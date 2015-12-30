@@ -53,7 +53,14 @@ class APCBase(PDUDriver):
         # only uncomment this line for FULL debug when developing
         # self.connection = pexpect.spawn(self.exec_string, logfile=sys.stdout)
         self.connection = pexpect.spawn(self.exec_string)
-        self._pdu_login("apc", "apc")
+        logging.debug("modify by Bo @ 2015.12.30")
+        if self.settings["driver"] == "np1601":
+            username = self.settings["username"]
+            password = self.settings["password"]
+            logging.debug("settings: %s" % self.settings)
+            self._pdu_login_np(username, password)
+        else:
+            self._pdu_login("apc", "apc")
 
     def _cleanup(self):
         self._pdu_logout()  # pylint: disable=no-member
@@ -71,3 +78,15 @@ class APCBase(PDUDriver):
         self.connection.send("%s\r" % username)
         self.connection.expect("Password  :")
         self.connection.send("%s\r" % password)
+
+    def _pdu_login_np(self. username, password):
+        log.debug("attempting login with username %s, password %s",
+                   username, password)
+        self.connection.sendline("")
+        self.connection.expect(">")
+        self.connection.sendline("login")
+        self.connection.expect("User ID:")
+        self.connection.sendline("%s" % username)
+        self.connection.expect("Password:")
+        self.connection.sendline("%s" % password)
+

@@ -22,6 +22,7 @@ from lavapdu.drivers.apc7952 import APC7952  # pylint: disable=W0611
 from lavapdu.drivers.apc9218 import APC9218  # pylint: disable=W0611
 from lavapdu.drivers.apc8959 import APC8959  # pylint: disable=W0611
 from lavapdu.drivers.apc9210 import APC9210  # pylint: disable=W0611
+from lavapdu.drivers.np1601 import NP1601
 from lavapdu.drivers.ubiquity import Ubiquity3Port  # pylint: disable=W0611
 from lavapdu.drivers.ubiquity import Ubiquity6Port  # pylint: disable=W0611
 
