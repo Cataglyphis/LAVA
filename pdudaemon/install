@@ -1,0 +1,18 @@
+#!/bin/sh
+set -e
+
+sudo service lavapdu-listen stop
+sudo service lavapdu-runner stop
+sudo cp lavapdu.conf /etc/lavapdu/lavapdu.conf
+sudo cp lavapdu-listen /usr/sbin
+sudo cp lavapdu-runner /usr/sbin
+sudo cp pduclient /usr/bin
+sudo chmod 0755 /usr/sbin/lavapdu-listen
+sudo chmod 0755 /usr/sbin/lavapdu-runner
+sudo chmod 0755 /usr/bin/pduclient
+
+sudo rm -rf /usr/lib/python2.7/dist-packages/lavapdu
+sudo cp -r lavapdu /usr/lib/python2.7/dist-packages/lavapdu
+
+sudo service lavapdu-listen start
+sudo service lavapdu-runner start
