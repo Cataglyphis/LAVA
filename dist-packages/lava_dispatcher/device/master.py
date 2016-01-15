@@ -479,6 +479,15 @@ class MasterImageTarget(Target):
             with self._python_file_system(runner, directory, self.MASTER_PS1_PATTERN, mounted=True) as root:
                 yield root
 
+    ############################################################
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+    # add function _wait_for_master_boot_master
+    ############################################################
+    def _wait_for_master_boot_mstar(self):
+        self._enter_bootloader_mstar(self.proc)
+
+
+
     def _wait_for_master_boot(self):
         if self.config.boot_cmds_master:
             # Break the boot sequence
@@ -536,10 +545,10 @@ class MasterImageTarget(Target):
                 self.proc = connect_to_serial(self.context)
                 if self.config.hard_reset_command:
                     self._hard_reboot(self.proc)
-                    self._wait_for_master_boot()
+                    self._wait_for_master_boot_mstar()
                 else:
                     self._soft_reboot(self.proc)
-                    self._wait_for_master_boot()
+                    self._wait_for_master_boot_mstar()
             except (OperationFailed, pexpect.TIMEOUT) as e:
                 msg = "Resetting platform into master image failed: %s" % e
                 logging.warning(msg)

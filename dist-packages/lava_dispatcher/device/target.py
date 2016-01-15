@@ -484,13 +484,15 @@ class Target(object):
         logging.info("Perform soft reboot the system")
         # Try to C-c the running process, if any.
         connection.sendcontrol('c')
+        connection.expect('shell')
         connection.sendline(self.config.soft_boot_cmd)
         # Looking for reboot messages or if they are missing, the U-Boot
         # message will also indicate the reboot is done.
-        match_id = connection.expect(
-            [pexpect.TIMEOUT, 'Restarting system',
-             'The system is going down for reboot NOW',
-             'Will now restart', 'U-Boot'], timeout=120)
+        patterns = [pexpect.TIMEOUT, 'Restarting system',
+                    'The system is going down for reboot NOW',
+                    'Will now restart', 'U-Boot']
+        match_id = connection.expect(patterns, timeout=120)
+        logging.info('Matched %s', patterns[match_id])
         if match_id == 0:
             raise OperationFailed("Soft reboot failed")
 
@@ -501,6 +503,30 @@ class Target(object):
         else:
             connection.send("~$")
             connection.sendline("hardreset")
+
+    ############################################################
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+    # add function _enter_bootloader_mstar
+    ############################################################
+    def _enter_bootloader_mstar(self, connection):
+        try:
+            start = time.time()
+            connection.expect(self.config.interrupt_boot_prompt,
+                              timeout=self.config.bootloader_timeout)
+            if self.config.interrupt_boot_control_character:
+                connection.sendcontrol(self.config.interrupt_boot_control_character)
+            else:
+                for i in range(50):
+                    connection.send(self.config.interrupt_boot_command)
+                connection.expect('<< MStar >>#')
+            # Record the time it takes to enter the bootloader.
+            enter_bootloader_time = "{0:.2f}".format(time.time() - start)
+            self.context.test_data.add_result('enter_bootloader', 'pass', enter_bootloader_time, 'seconds')
+        except pexpect.TIMEOUT:
+            msg = 'Infrastructure Error: failed to enter the bootloader.'
+            logging.error(msg)
+            self.context.test_data.add_result('enter_bootloader', 'fail', message=msg)
+            raise
 
     def _enter_bootloader(self, connection):
         try:
