@@ -511,14 +511,13 @@ class Target(object):
     def _enter_bootloader_mstar(self, connection):
         try:
             start = time.time()
-            connection.expect(self.config.interrupt_boot_prompt,
-                              timeout=self.config.bootloader_timeout)
-            if self.config.interrupt_boot_control_character:
-                connection.sendcontrol(self.config.interrupt_boot_control_character)
-            else:
-                for i in range(50):
-                    connection.send(self.config.interrupt_boot_command)
-                connection.expect('<< MStar >>#')
+            # connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.bootloader_timeout)
+            # if self.config.interrupt_boot_control_character:
+            #     connection.sendcontrol(self.config.interrupt_boot_control_character)
+            # else:
+            for i in range(20):
+                connection.send(self.config.interrupt_boot_command)
+            connection.expect('<< MStar >>#')
             # Record the time it takes to enter the bootloader.
             enter_bootloader_time = "{0:.2f}".format(time.time() - start)
             self.context.test_data.add_result('enter_bootloader', 'pass', enter_bootloader_time, 'seconds')
