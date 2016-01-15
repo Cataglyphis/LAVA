@@ -11,3 +11,10 @@ cd pdudaemon
 sudo chmod a+x install
 sudo ./install
 ```
+
+### Add LAVA source code
+```shell
+cd dist-packages
+sudo chmod a+x install
+sudo ./install
+```
