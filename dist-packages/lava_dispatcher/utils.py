@@ -514,8 +514,6 @@ class logging_spawn(pexpect.spawn):
 ############################################################
 # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
 ############################################################
-
-
 def connect_to_serial(context):
     """
     Attempts to connect to a serial console server like conmux or cyclades
@@ -563,7 +561,14 @@ def connect_to_serial(context):
                     logging.warning('attempting to reset serial port')
                     context.run_command(reset_cmd)
                 else:
-                    logging.warning('no reset_port command configured')
+                    logging.warning('no reset_port command configured, try to kill the process')
+                    proc_telnet = subprocess.Popen(['ps', 'a'], stdout=subprocess.PIPE)
+                    out, err = proc_telnet.communicate()
+                    for line in out.splitlines():
+                        if context.device_config.connection_command in line:
+                            pid = int(line.split('')[0])
+                            logging.warning('kill process: %s', context.device_config.connection_command)
+                            os.kill(pid, signal.SIGKILL)  # SIGKILL for Linux
                 proc.close(True)
                 retry_count += 1
                 time.sleep(5)
