@@ -18,6 +18,12 @@
 # along
 # with this program; if not, see <http://www.gnu.org/licenses>.
 
+
+############################################################
+# modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+# add function deploy_mstar in class BootloaderTarget
+############################################################
+
 import logging
 import contextlib
 import subprocess
@@ -155,8 +161,23 @@ class BootloaderTarget(MasterImageTarget):
         else:
             raise CriticalError("Unknown bootloader type")
 
-    def deploy_linaro_kernel(self, kernel, ramdisk, dtb, overlays, rootfs, nfsrootfs, image, bootloader, firmware, bl0, bl1,
-                             bl2, bl31, rootfstype, bootloadertype, target_type, qemu_pflash=None):
+    ############################################################
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+    # add function deploy_mstar in class BootloaderTarget
+    ############################################################
+
+    def deploy_mstar(self, image, image_server_ip, rootfstype, bootloadertype):
+        # we set the boot type
+        self._set_boot_type(bootloadertype)
+        if self._is_bootloader():
+            logging.debug("Set bootloadertype to u_boot in mstar platform")
+            super(BootloaderTarget, self).deploy_mstar(image, image_server_ip,
+                                                       rootfstype, bootloadertype)
+        else:
+            raise CriticalError("Invalid bootloadertype in mstar platform")
+
+    def deploy_linaro_kernel(self, kernel, ramdisk, dtb, overlays, rootfs, nfsrootfs, image, bootloader, firmware,
+                             bl0, bl1, bl2, bl31, rootfstype, bootloadertype, target_type, qemu_pflash=None):
         if self.__deployment_data__ is None:
             # Get deployment data
             logging.debug("Attempting to set deployment data")

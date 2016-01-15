@@ -472,9 +472,13 @@ class Target(object):
 
         if boot_tags is not None:
             boot_cmds = self._tag_boot_cmds(boot_cmds, boot_tags)
-        print "DEBUG: " + "=" * 10
-        print boot_cmds
         return boot_cmds
+
+    ############################################################
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+    # modify 'Restarting system.' to 'Restarting system'
+    # to match the mstar platform
+    ############################################################
 
     def _soft_reboot(self, connection):
         logging.info("Perform soft reboot the system")
@@ -484,7 +488,7 @@ class Target(object):
         # Looking for reboot messages or if they are missing, the U-Boot
         # message will also indicate the reboot is done.
         match_id = connection.expect(
-            [pexpect.TIMEOUT, 'Restarting system.',
+            [pexpect.TIMEOUT, 'Restarting system',
              'The system is going down for reboot NOW',
              'Will now restart', 'U-Boot'], timeout=120)
         if match_id == 0:

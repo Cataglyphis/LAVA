@@ -19,6 +19,12 @@
 # along
 # with this program; if not, see <http://www.gnu.org/licenses>.
 
+
+############################################################
+# modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+# add function deploy_mstar in class LavaClient
+############################################################
+
 import commands
 import contextlib
 import logging
@@ -396,12 +402,14 @@ class LavaClient(object):
         self.target_device = get_target(context, config)
         self.vm_group = VmGroupHandler(self)
 
+    ############################################################
+    # created by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+    # call lava_dispatcher.device.bootloader: deploy_mstar
+    ############################################################
     def deploy_mstar(self, image, image_server_ip,
                      rootfstype, bootloadertype):
         self.target_device.deploy_mstar(image, image_server_ip,
-                                        rootfstype,bootloadertype)
-
-
+                                        rootfstype, bootloadertype)
 
     def deploy_linaro_android(self, images, rootfstype,
                               bootloadertype, target_type):

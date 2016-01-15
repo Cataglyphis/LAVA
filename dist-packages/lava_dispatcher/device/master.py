@@ -19,6 +19,12 @@
 # along
 # with this program; if not, see <http://www.gnu.org/licenses>.
 
+
+############################################################
+# modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+# add function deploy_mstar in class MasterImageTarget
+############################################################
+
 import contextlib
 import logging
 import os
@@ -139,6 +145,18 @@ class MasterImageTarget(Target):
                 self.proc.sendline(self.config.connection_command_terminate)
         finalize_process(self.proc)
         self.proc = None
+
+    ############################################################
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+    # add function deploy_mstar in class MasterImageTarget
+    ############################################################
+
+    def deploy_mstar(self, image, image_server_ip, rootfstype, bootloadertype):
+        # reboot the system, enter and check u_boot
+        self.boot_master_image_mstar()
+
+
+
 
     def deploy_linaro(self, hwpack, rfs, dtb, rootfstype, bootfstype, bootloadertype, qemu_pflash=None):
         self.boot_master_image()
@@ -497,6 +515,46 @@ class MasterImageTarget(Target):
                                              boot_tags=self.master_boot_tags)
             self._customize_bootloader(self.proc, boot_cmds)
         self._monitor_boot(self.proc, self.MASTER_PS1, self.MASTER_PS1_PATTERN, is_master=True)
+
+    ############################################################
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+    # add function boot_master_image_mstar
+    ############################################################
+
+    def boot_master_image_mstar(self):
+        boot_attempts = self.config.boot_retries
+        attempts = 0
+        in_master_image = False
+        while (attempts < boot_attempts) and (not in_master_image):
+            logging.info("Booting the system master image. Attempt: %d", attempts + 1)
+            try:
+                if self.proc:
+                    if self.config.connection_command_terminate:
+                        self.proc.sendline(self.config.connection_command_terminate)
+                    finalize_process(self.proc)
+                    self.proc = None
+                self.proc = connect_to_serial(self.context)
+                if self.config.hard_reset_command:
+                    self._hard_reboot(self.proc)
+                    self._wait_for_master_boot()
+                else:
+                    self._soft_reboot(self.proc)
+                    self._wait_for_master_boot()
+            except (OperationFailed, pexpect.TIMEOUT) as e:
+                msg = "Resetting platform into master image failed: %s" % e
+                logging.warning(msg)
+                attempts += 1
+                continue
+
+            logging.info("System is in master image now")
+            self.context.test_data.add_result('boot_master_image_mstar', 'pass')
+            in_master_image = True
+
+        if not in_master_image:
+            msg = "Master Image Error: Could not get master image booted properly"
+            logging.error(msg)
+            self.context.test_data.add_result('boot_master_image_mstar', 'fail')
+            raise CriticalError(msg)
 
     def boot_master_image(self):
         """
