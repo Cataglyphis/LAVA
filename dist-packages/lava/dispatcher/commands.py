@@ -180,6 +180,9 @@ class dispatch(DispatcherCommand):
             DATEFMT = '%Y-%m-%d %I:%M:%S %p'
             logging.basicConfig(format=FORMAT, datefmt=DATEFMT)
             try:
+                ######################################################################
+                # lava-dispatcher.conf
+                ######################################################################
                 self.config = get_config()
             except CommandError as e:
                 if self.args.output_dir:

@@ -396,6 +396,13 @@ class LavaClient(object):
         self.target_device = get_target(context, config)
         self.vm_group = VmGroupHandler(self)
 
+    def deploy_mstar(self, image, image_server_ip,
+                     rootfstype, bootloadertype):
+        self.target_device.deploy_mstar(image, image_server_ip,
+                                        rootfstype,bootloadertype)
+
+
+
     def deploy_linaro_android(self, images, rootfstype,
                               bootloadertype, target_type):
         self.target_device.deploy_android(images, rootfstype,
