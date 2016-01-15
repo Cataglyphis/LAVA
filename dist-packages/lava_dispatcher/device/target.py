@@ -491,7 +491,7 @@ class Target(object):
             #     connection.sendcontrol(self.config.interrupt_boot_control_character)
             # else:
             for i in range(20):
-                connection.send(self.config.interrupt_boot_command)
+                connection.sendline(self.config.interrupt_boot_command)
             connection.expect('<< MStar >>#')
             # Record the time it takes to enter the bootloader.
             enter_bootloader_time = "{0:.2f}".format(time.time() - start)

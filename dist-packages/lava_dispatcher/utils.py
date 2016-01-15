@@ -575,7 +575,8 @@ def connect_to_serial(context):
                 continue
             elif result == 'all-good':
                 # press Enter
-                logging.info("Press Enter and expect shell@helios")
+                logging.info("Press Enter twice and expect shell@helios")
+                proc.sendline('', delay=500)
                 proc.sendline('', delay=500)
                 proc.expect('shell')
                 context.test_data.add_result('connect_to_console', 'pass')
