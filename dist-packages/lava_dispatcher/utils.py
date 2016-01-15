@@ -566,7 +566,7 @@ def connect_to_serial(context):
                     out, err = proc_telnet.communicate()
                     for line in out.splitlines():
                         if context.device_config.connection_command in line:
-                            pid = int(line.split('')[0])
+                            pid = int(line.split()[0])
                             logging.warning('kill process: %s', context.device_config.connection_command)
                             os.kill(pid, signal.SIGKILL)  # SIGKILL for Linux
                 proc.close(True)
