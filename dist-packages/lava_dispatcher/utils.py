@@ -511,6 +511,10 @@ class logging_spawn(pexpect.spawn):
                 ['.+', pexpect.EOF, pexpect.TIMEOUT],
                 timeout=0.1, lava_no_logging=1)
 
+############################################################
+# modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+############################################################
+
 
 def connect_to_serial(context):
     """
@@ -519,17 +523,27 @@ def connect_to_serial(context):
     retry_count = 0
     retry_limit = 3
 
-    port_stuck_message = 'Data Buffering Suspended\.'
-    conn_closed_message = 'Connection closed by foreign host\.'
+    port_stuck_message = 'Data Buffering Suspended'
+    conn_closed_message = 'Connection closed by foreign host'
     connection_refused_message = 'Connection refused'
+    connection_succeed_message = 'ser2net port'
+
+    # expectations = {
+    #     port_stuck_message: 'reset-port',
+    #     context.device_config.connection_command_pattern: 'all-good',
+    #     conn_closed_message: 'retry',
+    #     pexpect.TIMEOUT: 'all-good',
+    #     connection_refused_message: 'retry',
+    # }
 
     expectations = {
         port_stuck_message: 'reset-port',
-        context.device_config.connection_command_pattern: 'all-good',
         conn_closed_message: 'retry',
-        pexpect.TIMEOUT: 'all-good',
         connection_refused_message: 'retry',
+        connection_succeed_message: 'all-good',
+        pexpect.TIMEOUT: 'timeout'
     }
+
     patterns = []
     results = []
     for pattern, result in expectations.items():
@@ -538,14 +552,12 @@ def connect_to_serial(context):
 
     while retry_count < retry_limit:
         try:
-            proc = context.spawn(
-                context.device_config.connection_command,
-                timeout=120)
+            proc = context.spawn(context.device_config.connection_command, timeout=120)
             logging.info('Attempting to connect to device using: %s', context.device_config.connection_command)
             match = proc.expect(patterns, timeout=10)
             result = results[match]
             logging.info('Matched %r which means %s', patterns[match], result)
-            if result == 'retry' or result == 'reset-port':
+            if result == 'retry' or result == 'reset-port' or results == 'timeout':
                 reset_cmd = context.device_config.reset_port_command
                 if reset_cmd:
                     logging.warning('attempting to reset serial port')
@@ -557,6 +569,9 @@ def connect_to_serial(context):
                 time.sleep(5)
                 continue
             elif result == 'all-good':
+                # press Enter
+                proc.sendline('')
+                proc.expect('shell')
                 context.test_data.add_result('connect_to_console', 'pass')
                 atexit.register(proc.close, True)
                 return proc
