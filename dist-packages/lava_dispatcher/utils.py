@@ -554,10 +554,10 @@ def connect_to_serial(context):
         try:
             proc = context.spawn(context.device_config.connection_command, timeout=120)
             logging.info('Attempting to connect to device using: %s', context.device_config.connection_command)
-            match = proc.expect(patterns, timeout=10)
+            match = proc.expect(patterns, timeout=20)
             result = results[match]
             logging.info('Matched %r which means %s', patterns[match], result)
-            if result == 'retry' or result == 'reset-port' or results == 'timeout':
+            if result == 'retry' or result == 'reset-port' or result == 'timeout':
                 reset_cmd = context.device_config.reset_port_command
                 if reset_cmd:
                     logging.warning('attempting to reset serial port')
@@ -570,11 +570,14 @@ def connect_to_serial(context):
                 continue
             elif result == 'all-good':
                 # press Enter
+                logging.info("Press Enter and expect shell@helios")
                 proc.sendline('')
                 proc.expect('shell')
                 context.test_data.add_result('connect_to_console', 'pass')
                 atexit.register(proc.close, True)
                 return proc
+            else:
+                pass
         except CriticalError:
             retry_count += 1
 
