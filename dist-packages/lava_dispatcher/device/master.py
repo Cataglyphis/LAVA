@@ -547,8 +547,6 @@ class MasterImageTarget(Target):
                     self._hard_reboot(self.proc)
                     self._wait_for_master_boot_mstar()
                 else:
-                    # self._soft_reboot(self.proc)
-                    # self._wait_for_master_boot_mstar()
                     self._soft_reboot_enter_bootloader(self.proc)
             except (OperationFailed, pexpect.TIMEOUT) as e:
                 msg = "Resetting platform into master image failed: %s" % e

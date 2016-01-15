@@ -486,10 +486,6 @@ class Target(object):
             connection.expect('shell')
             connection.sendline(self.config.soft_boot_cmd)
             start = time.time()
-            # connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.bootloader_timeout)
-            # if self.config.interrupt_boot_control_character:
-            #     connection.sendcontrol(self.config.interrupt_boot_control_character)
-            # else:
             for i in range(20):
                 connection.sendline(self.config.interrupt_boot_command)
             connection.expect('<< MStar >>#')
@@ -504,10 +500,27 @@ class Target(object):
 
     ############################################################
     # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+    # soft reboot and enter the mstar bootloader
+    ############################################################
+    def _hard_reboot_enter_bootloader(self, connection):
+        logging.info("Perform hard reboot on the system")
+        if self.config.hard_reset_command != "":
+            self.context.run_command(self.config.hard_reset_command)
+            for i in range(20):
+                connection.sendline(self.config.interrupt_boot_command)
+            connection.expect('<< MStar >>#')
+            # Record the time it takes to enter the bootloader.
+            enter_bootloader_time = "{0:.2f}".format(time.time() - start)
+            self.context.test_data.add_result('enter_bootloader', 'pass', enter_bootloader_time, 'seconds')
+        else:
+            logging.warning("No hard reboot command, use soft reboot instead")
+            self._soft_reboot_enter_bootloader(connection)
+
+    ############################################################
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
     # modify 'Restarting system.' to 'Restarting system'
     # to match the mstar platform
     ############################################################
-
     def _soft_reboot(self, connection):
         logging.info("Perform soft reboot the system")
         # Try to C-c the running process, if any.
