@@ -3,7 +3,7 @@ set -e
 
 sudo service lava-server stop
 
-packages="/usr/local/python2.7/dist-packages/"
+packages="/usr/lib/python2.7/dist-packages/"
 lava_dispatcher="lava_dispatcher/default-config/lava-dispatcher/device-types/"
 
 # lava_dispatcher
