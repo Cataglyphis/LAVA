@@ -1,4 +1,5 @@
 #!/bin/sh
+# wang.bo@whaley.cn
 set -e
 
 sudo service lava-server stop
@@ -13,5 +14,6 @@ sudo cp -f lava_dispatcher/client/base.py ${packages}lava_dispatcher/client/
 sudo cp -f lava_dispatcher/device/bootloader.py ${packages}lava_dispatcher/device/
 sudo cp -f lava_dispatcher/device/master.py ${packages}lava_dispatcher/device/
 sudo cp -f lava_dispatcher/device/target.py ${packages}lava_dispatcher/device/
+sudo cp -f lava_dispatcher/utils.py ${packages}lava_dispatcher/
 
 sudo service lava-server start
