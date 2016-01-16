@@ -149,14 +149,18 @@ class MasterImageTarget(Target):
     ############################################################
     # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
     # add function deploy_mstar in class MasterImageTarget
+    # add function deploy_mstar_image
     ############################################################
 
     def deploy_mstar(self, image, image_server_ip, rootfstype, bootloadertype):
         # reboot the system, enter and check u_boot
         self.boot_master_image_mstar()
+        self._deploy_mstar_image(image, image_server_ip)
 
-
-
+    def _deploy_mstar_image(self, image, image_server_ip):
+        logging.info("start to deploy the image from %s with %s" % (image_server_ip, image))
+        self.proc.sendline("setenv serverip %s" % image_server_ip, send_char=False)
+        self.proc.sendline("mstar %s" % image, send_char=False)
 
     def deploy_linaro(self, hwpack, rfs, dtb, rootfstype, bootfstype, bootloadertype, qemu_pflash=None):
         self.boot_master_image()
@@ -481,7 +485,7 @@ class MasterImageTarget(Target):
 
     ############################################################
     # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
-    # add function _wait_for_master_boot_master
+    # add function _wait_for_master_boot_mastar
     ############################################################
     def _wait_for_master_boot_mstar(self):
         self._enter_bootloader_mstar(self.proc)
@@ -529,7 +533,6 @@ class MasterImageTarget(Target):
     # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
     # add function boot_master_image_mstar
     ############################################################
-
     def boot_master_image_mstar(self):
         boot_attempts = self.config.boot_retries
         attempts = 0
@@ -544,8 +547,7 @@ class MasterImageTarget(Target):
                     self.proc = None
                 self.proc = connect_to_serial(self.context)
                 if self.config.hard_reset_command:
-                    self._hard_reboot(self.proc)
-                    self._wait_for_master_boot_mstar()
+                    self._hard_reboot_enter_bootloader(self.proc)
                 else:
                     self._soft_reboot_enter_bootloader(self.proc)
             except (OperationFailed, pexpect.TIMEOUT) as e:

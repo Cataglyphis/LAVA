@@ -484,8 +484,8 @@ class Target(object):
             # Try to C-c the running process, if any.
             connection.sendcontrol('c')
             connection.expect('shell')
-            connection.sendline(self.config.soft_boot_cmd)
             start = time.time()
+            connection.sendline(self.config.soft_boot_cmd)
             for i in range(20):
                 connection.sendline(self.config.interrupt_boot_command)
             connection.expect('<< MStar >>#')
@@ -505,6 +505,7 @@ class Target(object):
     def _hard_reboot_enter_bootloader(self, connection):
         logging.info("Perform hard reboot on the system")
         if self.config.hard_reset_command != "":
+            start = time.time()
             self.context.run_command(self.config.hard_reset_command)
             for i in range(20):
                 connection.sendline(self.config.interrupt_boot_command)
