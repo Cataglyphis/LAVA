@@ -35,5 +35,5 @@ class cmd_deploy_mstar_image(BaseAction):
             customize=None):
         if customize is not None:
             self.client.config.customize = customize
-        self.client.deploy_mstar(image=image, image_server_ip=None,
+        self.client.deploy_mstar(image=image, image_server_ip=image_server_ip,
                                  rootfstype=rootfstype, bootloadertype=bootloadertype)

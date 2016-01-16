@@ -161,6 +161,8 @@ class MasterImageTarget(Target):
         logging.info("start to deploy the image from %s with %s" % (image_server_ip, image))
         self.proc.sendline("setenv serverip %s" % image_server_ip, send_char=False)
         self.proc.sendline("mstar %s" % image, send_char=False)
+        self.proc.expect("shell", timeout=3600)
+
 
     def deploy_linaro(self, hwpack, rfs, dtb, rootfstype, bootfstype, bootloadertype, qemu_pflash=None):
         self.boot_master_image()

@@ -169,7 +169,7 @@ class BootloaderTarget(MasterImageTarget):
     def deploy_mstar(self, image, image_server_ip, rootfstype, bootloadertype):
         # we set the boot type
         self._set_boot_type(bootloadertype)
-        if self._is_bootloader():
+        if self._is_uboot():
             logging.debug("Set bootloadertype to u_boot in mstar platform")
             super(BootloaderTarget, self).deploy_mstar(image, image_server_ip,
                                                        rootfstype, bootloadertype)
