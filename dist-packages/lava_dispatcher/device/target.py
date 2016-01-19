@@ -740,6 +740,7 @@ class Target(object):
                     self._wait_for_prompt(connection,
                                           self.config.bootloader_prompt,
                                           timeout=self.config.boot_cmd_timeout)
+                    logging.info("boot command: %s" % line)
                     connection.sendline(line, delay,
                                         send_char=self.config.send_char)
             self.context.test_data.add_result('execute_boot_cmds',

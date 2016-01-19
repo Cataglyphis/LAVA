@@ -522,9 +522,9 @@ class MasterImageTarget(Target):
         # monitor the deploy and reboot
         self._monitor_boot(self.proc, self.MASTER_PS1, self.MASTER_PS1_PATTERN, is_master=False)
         # skip guide
-        self._skip_giude_mstar(self.proc)
+        self._skip_guide_mstar(self.proc)
 
-    def _skip_giude_mstar(self, connection):
+    def _skip_guide_mstar(self, connection):
         logging.info("Try to skip the guide")
         try:
             connection.sendcontrol('c')
