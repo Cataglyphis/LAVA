@@ -527,7 +527,7 @@ class MasterImageTarget(Target):
 
     def _skip_guide_mstar(self, connection):
         pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", pexpect.TIMEOUT]
-        for i in range(3):
+        for i in range(5):
             logging.info("Try to skip the guide. Attempt: %s" % str(i+1))
             connection.sendcontrol('c')
             connection.sendline('')
@@ -536,7 +536,7 @@ class MasterImageTarget(Target):
             pos1 = connection.expect(pattern, timeout=10)
             if pos1 == 0:
                 logging.warning("Can't find service: window")
-                time.sleep(10)
+                time.sleep(30)
                 continue
             elif pos1 == 1:
                 logging.info("Now in com.helios.guide activity")
@@ -557,7 +557,7 @@ class MasterImageTarget(Target):
                 logging.info("Already in com.helios.launch activity")
                 break
             else:
-                time.sleep(5)
+                time.sleep(10)
                 continue
         else:
             logging.error("Can't skip the guide. Please have a check")
