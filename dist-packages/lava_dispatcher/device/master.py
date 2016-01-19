@@ -536,7 +536,7 @@ class MasterImageTarget(Target):
             pos1 = connection.expect(pattern, timeout=10)
             if pos1 == 0:
                 logging.warning("Can't find service: window")
-                time.sleep(30)
+                time.sleep(60)
                 continue
             elif pos1 == 1:
                 logging.info("Now in com.helios.guide activity")
@@ -544,6 +544,7 @@ class MasterImageTarget(Target):
                 connection.sendline('')
                 connection.expect('shell', timeout=5)
                 connection.sendline('su')
+                time.sleep(5)
                 connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
                 time.sleep(5)
                 connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
@@ -557,7 +558,7 @@ class MasterImageTarget(Target):
                 logging.info("Already in com.helios.launch activity")
                 break
             else:
-                time.sleep(10)
+                time.sleep(20)
                 continue
         else:
             logging.error("Can't skip the guide. Please have a check")
