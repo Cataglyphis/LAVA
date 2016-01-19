@@ -525,26 +525,28 @@ class MasterImageTarget(Target):
         self._skip_guide_mstar(self.proc)
 
     def _skip_guide_mstar(self, connection):
-        logging.info("Try to skip the guide")
-        try:
+        for i in range(3):
+            logging.info("Try to skip the guide. Attempt: %s" % str(i+1))
             connection.sendcontrol('c')
-            connection.expect('shell')
-            shell_cmd = 'dumpsys window | grep mFocusedApp'
-            child = pexpect.spawn(shell_cmd, timeout=20)
-            if child.expect("com.helios.guide"):
+            connection.sendline('')
+            connection.expect('shell', timeout=5)
+            connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
+            if connection.expect("com.helios.guide", timeout=10):
                 logging.info("Now in com.helios.guide activity")
                 connection.sendcontrol('c')
-                connection.expect('shell')
+                connection.sendline('')
+                connection.expect('shell', timeout=5)
                 connection.sendline('su')
                 connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
-                child = pexpect.spawn(shell_cmd, timeout=20)
-                if child.expect("com.helios.launcher"):
+                if connection.expect("com.helios.launcher", timeout=10):
                     logging.info("Now in com.helios.launcher activity, skip the guide successfully")
+                    break
             else:
                 logging.warning("Not in com.helios.guide activity now")
-        except pexpect.TIMEOUT:
-            msg = "Unable to skip the guide"
-            logging.warning(msg)
+                time.sleep(5)
+                continue
+        else:
+            logging.error("Can't skip the guide. Please have a check")
 
     def _wait_for_master_boot(self):
         if self.config.boot_cmds_master:
