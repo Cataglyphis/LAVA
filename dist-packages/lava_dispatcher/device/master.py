@@ -535,6 +535,7 @@ class MasterImageTarget(Target):
             connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
             pos1 = connection.expect(pattern, timeout=10)
             if pos1 == 0:
+                logging.warning("Can't find service: window")
                 time.sleep(10)
                 continue
             elif pos1 == 1:
