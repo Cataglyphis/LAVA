@@ -149,20 +149,43 @@ class MasterImageTarget(Target):
     ############################################################
     # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
     # add function deploy_mstar in class MasterImageTarget
-    # add function deploy_mstar_image
     ############################################################
-
     def deploy_mstar(self, image, image_server_ip, rootfstype, bootloadertype):
         # reboot the system, enter and check u_boot
-        self.boot_master_image_mstar()
-        self._deploy_mstar_image(image, image_server_ip)
+        logging.info('Start to deploy mstar image')
+        boot_attempts = self.config.boot_retries
+        attempts = 0
+        in_master_image = False
+        while (attempts < boot_attempts) and (not in_master_image):
+            logging.info("Booting the mstar image. Attempt: %d", attempts + 1)
+            try:
+                if self.proc:
+                    if self.config.connection_command_terminate:
+                        self.proc.sendline(self.config.connection_command_terminate)
+                    finalize_process(self.proc)
+                    self.proc = None
+                self.proc = connect_to_serial(self.context)
+                if self.config.hard_reset_command:
+                    self._hard_reboot_enter_bootloader(self.proc)
+                    self._wait_for_boot_mstar(image, image_server_ip)
+                else:
+                    self._soft_reboot_enter_bootloader(self.proc)
+                    self._wait_for_boot_mstar(image, image_server_ip)
+            except (OperationFailed, pexpect.TIMEOUT) as e:
+                msg = "Resetting platform into mstar image failed: %s" % e
+                logging.warning(msg)
+                attempts += 1
+                continue
 
-    def _deploy_mstar_image(self, image, image_server_ip):
-        logging.info("start to deploy the image from %s with %s" % (image_server_ip, image))
-        self.proc.sendline("setenv serverip %s" % image_server_ip, send_char=False)
-        self.proc.sendline("mstar %s" % image, send_char=False)
-        self.proc.expect("shell", timeout=3600)
+            logging.info("System is in mstar image now")
+            self.context.test_data.add_result('boot_image_mstar', 'pass')
+            in_master_image = True
 
+        if not in_master_image:
+            msg = "Mstar Image Error: Could not get mstar image booted properly"
+            logging.error(msg)
+            self.context.test_data.add_result('boot_image_mstar', 'fail')
+            raise CriticalError(msg)
 
     def deploy_linaro(self, hwpack, rfs, dtb, rootfstype, bootfstype, bootloadertype, qemu_pflash=None):
         self.boot_master_image()
@@ -486,13 +509,42 @@ class MasterImageTarget(Target):
                 yield root
 
     ############################################################
-    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
-    # add function _wait_for_master_boot_mastar
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.18
+    # add function _wait_for_boot_mstar
     ############################################################
-    def _wait_for_master_boot_mstar(self):
-        self._enter_bootloader_mstar(self.proc)
+    def _wait_for_boot_mstar(self, image, image_server_ip):
+        self.master_boot_tags['{IMAGE}'] = image
+        self.master_boot_tags['{IMAGE_SERVER_IP}'] = image_server_ip
+        boot_cmds = self._load_boot_cmds(default='boot_cmds', boot_tags=self.master_boot_tags)
+        logging.info("boot_cmds is: %s" % boot_cmds)
+        # run boot_cmds to deploy the image
+        self._customize_bootloader(self.proc, boot_cmds)
+        # monitor the deploy and reboot
+        self._monitor_boot(self.proc, self.MASTER_PS1, self.MASTER_PS1_PATTERN, is_master=False)
+        # skip guide
+        self._skip_giude_mstar(self.proc)
 
-
+    def _skip_giude_mstar(self, connection):
+        logging.info("Try to skip the guide")
+        try:
+            connection.sendcontrol('c')
+            connection.expect('shell')
+            shell_cmd = 'dumpsys window | grep mFocusedApp'
+            child = pexpect.spawn(shell_cmd, timeout=20)
+            if child.expect("com.helios.guide"):
+                logging.info("Now in com.helios.guide activity")
+                connection.sendcontrol('c')
+                connection.expect('shell')
+                connection.sendline('su')
+                connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
+                child = pexpect.spawn(shell_cmd, timeout=20)
+                if child.expect("com.helios.launcher"):
+                    logging.info("Now in com.helios.launcher activity, skip the guide successfully")
+            else:
+                logging.warning("Not in com.helios.guide activity now")
+        except pexpect.TIMEOUT:
+            msg = "Unable to skip the guide"
+            logging.warning(msg)
 
     def _wait_for_master_boot(self):
         if self.config.boot_cmds_master:
@@ -530,43 +582,6 @@ class MasterImageTarget(Target):
                                              boot_tags=self.master_boot_tags)
             self._customize_bootloader(self.proc, boot_cmds)
         self._monitor_boot(self.proc, self.MASTER_PS1, self.MASTER_PS1_PATTERN, is_master=True)
-
-    ############################################################
-    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
-    # add function boot_master_image_mstar
-    ############################################################
-    def boot_master_image_mstar(self):
-        boot_attempts = self.config.boot_retries
-        attempts = 0
-        in_master_image = False
-        while (attempts < boot_attempts) and (not in_master_image):
-            logging.info("Booting the system master image. Attempt: %d", attempts + 1)
-            try:
-                if self.proc:
-                    if self.config.connection_command_terminate:
-                        self.proc.sendline(self.config.connection_command_terminate)
-                    finalize_process(self.proc)
-                    self.proc = None
-                self.proc = connect_to_serial(self.context)
-                if self.config.hard_reset_command:
-                    self._hard_reboot_enter_bootloader(self.proc)
-                else:
-                    self._soft_reboot_enter_bootloader(self.proc)
-            except (OperationFailed, pexpect.TIMEOUT) as e:
-                msg = "Resetting platform into master image failed: %s" % e
-                logging.warning(msg)
-                attempts += 1
-                continue
-
-            logging.info("System is in master image now")
-            self.context.test_data.add_result('boot_master_image_mstar', 'pass')
-            in_master_image = True
-
-        if not in_master_image:
-            msg = "Master Image Error: Could not get master image booted properly"
-            logging.error(msg)
-            self.context.test_data.add_result('boot_master_image_mstar', 'fail')
-            raise CriticalError(msg)
 
     def boot_master_image(self):
         """

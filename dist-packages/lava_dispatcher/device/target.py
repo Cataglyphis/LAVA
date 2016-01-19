@@ -488,7 +488,8 @@ class Target(object):
             connection.sendline(self.config.soft_boot_cmd)
             for i in range(20):
                 connection.sendline(self.config.interrupt_boot_command)
-            connection.expect('<< MStar >>#')
+            # connection.expect('<< MStar >>#')
+            connection.expect(self.config.bootloader_prompt, timeout=30)
             # Record the time it takes to enter the bootloader.
             enter_bootloader_time = "{0:.2f}".format(time.time() - start)
             self.context.test_data.add_result('enter_bootloader', 'pass', enter_bootloader_time, 'seconds')
@@ -509,7 +510,8 @@ class Target(object):
             self.context.run_command(self.config.hard_reset_command)
             for i in range(20):
                 connection.sendline(self.config.interrupt_boot_command)
-            connection.expect('<< MStar >>#')
+            # connection.expect('<< MStar >>#')
+            connection.expect(self.config.bootloader_prompt, timeout=30)
             # Record the time it takes to enter the bootloader.
             enter_bootloader_time = "{0:.2f}".format(time.time() - start)
             self.context.test_data.add_result('enter_bootloader', 'pass', enter_bootloader_time, 'seconds')
@@ -612,16 +614,18 @@ class Target(object):
 
         if self.config.has_kernel_messages:
             try:
+                start = time.time()
                 connection.expect(self.config.image_boot_msg,
                                   timeout=self.config.image_boot_msg_timeout)
+                image_boot_time = "{0:.2f}".format(time.time() - start)
                 start = time.time()
-                self.context.test_data.add_result(wait_for_image_boot,
-                                                  good)
+                self.context.test_data.add_result(wait_for_image_boot, good, image_boot_time, 'seconds')
+                logging.info("Image boot time: %s seconds" % image_boot_time)
+                # self.context.test_data.add_result(wait_for_image_boot, good)
             except pexpect.TIMEOUT:
                 msg = "Kernel Error: did not start booting."
                 logging.error(msg)
-                self.context.test_data.add_result(wait_for_image_boot,
-                                                  bad, message=msg)
+                self.context.test_data.add_result(wait_for_image_boot, bad, message=msg)
                 raise
 
             try:
@@ -632,8 +636,7 @@ class Target(object):
                           'Freeing init memory',
                           '-+\[ cut here \]-+\s+(.*\s+-+\[ end trace (\w*) \]-+)',
                           '(Unhandled fault.*)\r\n']
-                    i = connection.expect(pl,
-                                          timeout=self.config.kernel_boot_msg_timeout)
+                    i = connection.expect(pl, timeout=self.config.kernel_boot_msg_timeout)
                     if i == 0 or i == 1:
                         # Kernel booted normally
                         done = True
@@ -652,59 +655,59 @@ class Target(object):
                         self.context.test_data.add_result(kwarn, 'fail', message=kwarnings)
                         continue
                 kernel_boot_time = "{0:.2f}".format(time.time() - start)
-                self.context.test_data.add_result(wait_for_kernel_boot,
-                                                  good)
-                start = time.time()
+                self.context.test_data.add_result(wait_for_kernel_boot, good, kernel_boot_time, "seconds")
+                logging.info("Kernel boot time: %s seconds" % kernel_boot_time)
+                # self.context.test_data.add_result(wait_for_kernel_boot, good)
+                # start = time.time()
             except pexpect.TIMEOUT:
-                self.context.test_data.add_result(wait_for_kernel_boot,
-                                                  bad)
+                self.context.test_data.add_result(wait_for_kernel_boot, bad)
                 raise
 
-        try:
-            self._auto_login(connection, is_master)
-        except pexpect.TIMEOUT:
-            msg = "Userspace Error: auto login prompt not found."
-            logging.error(msg)
-            self.context.test_data.add_result(wait_for_login_prompt,
-                                              bad, message=msg)
-            raise
-
-        try:
-            if is_master:
-                pattern = self.config.master_str
-            else:
-                pattern = self.config.test_image_prompts
-
-            self._wait_for_prompt(connection, pattern, self.config.boot_linaro_timeout)
-            if not is_master:
-                if self.target_distro == 'android':
-                    # Gain root access
-                    connection.sendline('su')
-                    self._wait_for_prompt(connection, pattern, timeout=10)
-            connection.sendline('export PS1="%s"' % ps1,
-                                send_char=self.config.send_char)
-            self._wait_for_prompt(connection, ps1_pattern, timeout=10)
-            if self.config.has_kernel_messages:
-                userspace_boot_time = "{0:.2f}".format(time.time() - start)
-            self.context.test_data.add_result(wait_for_image_prompt, good)
-        except pexpect.TIMEOUT:
-            msg = "Userspace Error: image prompt not found."
-            logging.error(msg)
-            self.context.test_data.add_result(wait_for_image_prompt,
-                                              bad)
-            raise
-
-        # Record results
-        boot_meta = {}
-        boot_meta['dtb-append'] = str(self.config.append_dtb)
-        self.context.test_data.add_metadata(boot_meta)
-        if self.config.has_kernel_messages:
-            self.context.test_data.add_result(kernel_boot, 'pass',
-                                              kernel_boot_time, 'seconds')
-            self.context.test_data.add_result(userspace_boot, 'pass',
-                                              userspace_boot_time, 'seconds')
-            logging.info("Kernel boot time: %s seconds" % kernel_boot_time)
-            logging.info("Userspace boot time: %s seconds" % userspace_boot_time)
+        # try:
+        #     self._auto_login(connection, is_master)
+        # except pexpect.TIMEOUT:
+        #     msg = "Userspace Error: auto login prompt not found."
+        #     logging.error(msg)
+        #     self.context.test_data.add_result(wait_for_login_prompt,
+        #                                       bad, message=msg)
+        #     raise
+        #
+        # try:
+        #     if is_master:
+        #         pattern = self.config.master_str
+        #     else:
+        #         pattern = self.config.test_image_prompts
+        #
+        #     self._wait_for_prompt(connection, pattern, self.config.boot_linaro_timeout)
+        #     if not is_master:
+        #         if self.target_distro == 'android':
+        #             # Gain root access
+        #             connection.sendline('su')
+        #             self._wait_for_prompt(connection, pattern, timeout=10)
+        #     connection.sendline('export PS1="%s"' % ps1,
+        #                         send_char=self.config.send_char)
+        #     self._wait_for_prompt(connection, ps1_pattern, timeout=10)
+        #     if self.config.has_kernel_messages:
+        #         userspace_boot_time = "{0:.2f}".format(time.time() - start)
+        #     self.context.test_data.add_result(wait_for_image_prompt, good)
+        # except pexpect.TIMEOUT:
+        #     msg = "Userspace Error: image prompt not found."
+        #     logging.error(msg)
+        #     self.context.test_data.add_result(wait_for_image_prompt,
+        #                                       bad)
+        #     raise
+        #
+        # # Record results
+        # boot_meta = {}
+        # boot_meta['dtb-append'] = str(self.config.append_dtb)
+        # self.context.test_data.add_metadata(boot_meta)
+        # if self.config.has_kernel_messages:
+        #     self.context.test_data.add_result(kernel_boot, 'pass',
+        #                                       kernel_boot_time, 'seconds')
+        #     self.context.test_data.add_result(userspace_boot, 'pass',
+        #                                       userspace_boot_time, 'seconds')
+        #     logging.info("Kernel boot time: %s seconds" % kernel_boot_time)
+        #     logging.info("Userspace boot time: %s seconds" % userspace_boot_time)
 
     def _customize_bootloader(self, connection, boot_cmds):
         start = time.time()

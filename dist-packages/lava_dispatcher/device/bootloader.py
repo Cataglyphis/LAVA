@@ -168,13 +168,17 @@ class BootloaderTarget(MasterImageTarget):
 
     def deploy_mstar(self, image, image_server_ip, rootfstype, bootloadertype):
         # we set the boot type
+        if image is None:
+            raise CriticalError("Invalid image in mstar platform")
+        if image_server_ip is None:
+            raise CriticalError("Invalid image server ip in mstar platform")
         self._set_boot_type(bootloadertype)
+        logging.debug("Set bootloader type to u_boot in mstar platform")
         if self._is_uboot():
-            logging.debug("Set bootloadertype to u_boot in mstar platform")
             super(BootloaderTarget, self).deploy_mstar(image, image_server_ip,
                                                        rootfstype, bootloadertype)
         else:
-            raise CriticalError("Invalid bootloadertype in mstar platform")
+            raise CriticalError("Invalid bootloader type in mstar platform")
 
     def deploy_linaro_kernel(self, kernel, ramdisk, dtb, overlays, rootfs, nfsrootfs, image, bootloader, firmware,
                              bl0, bl1, bl2, bl31, rootfstype, bootloadertype, target_type, qemu_pflash=None):
