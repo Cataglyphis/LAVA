@@ -167,7 +167,7 @@ class BootloaderTarget(MasterImageTarget):
     ############################################################
 
     def deploy_mstar(self, image, image_server_ip, rootfstype, bootloadertype):
-        # we set the boot type
+        # set the boot type
         if image is None:
             raise CriticalError("Invalid image in mstar platform")
         if image_server_ip is None:
