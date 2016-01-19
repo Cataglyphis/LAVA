@@ -613,23 +613,22 @@ class Target(object):
             userspace_boot = 'master_userspace_boot_time'
 
         if self.config.has_kernel_messages:
-            # try:
-            #     start = time.time()
-            #     connection.expect(self.config.image_boot_msg,
-            #                       timeout=self.config.image_boot_msg_timeout)
-            #     image_boot_time = "{0:.2f}".format(time.time() - start)
-            #     start = time.time()
-            #     self.context.test_data.add_result(wait_for_image_boot, good, image_boot_time, 'seconds')
-            #     logging.info("Image boot time: %s seconds" % image_boot_time)
-            #     # self.context.test_data.add_result(wait_for_image_boot, good)
-            # except pexpect.TIMEOUT:
-            #     msg = "Kernel Error: did not start booting."
-            #     logging.error(msg)
-            #     self.context.test_data.add_result(wait_for_image_boot, bad, message=msg)
-            #     raise
-
             try:
                 start = time.time()
+                connection.expect(self.config.image_boot_msg,
+                                  timeout=self.config.image_boot_msg_timeout)
+                image_boot_time = "{0:.2f}".format(time.time() - start)
+                start = time.time()
+                self.context.test_data.add_result(wait_for_image_boot, good, image_boot_time, 'seconds')
+                logging.info("Image boot time: %s seconds" % image_boot_time)
+                # self.context.test_data.add_result(wait_for_image_boot, good)
+            except pexpect.TIMEOUT:
+                msg = "Kernel Error: did not start booting."
+                logging.error(msg)
+                self.context.test_data.add_result(wait_for_image_boot, bad, message=msg)
+                raise
+
+            try:
                 done = False
                 warnings = 0
                 while not done:
@@ -742,9 +741,7 @@ class Target(object):
                                           timeout=self.config.boot_cmd_timeout)
                     logging.info("boot command: %s" % line)
                     connection.sendline(line, delay, send_char=self.config.send_char)
-            connection.expect(self.config.image_boot_msg, timeout=self.config.image_boot_msg_timeout)
-            execution_time = "{0:.2f}".format(time.time() - start)
-            self.context.test_data.add_result('execute_boot_cmds', 'pass', execution_time, 'seconds')
+            self.context.test_data.add_result('execute_boot_cmds', 'pass')
         except pexpect.TIMEOUT:
             msg = "Bootloader Error: boot command execution failed."
             logging.error(msg)
@@ -752,10 +749,10 @@ class Target(object):
                                               'fail', message=msg)
             raise
 
-        # # Record boot_cmds execution time
-        # execution_time = "{0:.2f}".format(time.time() - start)
-        # self.context.test_data.add_result('boot_cmds_execution_time', 'pass',
-        #                                   execution_time, 'seconds')
+        # Record boot_cmds execution time
+        execution_time = "{0:.2f}".format(time.time() - start)
+        self.context.test_data.add_result('boot_cmds_execution_time', 'pass',
+                                          execution_time, 'seconds')
 
     def _target_extract(self, runner, tar_file, dest, timeout=-1, busybox=False):
         tmpdir = self.context.config.lava_image_tmpdir

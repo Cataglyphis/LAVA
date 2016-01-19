@@ -511,6 +511,7 @@ class MasterImageTarget(Target):
     ############################################################
     # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.18
     # add function _wait_for_boot_mstar
+    # add function _skip_guide_mstar
     ############################################################
     def _wait_for_boot_mstar(self, image, image_server_ip):
         self.master_boot_tags['{IMAGE}'] = image
@@ -525,24 +526,36 @@ class MasterImageTarget(Target):
         self._skip_guide_mstar(self.proc)
 
     def _skip_guide_mstar(self, connection):
+        pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", pexpect.TIMEOUT]
         for i in range(3):
             logging.info("Try to skip the guide. Attempt: %s" % str(i+1))
             connection.sendcontrol('c')
             connection.sendline('')
             connection.expect('shell', timeout=5)
             connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
-            if connection.expect("com.helios.guide", timeout=10):
+            pos1 = connection.expect(pattern, timeout=10)
+            if pos1 == 0:
+                time.sleep(10)
+                continue
+            elif pos1 == 1:
                 logging.info("Now in com.helios.guide activity")
                 connection.sendcontrol('c')
                 connection.sendline('')
                 connection.expect('shell', timeout=5)
                 connection.sendline('su')
                 connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
-                if connection.expect("com.helios.launcher", timeout=10):
+                time.sleep(5)
+                connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
+                pos2 = connection.expect(pattern, timeout=10)
+                if pos2 == 2:
                     logging.info("Now in com.helios.launcher activity, skip the guide successfully")
                     break
+                else:
+                    logging.info("Can't skip the guide, try it again")
+            elif pos1 == 2:
+                logging.info("Already in com.helios.launch activity")
+                break
             else:
-                logging.warning("Not in com.helios.guide activity now")
                 time.sleep(5)
                 continue
         else:
