@@ -21,12 +21,13 @@
 
 ############################################################
 # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
-# add function deploy_mstar in class BootloaderTarget
+# add function deploy_mstar_image in class BootloaderTarget
 ############################################################
 
 import logging
 import contextlib
 import subprocess
+import time
 
 from lava_dispatcher.device.master import (
     MasterImageTarget
@@ -163,22 +164,26 @@ class BootloaderTarget(MasterImageTarget):
 
     ############################################################
     # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
-    # add function deploy_mstar in class BootloaderTarget
+    # add function deploy_mstar_image in class BootloaderTarget
     ############################################################
 
-    def deploy_mstar(self, image, image_server_ip, rootfstype, bootloadertype):
+    def deploy_mstar_image(self, image, image_server_ip, rootfstype, bootloadertype):
         # set the boot type
         if image is None:
             raise CriticalError("Invalid image in mstar platform")
         if image_server_ip is None:
             raise CriticalError("Invalid image server ip in mstar platform")
-        self._set_boot_type(bootloadertype)
+        # specify mstar deployment data, vanilla as possible
+        if self.__deployment_data__ is None:
+            # Get deployment data
+            logging.debug("Attempting to set deployment data")
+            self.deployment_data = deployment_data.mstar
         logging.debug("Set bootloader type to u_boot in mstar platform")
+        self._set_boot_type(bootloadertype)
         if self._is_uboot():
-            super(BootloaderTarget, self).deploy_mstar(image, image_server_ip,
-                                                       rootfstype, bootloadertype)
-        else:
-            raise CriticalError("Invalid bootloader type in mstar platform")
+            self._boot_tags['{IMAGE}'] = image
+            self._boot_tags['{IMAGE_SERVER_IP}'] = image_server_ip
+            logging.info("Set {IMAGE} to %s, and {IMAGE_SERVER_IP} to %s" % (image, image_server_ip))
 
     def deploy_linaro_kernel(self, kernel, ramdisk, dtb, overlays, rootfs, nfsrootfs, image, bootloader, firmware,
                              bl0, bl1, bl2, bl31, rootfstype, bootloadertype, target_type, qemu_pflash=None):
@@ -336,6 +341,73 @@ class BootloaderTarget(MasterImageTarget):
                                send_char=self.config.send_char)
         self._customize_bootloader(self.proc, boot_cmds)
         self._monitor_boot(self.proc, self.tester_ps1, self.tester_ps1_pattern)
+
+    def boot_mstar_image(self):
+        if self.proc:
+            if self.config.connection_command_terminate:
+                self.proc.sendline(self.config.connection_command_terminate)
+            finalize_process(self.proc)
+            self.proc = None
+        self.proc = connect_to_serial(self.context)
+        if self.config.hard_reset_command:
+            self._hard_reboot_enter_bootloader(self.proc)
+            self._wait_for_boot_mstar()
+        else:
+            self._soft_reboot_enter_bootloader(self.proc)
+            self._wait_for_boot_mstar()
+
+    ############################################################
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.18
+    # add function _wait_for_boot_mstar
+    # add function _skip_guide_mstar
+    ############################################################
+    def _wait_for_boot_mstar(self):
+        boot_cmds = self._load_boot_cmds(default='boot_cmds', boot_tags=self._boot_tags)
+        logging.info("boot_cmds is: %s" % boot_cmds)
+        # run boot_cmds to deploy the image
+        self._customize_bootloader(self.proc, boot_cmds)
+        # monitor the deploy and reboot
+        self._monitor_boot(self.proc, self.tester_ps1, self.tester_ps1_pattern)
+        # skip guide
+        self._skip_guide_mstar(self.proc)
+
+    def _skip_guide_mstar(self, connection):
+        pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", pexpect.TIMEOUT]
+        for i in range(10):
+            logging.info("Try to skip the guide. Attempt: %s" % str(i+1))
+            connection.sendcontrol('c')
+            connection.sendline('')
+            connection.expect('shell', timeout=5)
+            connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
+            pos1 = connection.expect(pattern, timeout=10)
+            if pos1 == 0:
+                logging.warning("Can't find service: window")
+                time.sleep(60)
+                continue
+            elif pos1 == 1:
+                logging.info("Now in com.helios.guide activity")
+                connection.sendcontrol('c')
+                connection.sendline('')
+                connection.expect('shell', timeout=5)
+                connection.sendline('su')
+                time.sleep(5)
+                connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
+                time.sleep(5)
+                connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
+                pos2 = connection.expect(pattern, timeout=10)
+                if pos2 == 2:
+                    logging.info("Now in com.helios.launcher activity, skip the guide successfully")
+                    break
+                else:
+                    logging.info("Can't skip the guide, try it again")
+            elif pos1 == 2:
+                logging.info("Already in com.helios.launch activity")
+                break
+            else:
+                time.sleep(20)
+                continue
+        else:
+            logging.error("Can't skip the guide. Please have a check")
 
     def _boot_linaro_image(self):
         if self.proc:

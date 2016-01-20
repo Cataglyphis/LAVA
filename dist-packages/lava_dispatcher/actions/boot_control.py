@@ -168,3 +168,14 @@ class cmd_boot_master_image(BaseAction):
     def run(self):
         client = self.client
         client.boot_master_image()
+
+
+class cmd_boot_mstar_image(BaseAction):
+    """
+    call client code to boot the mstar image
+    """
+    parameters_schema = null_or_empty_schema
+
+    def run(self):
+        client = self.client
+        client.boot_mstar_image()

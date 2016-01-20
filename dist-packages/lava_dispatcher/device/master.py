@@ -146,47 +146,6 @@ class MasterImageTarget(Target):
         finalize_process(self.proc)
         self.proc = None
 
-    ############################################################
-    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
-    # add function deploy_mstar in class MasterImageTarget
-    ############################################################
-    def deploy_mstar(self, image, image_server_ip, rootfstype, bootloadertype):
-        # reboot the system, enter and check u_boot
-        logging.info('Start to deploy mstar image')
-        boot_attempts = self.config.boot_retries
-        attempts = 0
-        in_master_image = False
-        while (attempts < boot_attempts) and (not in_master_image):
-            logging.info("Booting the mstar image. Attempt: %d", attempts + 1)
-            try:
-                if self.proc:
-                    if self.config.connection_command_terminate:
-                        self.proc.sendline(self.config.connection_command_terminate)
-                    finalize_process(self.proc)
-                    self.proc = None
-                self.proc = connect_to_serial(self.context)
-                if self.config.hard_reset_command:
-                    self._hard_reboot_enter_bootloader(self.proc)
-                    self._wait_for_boot_mstar(image, image_server_ip)
-                else:
-                    self._soft_reboot_enter_bootloader(self.proc)
-                    self._wait_for_boot_mstar(image, image_server_ip)
-            except (OperationFailed, pexpect.TIMEOUT) as e:
-                msg = "Resetting platform into mstar image failed: %s" % e
-                logging.warning(msg)
-                attempts += 1
-                continue
-
-            logging.info("System is in mstar image now")
-            self.context.test_data.add_result('boot_image_mstar', 'pass')
-            in_master_image = True
-
-        if not in_master_image:
-            msg = "Mstar Image Error: Could not get mstar image booted properly"
-            logging.error(msg)
-            self.context.test_data.add_result('boot_image_mstar', 'fail')
-            raise CriticalError(msg)
-
     def deploy_linaro(self, hwpack, rfs, dtb, rootfstype, bootfstype, bootloadertype, qemu_pflash=None):
         self.boot_master_image()
 
@@ -508,61 +467,6 @@ class MasterImageTarget(Target):
             with self._python_file_system(runner, directory, self.MASTER_PS1_PATTERN, mounted=True) as root:
                 yield root
 
-    ############################################################
-    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.18
-    # add function _wait_for_boot_mstar
-    # add function _skip_guide_mstar
-    ############################################################
-    def _wait_for_boot_mstar(self, image, image_server_ip):
-        self.master_boot_tags['{IMAGE}'] = image
-        self.master_boot_tags['{IMAGE_SERVER_IP}'] = image_server_ip
-        boot_cmds = self._load_boot_cmds(default='boot_cmds', boot_tags=self.master_boot_tags)
-        logging.info("boot_cmds is: %s" % boot_cmds)
-        # run boot_cmds to deploy the image
-        self._customize_bootloader(self.proc, boot_cmds)
-        # monitor the deploy and reboot
-        self._monitor_boot(self.proc, self.MASTER_PS1, self.MASTER_PS1_PATTERN, is_master=False)
-        # skip guide
-        self._skip_guide_mstar(self.proc)
-
-    def _skip_guide_mstar(self, connection):
-        pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", pexpect.TIMEOUT]
-        for i in range(10):
-            logging.info("Try to skip the guide. Attempt: %s" % str(i+1))
-            connection.sendcontrol('c')
-            connection.sendline('')
-            connection.expect('shell', timeout=5)
-            connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
-            pos1 = connection.expect(pattern, timeout=10)
-            if pos1 == 0:
-                logging.warning("Can't find service: window")
-                time.sleep(60)
-                continue
-            elif pos1 == 1:
-                logging.info("Now in com.helios.guide activity")
-                connection.sendcontrol('c')
-                connection.sendline('')
-                connection.expect('shell', timeout=5)
-                connection.sendline('su')
-                time.sleep(5)
-                connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
-                time.sleep(5)
-                connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
-                pos2 = connection.expect(pattern, timeout=10)
-                if pos2 == 2:
-                    logging.info("Now in com.helios.launcher activity, skip the guide successfully")
-                    break
-                else:
-                    logging.info("Can't skip the guide, try it again")
-            elif pos1 == 2:
-                logging.info("Already in com.helios.launch activity")
-                break
-            else:
-                time.sleep(20)
-                continue
-        else:
-            logging.error("Can't skip the guide. Please have a check")
-
     def _wait_for_master_boot(self):
         if self.config.boot_cmds_master:
             # Break the boot sequence
@@ -599,6 +503,7 @@ class MasterImageTarget(Target):
                                              boot_tags=self.master_boot_tags)
             self._customize_bootloader(self.proc, boot_cmds)
         self._monitor_boot(self.proc, self.MASTER_PS1, self.MASTER_PS1_PATTERN, is_master=True)
+
 
     def boot_master_image(self):
         """

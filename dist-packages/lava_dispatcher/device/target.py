@@ -481,13 +481,14 @@ class Target(object):
     def _soft_reboot_enter_bootloader(self, connection):
         try:
             logging.info("Perform soft reboot the system and enter the bootloader")
-            # Try to C-c the running process, if any.
-            connection.sendcontrol('c')
+            connection.sendline('')
+            connection.sendline('')
             connection.expect('shell')
             start = time.time()
             connection.sendline(self.config.soft_boot_cmd)
             for i in range(20):
                 connection.sendline(self.config.interrupt_boot_command)
+            # in the future, we should modify the bootdelay in u_boot, and add u_boot hint
             # connection.expect('<< MStar >>#')
             connection.expect(self.config.bootloader_prompt, timeout=30)
             # Record the time it takes to enter the bootloader.
@@ -510,6 +511,7 @@ class Target(object):
             self.context.run_command(self.config.hard_reset_command)
             for i in range(20):
                 connection.sendline(self.config.interrupt_boot_command)
+            # in the future, we should modify the bootdelay in u_boot, and add u_boot hint
             # connection.expect('<< MStar >>#')
             connection.expect(self.config.bootloader_prompt, timeout=30)
             # Record the time it takes to enter the bootloader.
