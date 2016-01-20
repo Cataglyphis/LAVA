@@ -485,7 +485,7 @@ class BootloaderTarget(MasterImageTarget):
             pat = self.tester_ps1_pattern
             # True/False
             incrc = self.tester_ps1_includes_rc
-            logging.warning("Bo: " + "-"*10 + "tester_ps1_pattern: %s" + pat)
+            logging.warning("Bo: " + "-"*10 + "tester_ps1_pattern: %s" + str(pat))
             runner = NetworkCommandRunner(self, pat, incrc)
             with self._busybox_file_system(runner, directory) as path:
                 yield path

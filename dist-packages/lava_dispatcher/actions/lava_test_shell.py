@@ -822,13 +822,13 @@ class cmd_lava_test_shell(BaseAction):
         # add by Bo @ 2016.01.20
         # bootloader
         target = self.client.target_device
-        logging.warning("Bo: " + "-"*10 + "target: %s" + type(target))
-        logging.warning("Bo: " + "-"*10 + "testdef_urls: %s" + testdef_urls)
-        logging.warning("Bo: " + "-"*10 + "testdef_repos: %s" + testdef_repos)
+
+        logging.warning("Bo: " + "-"*10 + "testdef_urls: %s" + str(testdef_urls))
+        logging.warning("Bo: " + "-"*10 + "testdef_repos: %s" + str(testdef_repos))
         logging.warning("Bo: " + "-"*10 + "timeout: %s" + str(timeout))
-        logging.warning("Bo: " + "-"*10 + "skip_install: %s" + skip_install)
-        logging.warning("Bo: " + "-"*10 + "lava_test_dir: %s" + lava_test_dir)
-        logging.warning("Bo: " + "-"*10 + "lava_test_results_dir: %s" + lava_test_results_dir)
+        logging.warning("Bo: " + "-"*10 + "skip_install: %s" + str(skip_install))
+        logging.warning("Bo: " + "-"*10 + "lava_test_dir: %s" + str(lava_test_dir))
+        logging.warning("Bo: " + "-"*10 + "lava_test_results_dir: %s" + str(lava_test_results_dir))
         logging.warning("Bo: " + "-"*10 + "repeat_count: %s" + str(repeat_count))
         global repeat_cnt
         repeat_cnt = repeat_count
@@ -1053,9 +1053,8 @@ class cmd_lava_test_shell(BaseAction):
 
     def _configure_target(self, target, testdef_urls, testdef_repos, skip_install):
         results_part = target.deployment_data['lava_test_results_part_attr']
-        logging.warning("Bo: " + "-"*10 + "results_part: %s" % results_part)
         results_part = getattr(target.config, results_part)
-        logging.warning("Bo: " + "-"*10 + "results_part: %s" % results_part)
+        logging.warning("Bo: " + "-"*10 + "results_part: %s" % str(results_part))
 
         with target.file_system(results_part, target.lava_test_results_dir) as d:
             self._mk_runner_dirs(d)
