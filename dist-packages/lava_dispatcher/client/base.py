@@ -570,7 +570,7 @@ class LavaClient(object):
                 attempts += 1
                 continue
 
-            logging.info("System is in test image now")
+            logging.info("System is in test image now, deploy and boot image successfully")
             self.context.test_data.add_result('boot_test_image', 'pass')
             in_mstar_image = True
 

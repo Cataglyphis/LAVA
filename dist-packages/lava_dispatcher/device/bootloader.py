@@ -350,12 +350,13 @@ class BootloaderTarget(MasterImageTarget):
             finalize_process(self.proc)
             self.proc = None
         self.proc = connect_to_serial(self.context)
-        if self.config.hard_reset_command:
-            self._hard_reboot_enter_bootloader(self.proc)
-            self._wait_for_boot_mstar()
-        else:
-            self._soft_reboot_enter_bootloader(self.proc)
-            self._wait_for_boot_mstar()
+        if self._is_bootloader() and not self._booted:
+            if self.config.hard_reset_command:
+                self._hard_reboot_enter_bootloader(self.proc)
+                self._wait_for_boot_mstar()
+            else:
+                self._soft_reboot_enter_bootloader(self.proc)
+                self._wait_for_boot_mstar()
 
     ############################################################
     # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.18
@@ -371,6 +372,7 @@ class BootloaderTarget(MasterImageTarget):
         self._monitor_boot(self.proc, self.tester_ps1, self.tester_ps1_pattern)
         # skip guide
         self._skip_guide_mstar(self.proc)
+        self._booted = True
 
     def _skip_guide_mstar(self, connection):
         pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", pexpect.TIMEOUT]
@@ -387,13 +389,13 @@ class BootloaderTarget(MasterImageTarget):
                 continue
             elif pos1 == 1:
                 logging.info("Now in com.helios.guide activity")
+                time.sleep(30)
                 connection.sendcontrol('c')
                 connection.sendline('')
                 connection.expect('shell', timeout=5)
                 connection.sendline('su')
-                time.sleep(5)
                 connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
-                time.sleep(5)
+                time.sleep(10)
                 connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
                 pos2 = connection.expect(pattern, timeout=10)
                 if pos2 == 2:
@@ -440,22 +442,50 @@ class BootloaderTarget(MasterImageTarget):
         self._booted = False
         self._in_test_shell = in_test_shell
 
+# comment by Bo @ 2015.01.20
+#     @contextlib.contextmanager
+#     def file_system(self, partition, directory):
+#         if self._is_bootloader() and self._reset_boot:
+#             self._reset_boot = False
+#             if self._in_test_shell:
+#                 self._in_test_shell = False
+#                 raise Exception("Operation timed out, resetting platform!")
+#         if self._is_bootloader() and not self._booted:
+#             self.context.client.boot_linaro_image()
+#         if self._is_bootloader() and self._lava_nfsrootfs:
+#             path = '%s/%s' % (self._lava_nfsrootfs, directory)
+#             ensure_directory(path)
+#             yield path
+#         elif self._is_bootloader():
+#             pat = self.tester_ps1_pattern
+#             incrc = self.tester_ps1_includes_rc
+#             runner = NetworkCommandRunner(self, pat, incrc)
+#             with self._busybox_file_system(runner, directory) as path:
+#                 yield path
+#         else:
+#             with super(BootloaderTarget, self).file_system(
+#                     partition, directory) as path:
+#                 yield path
+
+    # rewrite file_system()
     @contextlib.contextmanager
     def file_system(self, partition, directory):
-        if self._is_bootloader() and self._reset_boot:
-            self._reset_boot = False
-            if self._in_test_shell:
-                self._in_test_shell = False
-                raise Exception("Operation timed out, resetting platform!")
+        # if self._is_bootloader() and self._reset_boot:
+        #     self._reset_boot = False
+        #     if self._in_test_shell:
+        #         self._in_test_shell = False
+        #         raise Exception("Operation timed out, resetting platform!")
         if self._is_bootloader() and not self._booted:
-            self.context.client.boot_linaro_image()
-        if self._is_bootloader() and self._lava_nfsrootfs:
-            path = '%s/%s' % (self._lava_nfsrootfs, directory)
-            ensure_directory(path)
-            yield path
+            self.context.client.boot_mstar_image()
+        # if self._is_bootloader() and self._lava_nfsrootfs:
+        #     path = '%s/%s' % (self._lava_nfsrootfs, directory)
+        #     ensure_directory(path)
+        #     yield path
         elif self._is_bootloader():
             pat = self.tester_ps1_pattern
+            # True/False
             incrc = self.tester_ps1_includes_rc
+            logging.warning("Bo: " + "-"*10 + "tester_ps1_pattern: %s" + pat)
             runner = NetworkCommandRunner(self, pat, incrc)
             with self._busybox_file_system(runner, directory) as path:
                 yield path

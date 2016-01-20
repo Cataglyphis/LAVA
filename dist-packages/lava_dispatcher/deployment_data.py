@@ -75,8 +75,8 @@ android = deployment_data_dict({
 
 # ?
 mstar = deployment_data_dict({
-    'TESTER_PS1': "shell@helios",
-    'TESTER_PS1_PATTERN': "shell@helios",
+    'TESTER_PS1': "shell@helios:/ # ",
+    'TESTER_PS1_PATTERN': "shell@helios:/ # ",
     'TESTER_PS1_INCLUDES_RC': False,
     'boot_cmds': "boot_cmds",
 

@@ -12,13 +12,17 @@ sudo cp -f ${lava_dispatcher}mstar.conf ${packages}${lava_dispatcher}
 
 sudo cp -f lava_dispatcher/actions/deploy.py ${packages}lava_dispatcher/actions/
 sudo cp -f lava_dispatcher/actions/boot_control.py ${packages}lava_dispatcher/actions/
+sudo cp -f lava_dispatcher/actions/lava_test_shell.py ${packages}lava_dispatcher/actions/
 
 sudo cp -f lava_dispatcher/client/base.py ${packages}lava_dispatcher/client/
+
 sudo cp -f lava_dispatcher/device/bootloader.py ${packages}lava_dispatcher/device/
 sudo cp -f lava_dispatcher/device/master.py ${packages}lava_dispatcher/device/
 sudo cp -f lava_dispatcher/device/target.py ${packages}lava_dispatcher/device/
 
-sudo cp -f lava_dispatcher/utils.py ${packages}lava_dispatcher/
 sudo cp -f lava_dispatcher/deployment_data.py ${packages}lava_dispatcher/
+
+sudo cp -f lava_dispatcher/utils.py ${packages}lava_dispatcher/
+
 
 sudo service lava-server start
