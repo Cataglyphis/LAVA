@@ -11,6 +11,7 @@ lava_dispatcher="lava_dispatcher/default-config/lava-dispatcher/device-types/"
 sudo cp -f ${lava_dispatcher}mstar.conf ${packages}${lava_dispatcher}
 
 sudo cp -f lava_dispatcher/actions/deploy.py ${packages}lava_dispatcher/actions/
+sudo cp -f lava_dispatcher/actions/boot_control.py ${packages}lava_dispatcher/actions/
 
 sudo cp -f lava_dispatcher/client/base.py ${packages}lava_dispatcher/client/
 sudo cp -f lava_dispatcher/device/bootloader.py ${packages}lava_dispatcher/device/
