@@ -28,6 +28,7 @@ import logging
 import contextlib
 import subprocess
 import time
+import pexpect
 
 from lava_dispatcher.device.master import (
     MasterImageTarget
