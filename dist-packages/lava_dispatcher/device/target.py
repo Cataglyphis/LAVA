@@ -538,7 +538,9 @@ class Target(object):
     def _hard_reboot(self, connection):
         logging.info("Perform hard reset on the system")
         if self.config.hard_reset_command != "":
+            connection.send(self.config.interrupt_boot_command, delay=50)
             self.context.run_command(self.config.hard_reset_command)
+            connection.send(self.config.interrupt_boot_command, delay=50)
         else:
             # comment below 2 lines, 2016.01.21
             # connection.send("~$")
