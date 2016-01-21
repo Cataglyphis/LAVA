@@ -459,7 +459,6 @@ class logging_spawn(pexpect.spawn):
         :param delay: delay in milliseconds between sending each character
         :param send_char: send one character or entire string
         """
-        logging.debug("send line: %s", s)
         self.send(s, delay, send_char)
         self.send(os.linesep, delay)
 
@@ -468,7 +467,7 @@ class logging_spawn(pexpect.spawn):
         return super(logging_spawn, self).sendcontrol(char)
 
     def send(self, string, delay=0, send_char=True):
-        # logging.debug("send (delay_ms=%s): %s ", delay, string)
+        logging.debug("send (delay_ms=%s): %s ", delay, string)
         sent = 0
         delay = float(delay) / 1000
         if send_char:

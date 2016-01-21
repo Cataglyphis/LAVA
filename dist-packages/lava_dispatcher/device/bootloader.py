@@ -164,23 +164,18 @@ class BootloaderTarget(MasterImageTarget):
             raise CriticalError("Unknown bootloader type")
 
     ############################################################
-    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
-    # add function deploy_mstar_image in class BootloaderTarget
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.21
+    # add function deploy_whaley_image in class BootloaderTarget
     ############################################################
 
-    def deploy_mstar_image(self, image, image_server_ip, rootfstype, bootloadertype):
-        # set the boot type
-        if image is None:
-            raise CriticalError("Invalid image in mstar platform")
-        if image_server_ip is None:
-            raise CriticalError("Invalid image server ip in mstar platform")
-        # specify mstar deployment data, vanilla as possible
+    def deploy_whaley_image(self, image, image_server_ip, rootfstype, bootloadertype):
         if self.__deployment_data__ is None:
             # Get deployment data
             logging.debug("Attempting to set deployment data")
-            self.deployment_data = deployment_data.mstar
-        logging.debug("Set bootloader type to u_boot in mstar platform")
+            self.deployment_data = deployment_data.whaley
+        logging.debug("Set bootloader type to u_boot in whaley platform")
         self._set_boot_type(bootloadertype)
+        self._default_boot_cmds = 'boot_cmds'
         if self._is_uboot():
             self._boot_tags['{IMAGE}'] = image
             self._boot_tags['{IMAGE_SERVER_IP}'] = image_server_ip
@@ -333,84 +328,17 @@ class BootloaderTarget(MasterImageTarget):
 
     def _run_boot(self):
         self._load_test_firmware()
+        # enter bootloader, 2016.01.21
         self._enter_bootloader(self.proc)
         boot_cmds = self._load_boot_cmds(default=self._default_boot_cmds,
                                          boot_tags=self._boot_tags)
         # Sometimes a command must be run to clear u-boot console buffer
+        logging.info("boot cmds: %s", boot_cmds)
         if self.config.pre_boot_cmd:
             self.proc.sendline(self.config.pre_boot_cmd,
                                send_char=self.config.send_char)
         self._customize_bootloader(self.proc, boot_cmds)
         self._monitor_boot(self.proc, self.tester_ps1, self.tester_ps1_pattern)
-
-    def boot_mstar_image(self):
-        if self.proc:
-            if self.config.connection_command_terminate:
-                self.proc.sendline(self.config.connection_command_terminate)
-            finalize_process(self.proc)
-            self.proc = None
-        self.proc = connect_to_serial(self.context)
-        if self._is_bootloader() and not self._booted:
-            if self.config.hard_reset_command:
-                self._hard_reboot_enter_bootloader(self.proc)
-                self._wait_for_boot_mstar()
-            else:
-                self._soft_reboot_enter_bootloader(self.proc)
-                self._wait_for_boot_mstar()
-
-    ############################################################
-    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.18
-    # add function _wait_for_boot_mstar
-    # add function _skip_guide_mstar
-    ############################################################
-    def _wait_for_boot_mstar(self):
-        boot_cmds = self._load_boot_cmds(default='boot_cmds', boot_tags=self._boot_tags)
-        logging.info("boot_cmds is: %s" % boot_cmds)
-        # run boot_cmds to deploy the image
-        self._customize_bootloader(self.proc, boot_cmds)
-        # monitor the deploy and reboot
-        self._monitor_boot(self.proc, self.tester_ps1, self.tester_ps1_pattern)
-        # skip guide
-        self._skip_guide_mstar(self.proc)
-        self._booted = True
-
-    def _skip_guide_mstar(self, connection):
-        pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", pexpect.TIMEOUT]
-        for i in range(10):
-            logging.info("Try to skip the guide. Attempt: %s" % str(i+1))
-            connection.sendcontrol('c')
-            connection.sendline('')
-            connection.expect('shell', timeout=5)
-            connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
-            pos1 = connection.expect(pattern, timeout=10)
-            if pos1 == 0:
-                logging.warning("Can't find service: window")
-                time.sleep(60)
-                continue
-            elif pos1 == 1:
-                logging.info("Now in com.helios.guide activity")
-                time.sleep(30)
-                connection.sendcontrol('c')
-                connection.sendline('')
-                connection.expect('shell', timeout=5)
-                connection.sendline('su')
-                connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
-                time.sleep(10)
-                connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
-                pos2 = connection.expect(pattern, timeout=10)
-                if pos2 == 2:
-                    logging.info("Now in com.helios.launcher activity, skip the guide successfully")
-                    break
-                else:
-                    logging.info("Can't skip the guide, try it again")
-            elif pos1 == 2:
-                logging.info("Already in com.helios.launch activity")
-                break
-            else:
-                time.sleep(20)
-                continue
-        else:
-            logging.error("Can't skip the guide. Please have a check")
 
     def _boot_linaro_image(self):
         if self.proc:
@@ -419,6 +347,7 @@ class BootloaderTarget(MasterImageTarget):
             finalize_process(self.proc)
             self.proc = None
         self.proc = connect_to_serial(self.context)
+        # bootloader and not booted, 2016.01.21
         if self._is_bootloader() and not self._booted:
             if self.config.hard_reset_command or self.config.hard_reset_command == "":
                 self._hard_reboot(self.proc)
@@ -427,6 +356,7 @@ class BootloaderTarget(MasterImageTarget):
                 self._soft_reboot(self.proc)
                 self._run_boot()
             self._booted = True
+        # bootloader and booted, 2016.01.21
         elif self._is_bootloader() and self._booted:
             self.proc.sendline('export PS1="%s"'
                                % self.tester_ps1,

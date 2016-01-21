@@ -170,12 +170,12 @@ class cmd_boot_master_image(BaseAction):
         client.boot_master_image()
 
 
-class cmd_boot_mstar_image(BaseAction):
+class cmd_boot_whaley_image(BaseAction):
     """
-    call client code to boot the mstar image
+    call client code to boot the whaley image
     """
     parameters_schema = null_or_empty_schema
 
     def run(self):
         client = self.client
-        client.boot_mstar_image()
+        client.boot_whaley_image()

@@ -351,6 +351,45 @@ class Target(object):
             logging.debug("Retaining SELinux support in the current image.")
             return True
 
+    def _skip_guide_whaley(self, connection):
+        pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", pexpect.TIMEOUT]
+        for i in range(10):
+            logging.info("Try to skip the guide. Attempt: %s" % str(i+1))
+            connection.sendcontrol('c')
+            connection.sendline('')
+            connection.expect('shell', timeout=5)
+            connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
+            pos1 = connection.expect(pattern, timeout=10)
+            if pos1 == 0:
+                logging.warning("Can't find service: window")
+                time.sleep(60)
+                continue
+            elif pos1 == 1:
+                logging.info("Now in com.helios.guide activity")
+                time.sleep(30)
+                connection.sendcontrol('c')
+                connection.sendline('')
+                connection.expect('shell', timeout=5)
+                connection.sendline('su')
+                connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
+                time.sleep(20)
+                connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
+                pos2 = connection.expect(pattern, timeout=10)
+                if pos2 == 2:
+                    logging.info("Now in com.helios.launcher activity, skip the guide successfully")
+                    break
+                else:
+                    logging.info("Can't skip the guide, try it again")
+            elif pos1 == 2:
+                logging.info("Already in com.helios.launch activity")
+                break
+            else:
+                time.sleep(20)
+                continue
+        else:
+            logging.error("Can't skip the guide. Please have a check")
+            self.context.test_data.add_result("skip_guide_whaley", "fail")
+
     def _auto_login(self, connection, is_master=False):
         if is_master:
             if self.config.master_login_prompt is not None:
@@ -476,53 +515,6 @@ class Target(object):
 
     ############################################################
     # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
-    # soft reboot and enter the mstar bootloader
-    ############################################################
-    def _soft_reboot_enter_bootloader(self, connection):
-        try:
-            logging.info("Perform soft reboot the system and enter the bootloader")
-            connection.sendline('')
-            connection.sendline('')
-            connection.expect('shell')
-            start = time.time()
-            connection.sendline(self.config.soft_boot_cmd)
-            for i in range(1000):
-                connection.sendline(self.config.interrupt_boot_command, delay=20)
-            # in the future, we should modify the bootdelay in u_boot, and add u_boot hint
-            # connection.expect('<< MStar >>#')
-            connection.expect(self.config.bootloader_prompt, timeout=30)
-            # Record the time it takes to enter the bootloader.
-            enter_bootloader_time = "{0:.2f}".format(time.time() - start)
-            self.context.test_data.add_result('enter_bootloader', 'pass', enter_bootloader_time, 'seconds')
-        except pexpect.TIMEOUT:
-            msg = 'Infrastructure Error: failed to enter the bootloader.'
-            logging.error(msg)
-            self.context.test_data.add_result('enter_bootloader', 'fail', message=msg)
-            raise
-
-    ############################################################
-    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
-    # soft reboot and enter the mstar bootloader
-    ############################################################
-    def _hard_reboot_enter_bootloader(self, connection):
-        logging.info("Perform hard reboot on the system")
-        if self.config.hard_reset_command != "":
-            start = time.time()
-            self.context.run_command(self.config.hard_reset_command)
-            for i in range(1000):
-                connection.sendline(self.config.interrupt_boot_command, delay=20)
-            # in the future, we should modify the bootdelay in u_boot, and add u_boot hint
-            # connection.expect('<< MStar >>#')
-            connection.expect(self.config.bootloader_prompt, timeout=30)
-            # Record the time it takes to enter the bootloader.
-            enter_bootloader_time = "{0:.2f}".format(time.time() - start)
-            self.context.test_data.add_result('enter_bootloader', 'pass', enter_bootloader_time, 'seconds')
-        else:
-            logging.warning("No hard reboot command, use soft reboot instead")
-            self._soft_reboot_enter_bootloader(connection)
-
-    ############################################################
-    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
     # modify 'Restarting system.' to 'Restarting system'
     # to match the mstar platform
     ############################################################
@@ -537,7 +529,8 @@ class Target(object):
         patterns = [pexpect.TIMEOUT, 'Restarting system',
                     'The system is going down for reboot NOW',
                     'Will now restart', 'U-Boot']
-        match_id = connection.expect(patterns, timeout=120)
+        # change timeout from 120 to 5
+        match_id = connection.expect(patterns, timeout=5)
         logging.info('Matched %s', patterns[match_id])
         if match_id == 0:
             raise OperationFailed("Soft reboot failed")
@@ -547,18 +540,23 @@ class Target(object):
         if self.config.hard_reset_command != "":
             self.context.run_command(self.config.hard_reset_command)
         else:
-            connection.send("~$")
-            connection.sendline("hardreset")
+            # comment below 2 lines, 2016.01.21
+            # connection.send("~$")
+            # connection.sendline("hardreset")
+            self._soft_reboot(connection)
 
     def _enter_bootloader(self, connection):
         try:
             start = time.time()
+            # expect Hit any key to stop autoboot
             connection.expect(self.config.interrupt_boot_prompt,
                               timeout=self.config.bootloader_timeout)
             if self.config.interrupt_boot_control_character:
                 connection.sendcontrol(self.config.interrupt_boot_control_character)
             else:
-                connection.send(self.config.interrupt_boot_command)
+                connection.send(self.config.interrupt_boot_command, delay=50)
+            # add below line, 2016.01.21
+            connection.expect(self.config.bootloader_prompt, timeout=self.config.bootloader_timeout)
             # Record the time it takes to enter the bootloader.
             enter_bootloader_time = "{0:.2f}".format(time.time() - start)
             self.context.test_data.add_result('enter_bootloader', 'pass',
@@ -566,8 +564,7 @@ class Target(object):
         except pexpect.TIMEOUT:
             msg = 'Infrastructure Error: failed to enter the bootloader.'
             logging.error(msg)
-            self.context.test_data.add_result('enter_bootloader', 'fail',
-                                              message=msg)
+            self.context.test_data.add_result('enter_bootloader', 'fail', message=msg)
             raise
 
     def _boot_cmds_preprocessing(self, boot_cmds):
@@ -616,14 +613,10 @@ class Target(object):
 
         if self.config.has_kernel_messages:
             try:
-                start = time.time()
                 connection.expect(self.config.image_boot_msg,
                                   timeout=self.config.image_boot_msg_timeout)
-                image_boot_time = "{0:.2f}".format(time.time() - start)
                 start = time.time()
-                self.context.test_data.add_result(wait_for_image_boot, good, image_boot_time, 'seconds')
-                logging.info("Image boot time: %s seconds" % image_boot_time)
-                # self.context.test_data.add_result(wait_for_image_boot, good)
+                self.context.test_data.add_result(wait_for_image_boot, good)
             except pexpect.TIMEOUT:
                 msg = "Kernel Error: did not start booting."
                 logging.error(msg)
@@ -657,59 +650,58 @@ class Target(object):
                         self.context.test_data.add_result(kwarn, 'fail', message=kwarnings)
                         continue
                 kernel_boot_time = "{0:.2f}".format(time.time() - start)
-                self.context.test_data.add_result(wait_for_kernel_boot, good, kernel_boot_time, "seconds")
-                logging.info("Kernel boot time: %s seconds" % kernel_boot_time)
-                # self.context.test_data.add_result(wait_for_kernel_boot, good)
-                # start = time.time()
+                self.context.test_data.add_result(wait_for_kernel_boot, good)
+                start = time.time()
             except pexpect.TIMEOUT:
                 self.context.test_data.add_result(wait_for_kernel_boot, bad)
                 raise
 
-        # try:
-        #     self._auto_login(connection, is_master)
-        # except pexpect.TIMEOUT:
-        #     msg = "Userspace Error: auto login prompt not found."
-        #     logging.error(msg)
-        #     self.context.test_data.add_result(wait_for_login_prompt,
-        #                                       bad, message=msg)
-        #     raise
-        #
-        # try:
-        #     if is_master:
-        #         pattern = self.config.master_str
-        #     else:
-        #         pattern = self.config.test_image_prompts
-        #
-        #     self._wait_for_prompt(connection, pattern, self.config.boot_linaro_timeout)
-        #     if not is_master:
-        #         if self.target_distro == 'android':
-        #             # Gain root access
-        #             connection.sendline('su')
-        #             self._wait_for_prompt(connection, pattern, timeout=10)
-        #     connection.sendline('export PS1="%s"' % ps1,
-        #                         send_char=self.config.send_char)
-        #     self._wait_for_prompt(connection, ps1_pattern, timeout=10)
-        #     if self.config.has_kernel_messages:
-        #         userspace_boot_time = "{0:.2f}".format(time.time() - start)
-        #     self.context.test_data.add_result(wait_for_image_prompt, good)
-        # except pexpect.TIMEOUT:
-        #     msg = "Userspace Error: image prompt not found."
-        #     logging.error(msg)
-        #     self.context.test_data.add_result(wait_for_image_prompt,
-        #                                       bad)
-        #     raise
-        #
-        # # Record results
-        # boot_meta = {}
-        # boot_meta['dtb-append'] = str(self.config.append_dtb)
-        # self.context.test_data.add_metadata(boot_meta)
-        # if self.config.has_kernel_messages:
-        #     self.context.test_data.add_result(kernel_boot, 'pass',
-        #                                       kernel_boot_time, 'seconds')
-        #     self.context.test_data.add_result(userspace_boot, 'pass',
-        #                                       userspace_boot_time, 'seconds')
-        #     logging.info("Kernel boot time: %s seconds" % kernel_boot_time)
-        #     logging.info("Userspace boot time: %s seconds" % userspace_boot_time)
+            # add is_skip in the future
+            self._skip_guide_whaley(connection)
+
+        try:
+            self._auto_login(connection, is_master)
+        except pexpect.TIMEOUT:
+            msg = "Userspace Error: auto login prompt not found."
+            logging.error(msg)
+            self.context.test_data.add_result(wait_for_login_prompt, bad, message=msg)
+            raise
+
+        try:
+            if is_master:
+                pattern = self.config.master_str
+            else:
+                pattern = self.config.test_image_prompts
+            logging.info("test image prompts pattern: %s" % pattern)
+            self._wait_for_prompt(connection, pattern, self.config.boot_linaro_timeout)
+            if not is_master:
+                if self.target_distro == 'android':
+                    # Gain root access
+                    connection.sendline('su')
+                    self._wait_for_prompt(connection, pattern, timeout=10)
+            connection.sendline('export PS1="%s"' % ps1,
+                                send_char=self.config.send_char)
+            self._wait_for_prompt(connection, ps1_pattern, timeout=10)
+            if self.config.has_kernel_messages:
+                userspace_boot_time = "{0:.2f}".format(time.time() - start)
+            self.context.test_data.add_result(wait_for_image_prompt, good)
+        except pexpect.TIMEOUT:
+            msg = "Userspace Error: image prompt not found."
+            logging.error(msg)
+            self.context.test_data.add_result(wait_for_image_prompt, bad)
+            raise
+
+        # Record results
+        boot_meta = {}
+        boot_meta['dtb-append'] = str(self.config.append_dtb)
+        self.context.test_data.add_metadata(boot_meta)
+        if self.config.has_kernel_messages:
+            self.context.test_data.add_result(kernel_boot, 'pass',
+                                              kernel_boot_time, 'seconds')
+            self.context.test_data.add_result(userspace_boot, 'pass',
+                                              userspace_boot_time, 'seconds')
+            logging.info("Kernel boot time: %s seconds" % kernel_boot_time)
+            logging.info("Userspace boot time: %s seconds" % userspace_boot_time)
 
     def _customize_bootloader(self, connection, boot_cmds):
         delay = self.config.bootloader_serial_delay_ms
@@ -741,6 +733,7 @@ class Target(object):
                 else:
                     self._wait_for_prompt(connection, self.config.bootloader_prompt,
                                           timeout=self.config.boot_cmd_timeout)
+                    # add below line to record boot commands
                     logging.info("boot command: %s" % line)
                     connection.sendline(line, delay, send_char=self.config.send_char)
             self.context.test_data.add_result('execute_boot_cmds', 'pass')

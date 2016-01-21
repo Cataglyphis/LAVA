@@ -19,12 +19,6 @@
 # along
 # with this program; if not, see <http://www.gnu.org/licenses>.
 
-
-############################################################
-# modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
-# add function deploy_mstar in class MasterImageTarget
-############################################################
-
 import contextlib
 import logging
 import os
@@ -132,6 +126,7 @@ class MasterImageTarget(Target):
         return self.device_version
 
     def power_on(self):
+        # call bootloader._boot_linaro_image(), 2016.01.21
         self._boot_linaro_image()
         return self.proc
 

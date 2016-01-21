@@ -404,11 +404,11 @@ class LavaClient(object):
         self.vm_group = VmGroupHandler(self)
 
     ############################################################
-    # created by Wang Bo (wang.bo@whaley.cn), 2016.01.15
-    # call lava_dispatcher.device.bootloader: deploy_mstar_image
+    # created by Wang Bo (wang.bo@whaley.cn), 2016.01.21
+    # call lava_dispatcher.device.bootloader: deploy_whaley_image
     ############################################################
-    def deploy_mstar_image(self, image, image_server_ip, rootfstype, bootloadertype):
-        self.target_device.deploy_mstar_image(image, image_server_ip, rootfstype, bootloadertype)
+    def deploy_whaley_image(self, image, image_server_ip, rootfstype, bootloadertype):
+        self.target_device.deploy_whaley_image(image, image_server_ip, rootfstype, bootloadertype)
 
     def deploy_linaro_android(self, images, rootfstype,
                               bootloadertype, target_type):
@@ -550,34 +550,36 @@ class LavaClient(object):
 
         self._boot_linaro_image()
 
-    def boot_mstar_image(self):
+    def boot_whaley_image(self):
         """
         Reboot the system to the test image
         """
         logging.info('Start to boot test image')
         boot_attempts = self.config.boot_retries
         attempts = 0
-        in_mstar_image = False
-        while (attempts < boot_attempts) and (not in_mstar_image):
+        in_whaley_image = False
+        while (attempts < boot_attempts) and (not in_whaley_image):
             logging.info("Booting the test image. Attempt: %d", attempts + 1)
 
             self.vm_group.wait_for_vms()
 
             try:
-                self.target_device.boot_mstar_image()
+                self._boot_linaro_image()
             except (OperationFailed, pexpect.TIMEOUT):
                 self.context.test_data.add_metadata({'boot_retries': str(attempts)})
                 attempts += 1
                 continue
 
-            logging.info("System is in test image now, deploy and boot image successfully")
-            self.context.test_data.add_result('boot_test_image', 'pass')
-            in_mstar_image = True
+            logging.info("System is in whaley image now, deploy and boot image successfully")
+            self.context.test_data.add_result('boot_whaley_image', 'pass')
 
-        if not in_mstar_image:
-            msg = "Test Image Error: Could not get test image booted properly"
+            in_whaley_image = True
+
+
+        if not in_whaley_image:
+            msg = "Test Image Error: Could not get whaley image booted properly"
             logging.error(msg)
-            self.context.test_data.add_result('boot_test_image', 'fail')
+            self.context.test_data.add_result('boot_whaley_image', 'fail')
             raise CriticalError(msg)
 
     def boot_linaro_image(self):
