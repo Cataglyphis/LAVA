@@ -85,7 +85,7 @@ mstar = deployment_data_dict({
     'lava_test_sh_cmd': "system/bin/sh",
     'lava_test_dir': "/data/local/tmp/lava-%s",
     'lava_test_results_part_attr': "data_part_android_org",
-    'lava_test_results_dir': "local/tmp/lava-%s",
+    'lava_test_results_dir': "/data/local/tmp/lava-%s",
 })
 
 ubuntu = deployment_data_dict({
