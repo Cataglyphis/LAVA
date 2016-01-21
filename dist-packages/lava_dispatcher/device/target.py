@@ -600,6 +600,7 @@ class Target(object):
             wait_for_login_prompt = 'wait_for_login_prompt'
             kernel_exception = 'test_kernel_exception_'
             wait_for_image_prompt = 'wait_for_test_image_prompt'
+            image_boot = 'test_image_boot_time'
             kernel_boot = 'test_kernel_boot_time'
             userspace_boot = 'test_userspace_boot_time'
         else:
@@ -613,8 +614,10 @@ class Target(object):
 
         if self.config.has_kernel_messages:
             try:
+                start = time.time()
                 connection.expect(self.config.image_boot_msg,
                                   timeout=self.config.image_boot_msg_timeout)
+                image_boot_time = "{0:.2f}".format(time.time() - start)
                 start = time.time()
                 self.context.test_data.add_result(wait_for_image_boot, good)
             except pexpect.TIMEOUT:
@@ -696,10 +699,13 @@ class Target(object):
         boot_meta['dtb-append'] = str(self.config.append_dtb)
         self.context.test_data.add_metadata(boot_meta)
         if self.config.has_kernel_messages:
+            self.context.test_data.add_result(image_boot, 'pass',
+                                              image_boot_time, 'seconds')
             self.context.test_data.add_result(kernel_boot, 'pass',
                                               kernel_boot_time, 'seconds')
             self.context.test_data.add_result(userspace_boot, 'pass',
                                               userspace_boot_time, 'seconds')
+            logging.info("Image boot time: %s seconds" % image_boot_time)
             logging.info("Kernel boot time: %s seconds" % kernel_boot_time)
             logging.info("Userspace boot time: %s seconds" % userspace_boot_time)
 
