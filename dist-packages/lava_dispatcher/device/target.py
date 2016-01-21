@@ -535,27 +535,15 @@ class Target(object):
         # logging.info('Matched %s', patterns[match_id])
         # if match_id == 0:
         #     raise OperationFailed("Soft reboot failed")
-        patterns = [self.config.interrupt_boot_prompt, pexpect.TIMEOUT]
-        for i in range(500):
+        for i in range(200):
             connection.sendline("")
-            index = connection.expect(patterns, timeout=10)
-            if index == 0:
-                break
-            else:
-                continue
 
     def _hard_reboot(self, connection):
-        patterns = [self.config.interrupt_boot_prompt, pexpect.TIMEOUT]
         logging.info("Perform hard reset on the system")
         if self.config.hard_reset_command != "":
             self.context.run_command(self.config.hard_reset_command)
-            for i in range(500):
+            for i in range(200):
                 connection.sendline("")
-                index = connection.expect(patterns, timeout=10)
-                if index == 0:
-                    break
-                else:
-                    continue
         else:
             # comment below 2 lines, 2016.01.21
             # connection.send("~$")
