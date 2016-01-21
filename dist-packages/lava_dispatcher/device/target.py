@@ -527,31 +527,35 @@ class Target(object):
         connection.sendline(self.config.soft_boot_cmd)
         # Looking for reboot messages or if they are missing, the U-Boot
         # message will also indicate the reboot is done.
-        patterns = [pexpect.TIMEOUT, 'Restarting system',
-                    'The system is going down for reboot NOW',
-                    'Will now restart', 'U-Boot']
-        # change timeout from 120 to 5
-        match_id = connection.expect(patterns, timeout=5)
-        logging.info('Matched %s', patterns[match_id])
-        if match_id == 0:
-            raise OperationFailed("Soft reboot failed")
-
-    def a(self, connection):
-        for i in range(1000):
+        # patterns = [pexpect.TIMEOUT, 'Restarting system',
+        #             'The system is going down for reboot NOW',
+        #             'Will now restart', 'U-Boot']
+        # # change timeout from 120 to 5
+        # match_id = connection.expect(patterns, timeout=5)
+        # logging.info('Matched %s', patterns[match_id])
+        # if match_id == 0:
+        #     raise OperationFailed("Soft reboot failed")
+        patterns = [self.config.interrupt_boot_prompt, pexpect.TIMEOUT]
+        for i in range(500):
             connection.sendline("")
-            time.sleep(0.1)
-
-    def b(self):
-        self.context.run_command(self.config.hard_reset_command)
+            index = connection.expect(patterns, timeout=10)
+            if index == 0:
+                break
+            else:
+                continue
 
     def _hard_reboot(self, connection):
+        patterns = [self.config.interrupt_boot_prompt, pexpect.TIMEOUT]
         logging.info("Perform hard reset on the system")
         if self.config.hard_reset_command != "":
-            threading.Thread(target=self.b)
-            threading.Thread(target=self.a, args=connection)
-            # self.context.run_command(self.config.hard_reset_command)
-            # for i in range(100):
-            #     connection.sendline("")
+            self.context.run_command(self.config.hard_reset_command)
+            for i in range(500):
+                connection.sendline("")
+                index = connection.expect(patterns, timeout=10)
+                if index == 0:
+                    break
+                else:
+                    continue
         else:
             # comment below 2 lines, 2016.01.21
             # connection.send("~$")
@@ -561,14 +565,14 @@ class Target(object):
     def _enter_bootloader(self, connection):
         try:
             start = time.time()
-            # # expect Hit any key to stop autoboot
-            # connection.expect(self.config.interrupt_boot_prompt,
-            #                   timeout=self.config.bootloader_timeout)
-            # if self.config.interrupt_boot_control_character:
-            #     connection.sendcontrol(self.config.interrupt_boot_control_character)
-            # else:
-            for i in range(10):
+            # expect Hit any key to stop autoboot
+            connection.expect(self.config.interrupt_boot_prompt,
+                              timeout=self.config.bootloader_timeout)
+            if self.config.interrupt_boot_control_character:
+                connection.sendcontrol(self.config.interrupt_boot_control_character)
+            else:
                 connection.send(self.config.interrupt_boot_command, delay=50)
+                connection.sendcontrol('c')
             # add below line, 2016.01.21
             connection.expect(self.config.bootloader_prompt, timeout=self.config.bootloader_timeout)
             # Record the time it takes to enter the bootloader.
