@@ -27,6 +27,7 @@ import time
 import pexpect
 import subprocess
 import lava_dispatcher.utils as utils
+import threading
 
 from lava_dispatcher.device import boot_options
 from lava_dispatcher import deployment_data
@@ -535,12 +536,22 @@ class Target(object):
         if match_id == 0:
             raise OperationFailed("Soft reboot failed")
 
+    def a(self, connection):
+        for i in range(1000):
+            connection.sendline("")
+            time.sleep(0.1)
+
+    def b(self):
+        self.context.run_command(self.config.hard_reset_command)
+
     def _hard_reboot(self, connection):
         logging.info("Perform hard reset on the system")
         if self.config.hard_reset_command != "":
-            self.context.run_command(self.config.hard_reset_command)
-            for i in range(100):
-                connection.sendline("")
+            threading.Thread(target=self.b)
+            threading.Thread(target=self.a, args=connection)
+            # self.context.run_command(self.config.hard_reset_command)
+            # for i in range(100):
+            #     connection.sendline("")
         else:
             # comment below 2 lines, 2016.01.21
             # connection.send("~$")
