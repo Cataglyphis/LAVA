@@ -486,8 +486,8 @@ class Target(object):
             connection.expect('shell')
             start = time.time()
             connection.sendline(self.config.soft_boot_cmd)
-            for i in range(20):
-                connection.sendline(self.config.interrupt_boot_command)
+            for i in range(1000):
+                connection.sendline(self.config.interrupt_boot_command, delay=20)
             # in the future, we should modify the bootdelay in u_boot, and add u_boot hint
             # connection.expect('<< MStar >>#')
             connection.expect(self.config.bootloader_prompt, timeout=30)
@@ -509,8 +509,8 @@ class Target(object):
         if self.config.hard_reset_command != "":
             start = time.time()
             self.context.run_command(self.config.hard_reset_command)
-            for i in range(20):
-                connection.sendline(self.config.interrupt_boot_command)
+            for i in range(1000):
+                connection.sendline(self.config.interrupt_boot_command, delay=20)
             # in the future, we should modify the bootdelay in u_boot, and add u_boot hint
             # connection.expect('<< MStar >>#')
             connection.expect(self.config.bootloader_prompt, timeout=30)
