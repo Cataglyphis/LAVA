@@ -22,8 +22,8 @@
 
 ############################################################
 # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.20
-# add function deploy_mstar_image in class LavaClient
-# add function boot_mstar_image in class LavaClient
+# add function deploy_whaley_image in class LavaClient
+# add function boot_whaley_image in class LavaClient
 ############################################################
 
 import commands

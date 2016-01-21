@@ -21,7 +21,7 @@
 
 ############################################################
 # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
-# add function deploy_mstar_image in class BootloaderTarget
+# add function deploy_whaley_image in class BootloaderTarget
 ############################################################
 
 import logging
@@ -406,7 +406,7 @@ class BootloaderTarget(MasterImageTarget):
         #         self._in_test_shell = False
         #         raise Exception("Operation timed out, resetting platform!")
         if self._is_bootloader() and not self._booted:
-            self.context.client.boot_mstar_image()
+            self.context.client.boot_whaley_image()
         if self._is_bootloader():
             pat = self.tester_ps1_pattern
             logging.warning("Bo: " + "-"*10 + "results_part: %s" % str(pat))
