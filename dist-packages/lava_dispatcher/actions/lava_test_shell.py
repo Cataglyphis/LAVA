@@ -38,7 +38,7 @@
 # configured with the value of the lava_test_dir configuration variable, and
 # the values mentioned above are just their defaults.  See
 # lava_dispatcher/deployment_data.py and lava_dispatcher/device/target.py for
-# details.
+# details.1
 #
 # I'll assume Ubuntu paths from here for simplicity.
 #
@@ -823,13 +823,13 @@ class cmd_lava_test_shell(BaseAction):
         # bootloader
         target = self.client.target_device
 
-        logging.warning("Bo: " + "-"*10 + "testdef_urls: %s" + str(testdef_urls))
-        logging.warning("Bo: " + "-"*10 + "testdef_repos: %s" + str(testdef_repos))
-        logging.warning("Bo: " + "-"*10 + "timeout: %s" + str(timeout))
-        logging.warning("Bo: " + "-"*10 + "skip_install: %s" + str(skip_install))
-        logging.warning("Bo: " + "-"*10 + "lava_test_dir: %s" + str(lava_test_dir))
-        logging.warning("Bo: " + "-"*10 + "lava_test_results_dir: %s" + str(lava_test_results_dir))
-        logging.warning("Bo: " + "-"*10 + "repeat_count: %s" + str(repeat_count))
+        logging.warning("Bo: " + "-"*10 + "testdef_urls: %s" % str(testdef_urls))
+        logging.warning("Bo: " + "-"*10 + "testdef_repos: %s" % str(testdef_repos))
+        logging.warning("Bo: " + "-"*10 + "timeout: %s" % str(timeout))
+        logging.warning("Bo: " + "-"*10 + "skip_install: %s" % str(skip_install))
+        logging.warning("Bo: " + "-"*10 + "lava_test_dir: %s" % str(lava_test_dir))
+        logging.warning("Bo: " + "-"*10 + "lava_test_results_dir: %s" % str(lava_test_results_dir))
+        logging.warning("Bo: " + "-"*10 + "repeat_count: %s" % str(repeat_count))
         global repeat_cnt
         repeat_cnt = repeat_count
 

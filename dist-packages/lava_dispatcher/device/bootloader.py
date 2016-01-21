@@ -477,21 +477,29 @@ class BootloaderTarget(MasterImageTarget):
         #         raise Exception("Operation timed out, resetting platform!")
         if self._is_bootloader() and not self._booted:
             self.context.client.boot_mstar_image()
+        if self._is_bootloader():
+            pat = self.tester_ps1_pattern
+            logging.warning("Bo: " + "-"*10 + "results_part: %s" % str(pat))
+            # True/False
+            incrc = self.tester_ps1_includes_rc
+            runner = NetworkCommandRunner(self, pat, incrc)
+            with self._busybox_file_system(runner, directory) as path:
+                yield path
+
         # if self._is_bootloader() and self._lava_nfsrootfs:
         #     path = '%s/%s' % (self._lava_nfsrootfs, directory)
         #     ensure_directory(path)
         #     yield path
-        elif self._is_bootloader():
-            pat = self.tester_ps1_pattern
-            # True/False
-            incrc = self.tester_ps1_includes_rc
-            logging.warning("Bo: " + "-"*10 + "tester_ps1_pattern: %s" + str(pat))
-            runner = NetworkCommandRunner(self, pat, incrc)
-            with self._busybox_file_system(runner, directory) as path:
-                yield path
-        else:
-            with super(BootloaderTarget, self).file_system(
-                    partition, directory) as path:
-                yield path
+        # elif self._is_bootloader():
+        #     pat = self.tester_ps1_pattern
+        #     # True/False
+        #     incrc = self.tester_ps1_includes_rc
+        #     runner = NetworkCommandRunner(self, pat, incrc)
+        #     with self._busybox_file_system(runner, directory) as path:
+        #         yield path
+        # else:
+        #     with super(BootloaderTarget, self).file_system(
+        #             partition, directory) as path:
+        #         yield path
 
 target_class = BootloaderTarget
