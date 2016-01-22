@@ -819,7 +819,6 @@ class cmd_lava_test_shell(BaseAction):
 
     def run(self, testdef_urls=None, testdef_repos=None, timeout=-1, skip_install=None,
             lava_test_dir=None, lava_test_results_dir=None, repeat_count=0):
-        # add by Bo @ 2016.01.20
         # bootloader
         target = self.client.target_device
 
@@ -836,6 +835,9 @@ class cmd_lava_test_shell(BaseAction):
         delay = target.config.test_shell_serial_delay_ms
 
         self._amend_test_execution_paths(target, lava_test_dir, lava_test_results_dir)
+
+        logging.warning("Bo: " + "-"*10 + "lava_test_dir: %s" % str(lava_test_dir))
+        logging.warning("Bo: " + "-"*10 + "lava_test_results_dir: %s" % str(lava_test_results_dir))
 
         testdef_objs = self._configure_target(target, testdef_urls,
                                               testdef_repos, skip_install)
@@ -1184,6 +1186,7 @@ class cmd_lava_test_shell(BaseAction):
                                             self._current_testdef.fixupdict)
         self._current_test_run['test_results'].append(test_result)
 
+    # change execution paths to the dir defined in deployment_data
     def _amend_test_execution_paths(self, target, lava_test_dir, lava_test_results_dir):
         if lava_test_dir is not None:
             # Preserve the default configuration value
