@@ -517,7 +517,7 @@ class Target(object):
     ############################################################
     # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
     # modify 'Restarting system.' to 'Restarting system'
-    # to match the mstar platform
+    # to match the whaley platform
     ############################################################
     def _soft_reboot(self, connection):
         logging.info("Perform soft reboot the system")
