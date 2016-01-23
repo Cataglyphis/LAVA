@@ -299,6 +299,7 @@ def _get_testdef_info(testdef):
     metadata['description'] = testdef['metadata'].get('description')
     metadata['format'] = testdef['metadata'].get('format')
     version = testdef['metadata'].get('version')
+    # str(version)
     metadata['version'] = version and str(version) or version
 
     # Convert list to comma separated string.
@@ -376,6 +377,7 @@ class TestDefinitionLoader(object):
             #     'branch_vcs': 'git',
             #     'branch_revision': commit_id,
             #     'branch_url': url,
+            #     'test_params': testdef_repo['parameters']
             # }
             info = _git_info(testdef_repo['git-repo'], repo, name)
 
@@ -433,6 +435,15 @@ class TestDefinitionLoader(object):
 
             if 'test-case-deps' in testdef:
                 self._get_dependent_test_cases(testdef)
+
+            # info =  {
+            #     'project_name': name,
+            #     'branch_vcs': 'git',
+            #     'branch_revision': commit_id,
+            #     'branch_url': url,
+            #     'test_params': testdef_repo['parameters'], // JSON parameters
+            #     'default_params': str(testdef['params']), // YAML parameters
+            # }
 
             # for test parameters
             if 'params' in testdef:
@@ -592,7 +603,6 @@ class URLTestDefinition(object):
         if 'params' in self.testdef:
             self.all_params.update(self.testdef['params'])
 
-        # parameters that was set in json
         if self._sw_sources and 'test_params' in self._sw_sources[0] and self._sw_sources[0]['test_params'] != '':
             _test_params_temp = eval(self._sw_sources[0]['test_params'])
             self.all_params.update(_test_params_temp)
@@ -756,6 +766,14 @@ class RepoTestDefinition(URLTestDefinition):
     The difference is that the files from the repository are also copied to
     the device.
     """
+    # info =  {
+    #     'project_name': name,
+    #     'branch_vcs': 'git',
+    #     'branch_revision': commit_id,
+    #     'branch_url': url,
+    #     'test_params': testdef_repo['parameters'], // JSON parameters
+    #     'default_params': str(testdef['params']), // YAML parameters
+    # }
 
     def __init__(self, context, idx, testdef, repo, info):
         testdef_metadata = {}
