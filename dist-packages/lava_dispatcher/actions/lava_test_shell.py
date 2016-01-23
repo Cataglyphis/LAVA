@@ -364,10 +364,19 @@ class TestDefinitionLoader(object):
         repo = None
         info = None
         if 'git-repo' in testdef_repo:
+            # repo = /var/lib/lava/dispatcher/tmp/gittestrepo
             repo = _get_testdef_git_repo(testdef_repo['git-repo'], tmpdir,
                                          testdef_repo.get('revision'),
                                          _get_lava_proxy(self.context))
+            # http://xxxx/*.git
+            # name = *
             name = os.path.splitext(os.path.basename(testdef_repo['git-repo']))[0]
+            # info =  {
+            #     'project_name': name,
+            #     'branch_vcs': 'git',
+            #     'branch_revision': commit_id,
+            #     'branch_url': url,
+            # }
             info = _git_info(testdef_repo['git-repo'], repo, name)
 
         if 'bzr-repo' in testdef_repo:
@@ -819,26 +828,18 @@ class cmd_lava_test_shell(BaseAction):
 
     def run(self, testdef_urls=None, testdef_repos=None, timeout=-1, skip_install=None,
             lava_test_dir=None, lava_test_results_dir=None, repeat_count=0):
+        # lava_test_dir: None, lava_test_results_dir: None
         # bootloader
         target = self.client.target_device
-
-        logging.warning("Bo: " + "-"*10 + "testdef_urls: %s" % str(testdef_urls))
-        logging.warning("Bo: " + "-"*10 + "testdef_repos: %s" % str(testdef_repos))
-        logging.warning("Bo: " + "-"*10 + "timeout: %s" % str(timeout))
-        logging.warning("Bo: " + "-"*10 + "skip_install: %s" % str(skip_install))
-        logging.warning("Bo: " + "-"*10 + "lava_test_dir: %s" % str(lava_test_dir))
-        logging.warning("Bo: " + "-"*10 + "lava_test_results_dir: %s" % str(lava_test_results_dir))
-        logging.warning("Bo: " + "-"*10 + "repeat_count: %s" % str(repeat_count))
         global repeat_cnt
         repeat_cnt = repeat_count
 
         delay = target.config.test_shell_serial_delay_ms
 
         self._amend_test_execution_paths(target, lava_test_dir, lava_test_results_dir)
+        # lava_test_dir: None, lava_test_results_dir: None
 
-        logging.warning("Bo: " + "-"*10 + "lava_test_dir: %s" % str(lava_test_dir))
-        logging.warning("Bo: " + "-"*10 + "lava_test_results_dir: %s" % str(lava_test_results_dir))
-
+        #
         testdef_objs = self._configure_target(target, testdef_urls,
                                               testdef_repos, skip_install)
 
@@ -968,24 +969,37 @@ class cmd_lava_test_shell(BaseAction):
         return False
 
     def _copy_runner(self, mntdir, target):
+        # mntdir = /var/lib/lava/dispatcher/tmp/time/device_hostname
+        # target = bootloader
+        # 'lava_test_sh_cmd': "/system/bin/sh",
         shell = target.deployment_data['lava_test_sh_cmd']
 
+        # LAVA_TEST_DIR = '%s/../lava_test_shell' % os.path.dirname(__file__)
+        # LAVA_MULTI_NODE_TEST_DIR = '%s/../lava_test_shell/multi_node' % os.path.dirname(__file__)
+        # LAVA_LMP_TEST_DIR = '%s/../lava_test_shell/lmp' % os.path.dirname(__file__)
         # Generic scripts
         scripts_to_copy = glob(os.path.join(LAVA_TEST_DIR, 'lava-*'))
 
         # Distro-specific scripts override the generic ones
+        # distro = android, here for whaley platform
         distro = target.deployment_data['distro']
+        # distro_support_dir = "LAVA_TEST_DIR/distro/android"
         distro_support_dir = '%s/distro/%s' % (LAVA_TEST_DIR, distro)
+        # add the script in distro
         for script in glob(os.path.join(distro_support_dir, 'lava-*')):
             scripts_to_copy.append(script)
 
         for fname in scripts_to_copy:
             with open(fname, 'r') as fin:
+                # get the name of the file
                 foutname = os.path.basename(fname)
                 with open('%s/bin/%s' % (mntdir, foutname), 'w',
                           encoding='utf-8') as fout:
+                    # Shebang
+                    # #!/system/bin/sh
                     fout.write("#!%s\n\n" % shell)
                     fout.write(fin.read())
+                    # add 755 privilege, fileno() is the file descriptor
                     os.fchmod(fout.fileno(), XMOD)
 
     def _inject_multi_node_api(self, mntdir, target):
@@ -1056,16 +1070,26 @@ class cmd_lava_test_shell(BaseAction):
     def _configure_target(self, target, testdef_urls, testdef_repos, skip_install):
         results_part = target.deployment_data['lava_test_results_part_attr']
         results_part = getattr(target.config, results_part)
-        logging.warning("Bo: " + "-"*10 + "results_part: %s" % str(results_part))
+        # comment at 2016.01.22
+        # results_part = 5
 
+        # d = /var/lib/lava/dispatcher/tmp/time/device_hostname
         with target.file_system(results_part, target.lava_test_results_dir) as d:
+            # d: /var/lib/lava/dispatcher/tmp/time/device_hostname
+            # _mk_runner_dirs() create below 3 folders in dispatcher
+            # /var/lib/lava/dispatcher/tmp/time/device_hostname/bin
+            # /var/lib/lava/dispatcher/tmp/time/device_hostname/tests
+            # /var/lib/lava/dispatcher/tmp/time/device_hostname/results
             self._mk_runner_dirs(d)
+            # target = bootloader
+            # copy scripts in lava_test_shell to /var/lib/lava/dispatcher/tmp/time/device_hostname/bin
             self._copy_runner(d, target)
             if 'target_group' in self.context.test_data.metadata:
                 self._inject_multi_node_api(d, target)
             if 'lmp_module' in self.context.test_data.metadata:
                 self._inject_lmp_api(d, target)
 
+            # scratch_dir = /var/lib/lava/dispatcher/tmp
             testdef_loader = TestDefinitionLoader(self.context, target.scratch_dir)
 
             if testdef_urls:
@@ -1082,6 +1106,8 @@ class cmd_lava_test_shell(BaseAction):
                 # android mount the partition under /system, while ubuntu
                 # mounts under /, so we have hdir for where it is on the
                 # host and tdir for how the target will see the path
+                # hdir = /var/lib/lava/dispatcher/tmp/time/device_hostname/tests/id_uuid
+                # tdir = /data/local/tmp/lava-device_hostname/tests/id_uuid
                 hdir = '%s/tests/%s' % (d, testdef.dirname)
                 tdir = '%s/tests/%s' % (target.lava_test_dir,
                                         testdef.dirname)

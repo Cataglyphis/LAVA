@@ -344,7 +344,10 @@ class Target(object):
             return True
 
     def _image_has_selinux_support(self, runner, timeout):
-        rc = runner.run("LANG=C tar --help 2>&1 | grep selinux", failok=True)
+        # rc = runner.run("LANG=C tar --help 2>&1 | grep selinux", failok=True)
+        # add below 2 lines, 2016.01.22
+        rc = runner.run("LANG=C busybox tar --help 2>&1 | grep selinux", failok=True, timeout=timeout)
+        logging.info("image_has_selinux_support: %s" % rc)
         if rc >= 1:
             logging.info("SELinux support disabled in test image. The current image has no selinux support in 'tar'.")
             return False
@@ -390,6 +393,13 @@ class Target(object):
         else:
             logging.error("Can't skip the guide. Please have a check")
             self.context.test_data.add_result("skip_guide_whaley", "fail")
+
+    def _install_busybox_whaley(self, connection):
+        logging.info("install busybox in /system/xbin")
+        connection.sendline('su')
+        connection.sendline('mount -o remount,rw /system')
+        connection.sendline('cd /system/xbin')
+        connection.sendline('busybox --install .')
 
     def _auto_login(self, connection, is_master=False):
         if is_master:
@@ -665,8 +675,11 @@ class Target(object):
                 self.context.test_data.add_result(wait_for_kernel_boot, bad)
                 raise
 
+            # add below 2 functions to skip guide and install busybox
             # add is_skip in the future
             self._skip_guide_whaley(connection)
+            # install busybox, need add judgement later
+            self._install_busybox_whaley(connection)
 
         try:
             self._auto_login(connection, is_master)
@@ -762,20 +775,38 @@ class Target(object):
                                           execution_time, 'seconds')
 
     def _target_extract(self, runner, tar_file, dest, timeout=-1, busybox=False):
+        # tar_file = /tmp/fs.tgz
+        # dest = /data/local/tmp
+        # tmpdir = /var/lib/lava/dispatcher/tmp
+        # url = http://%(LAVA_SERVER_IP)s/tmp
         tmpdir = self.context.config.lava_image_tmpdir
         url = self.context.config.lava_image_url
+        # tar_file = /tmp/fs.tgz
         tar_file = tar_file.replace(tmpdir, '')
+        # tar_url = http://lava_server_ip/tmp/tmp/fs.tgz
         tar_url = '/'.join(u.strip('/') for u in [url, tar_file])
         self._target_extract_url(runner, tar_url, dest, timeout=timeout, busybox=busybox)
 
     def _target_extract_url(self, runner, tar_url, dest, timeout=-1, busybox=False):
         decompression_cmd = ''
+
+        # if tar_url.endswith('.gz') or tar_url.endswith('.tgz'):
+        #     decompression_cmd = '| /bin/gzip -dc'
+        # elif tar_url.endswith('.bz2'):
+        #     decompression_cmd = '| /bin/bzip2 -dc'
+        # elif tar_url.endswith('.xz'):
+        #     decompression_cmd = '| /usr/bin/xz -dc'
+        # elif tar_url.endswith('.tar'):
+        #     decompression_cmd = ''
+        # else:
+        #     raise RuntimeError('bad file extension: %s' % tar_url)
+
         if tar_url.endswith('.gz') or tar_url.endswith('.tgz'):
-            decompression_cmd = '| /bin/gzip -dc'
+            decompression_cmd = '| busybox gzip -dc'
         elif tar_url.endswith('.bz2'):
-            decompression_cmd = '| /bin/bzip2 -dc'
+            decompression_cmd = '| busybox bzip2 -dc'
         elif tar_url.endswith('.xz'):
-            decompression_cmd = '| /usr/bin/xz -dc'
+            decompression_cmd = '| busybox xz -dc'
         elif tar_url.endswith('.tar'):
             decompression_cmd = ''
         else:
@@ -787,7 +818,10 @@ class Target(object):
             self.context.selinux = '--selinux'
         else:
             self.context.selinux = ''
-        runner.run('wget %s -O - %s %s | /bin/tar %s -C %s -xmf -'
+        # runner.run('wget %s -O - %s %s | /bin/tar %s -C %s -xmf -'
+        #            % (wget_options, tar_url, decompression_cmd, self.context.selinux, dest),
+        #            timeout=timeout)
+        runner.run('busybox wget %s -O - %s %s | busybox tar %s -C %s -xmf -'
                    % (wget_options, tar_url, decompression_cmd, self.context.selinux, dest),
                    timeout=timeout)
 
@@ -862,22 +896,32 @@ class Target(object):
 
     @contextlib.contextmanager
     def _busybox_file_system(self, runner, directory, mounted=False):
+        # runner: NetworkCommandRunner
+        # directory: 'lava_test_results_dir': "/data/local/tmp/lava-device_host_name",
         error_detected = False
         try:
             if mounted:
                 targetdir = os.path.abspath(os.path.join('/mnt/%s' % directory))
             else:
+                # targetdir = /data/local/tmp/lava-%s
                 targetdir = os.path.abspath(os.path.join('/', directory))
 
             runner.run('mkdir -p %s' % targetdir)
 
+            # parent_dir = /data/local/tmp
+            # target_name = device_hostname
             parent_dir, target_name = os.path.split(targetdir)
 
-            runner.run('/bin/tar -cmzf /tmp/fs.tgz -C %s %s'
+            # change command to busybox
+            # runner.run('/bin/tar -cmzf /tmp/fs.tgz -C %s %s'
+            #            % (parent_dir, target_name))
+            # tar parent_dir/target_name to /tmp/fs.tgz
+            runner.run('busybox tar -cmzf /tmp/fs.tgz -C %s %s'
                        % (parent_dir, target_name))
             runner.run('cd /tmp')  # need to be in same dir as fs.tgz
 
             try:
+                # get the target device ip
                 ip = runner.get_target_ip()
             except NetworkError as e:
                 error_detected = True
@@ -885,6 +929,7 @@ class Target(object):
 
             url_base = self._start_busybox_http_server(runner, ip)
 
+            # url = http://ip:http_port/fs.tgz
             url = url_base + '/fs.tgz'
             logging.info("Fetching url: %s", url)
             tf = download_image(url, self.context, self.scratch_dir,
@@ -896,15 +941,22 @@ class Target(object):
                 utils.ensure_directory(tfdir)
                 self.context.run_command('/bin/tar -C %s -xzf %s'
                                          % (tfdir, tf))
+                # tfdir = /var/lib/lava/dispatcher/tmp/time
+                # target_name = device hostname
+                # /var/lib/lava/dispatcher/tmp/time/device_hostname
                 yield os.path.join(tfdir, target_name)
             finally:
+                # tf = /var/lib/lava/dispatcher/tmp/fs.tgz
                 tf = os.path.join(self.scratch_dir, 'fs.tgz')
                 utils.mk_targz(tf, tfdir)
                 utils.rmtree(tfdir)
 
                 # get the last 2 parts of tf, ie "scratchdir/tf.tgz"
+                # tf = /tmp/fs.tgz
                 tf = '/'.join(tf.split('/')[-2:])
+                # targetdir = /data/local/tmp/lava-%s
                 runner.run('rm -rf %s' % targetdir)
+                # (runner, /tmp/fs.tgz, /data/local/tmp, True)
                 self._target_extract(runner, tf, parent_dir, busybox=True)
         finally:
             if not error_detected:

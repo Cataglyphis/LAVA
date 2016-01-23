@@ -140,7 +140,9 @@ class CommandRunner(object):
 
     def get_wget_options(self):
         patterns = ["GNU Wget", "BusyBox", pexpect.EOF, pexpect.TIMEOUT]
-        cmd = "LANG=C wget --help 2>&1 | head -n1"
+        # change below line, 2016.01.22
+        # cmd = "LANG=C wget --help 2>&1 | head -n1"
+        cmd = "LANG=C busybox wget --help 2>&1 | busybox head -n1"
         self.run(cmd, patterns, timeout=10)
         wget_options = ""
         if self.match_id == 0:
@@ -166,10 +168,14 @@ class NetworkCommandRunner(CommandRunner):
         except NetworkError:
             logging.exception("Unable to reach LAVA server")
             raise
-
+        # add by Bo, 2016.01.22
+        # use busybox commands
         pattern1 = "<(\d?\d?\d?\.\d?\d?\d?\.\d?\d?\d?\.\d?\d?\d?)>"
-        cmd = ("ifconfig `ip route get %s | sed 's/.*via\ //' | cut -d ' ' -f3` | grep 'inet addr' |"
-               "awk -F: '{split($2,a,\" \"); print \"<\" a[1] \">\"}'" %
+        # cmd = ("ifconfig `ip route get %s | sed 's/.*via\ //' | cut -d ' ' -f3` | grep 'inet addr' |"
+        #        "awk -F: '{split($2,a,\" \"); print \"<\" a[1] \">\"}'" %
+        #        self._client.context.config.lava_server_ip)
+        cmd = ("busybox ifconfig `ip route get %s | busybox sed 's/.*via\ //' | busybox cut -d ' ' -f3` | grep "
+               "'inet addr' | busybox awk -F: '{split($2,a,\" \"); print \"<\" a[1] \">\"}'" %
                self._client.context.config.lava_server_ip)
         self.run(
             cmd, [pattern1, pexpect.EOF, pexpect.TIMEOUT], timeout=300)
@@ -574,7 +580,6 @@ class LavaClient(object):
             self.context.test_data.add_result('boot_whaley_image', 'pass')
 
             in_whaley_image = True
-
 
         if not in_whaley_image:
             msg = "Test Image Error: Could not get whaley image booted properly"

@@ -372,64 +372,40 @@ class BootloaderTarget(MasterImageTarget):
         self._booted = False
         self._in_test_shell = in_test_shell
 
-# comment by Bo @ 2015.01.20
-#     @contextlib.contextmanager
-#     def file_system(self, partition, directory):
-#         if self._is_bootloader() and self._reset_boot:
-#             self._reset_boot = False
-#             if self._in_test_shell:
-#                 self._in_test_shell = False
-#                 raise Exception("Operation timed out, resetting platform!")
-#         if self._is_bootloader() and not self._booted:
-#             self.context.client.boot_linaro_image()
-#         if self._is_bootloader() and self._lava_nfsrootfs:
-#             path = '%s/%s' % (self._lava_nfsrootfs, directory)
-#             ensure_directory(path)
-#             yield path
-#         elif self._is_bootloader():
-#             pat = self.tester_ps1_pattern
-#             incrc = self.tester_ps1_includes_rc
-#             runner = NetworkCommandRunner(self, pat, incrc)
-#             with self._busybox_file_system(runner, directory) as path:
-#                 yield path
-#         else:
-#             with super(BootloaderTarget, self).file_system(
-#                     partition, directory) as path:
-#                 yield path
-
-    # rewrite file_system()
+    # comment at 2015.01.22
     @contextlib.contextmanager
     def file_system(self, partition, directory):
-        # if self._is_bootloader() and self._reset_boot:
-        #     self._reset_boot = False
-        #     if self._in_test_shell:
-        #         self._in_test_shell = False
-        #         raise Exception("Operation timed out, resetting platform!")
+        # whaley
+        # partition = 5
+        # directory = None
+        if self._is_bootloader() and self._reset_boot:
+            self._reset_boot = False
+            if self._in_test_shell:
+                self._in_test_shell = False
+                raise Exception("Operation timed out, resetting platform!")
+        # bootloader and not booted
         if self._is_bootloader() and not self._booted:
+            # self.context.client.boot_linaro_image()
+            # reboot the system to the test image
+            # if we don't use boot_whaley_image in job, use lava_test_shell directly, then boot the image
             self.context.client.boot_whaley_image()
-        if self._is_bootloader():
+        # for deploy linaro kernel, pass here
+        if self._is_bootloader() and self._lava_nfsrootfs:
+            path = '%s/%s' % (self._lava_nfsrootfs, directory)
+            ensure_directory(path)
+            yield path
+        # bootloader
+        elif self._is_bootloader():
+            # pat = 'TESTER_PS1': "shell@helios:/ # "
+            # incrc = 'TESTER_PS1_INCLUDES_RC': False
             pat = self.tester_ps1_pattern
-            logging.warning("Bo: " + "-"*10 + "results_part: %s" % str(pat))
-            # True/False
             incrc = self.tester_ps1_includes_rc
             runner = NetworkCommandRunner(self, pat, incrc)
             with self._busybox_file_system(runner, directory) as path:
                 yield path
-
-        # if self._is_bootloader() and self._lava_nfsrootfs:
-        #     path = '%s/%s' % (self._lava_nfsrootfs, directory)
-        #     ensure_directory(path)
-        #     yield path
-        # elif self._is_bootloader():
-        #     pat = self.tester_ps1_pattern
-        #     # True/False
-        #     incrc = self.tester_ps1_includes_rc
-        #     runner = NetworkCommandRunner(self, pat, incrc)
-        #     with self._busybox_file_system(runner, directory) as path:
-        #         yield path
-        # else:
-        #     with super(BootloaderTarget, self).file_system(
-        #             partition, directory) as path:
-        #         yield path
+        else:
+            with super(BootloaderTarget, self).file_system(
+                    partition, directory) as path:
+                yield path
 
 target_class = BootloaderTarget
