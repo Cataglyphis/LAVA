@@ -857,7 +857,6 @@ class cmd_lava_test_shell(BaseAction):
         self._amend_test_execution_paths(target, lava_test_dir, lava_test_results_dir)
         # lava_test_dir: None, lava_test_results_dir: None
 
-        #
         testdef_objs = self._configure_target(target, testdef_urls,
                                               testdef_repos, skip_install)
 
@@ -875,6 +874,8 @@ class cmd_lava_test_shell(BaseAction):
             if self.context.config.lava_no_proxy:
                 runner._connection.sendline(
                     "export no_proxy=%s" % self.context.config.lava_no_proxy, delay)
+            # lava_test_dir = /data/local/tmp/lava-hostname
+            # /data/local/tmp/lava-hostname/bin/lava-test-runner /data/local/tmp/lava-hostname
             runner._connection.sendline(
                 "%s/bin/lava-test-runner %s" % (
                     target.lava_test_dir,
@@ -1095,19 +1096,19 @@ class cmd_lava_test_shell(BaseAction):
         with target.file_system(results_part, target.lava_test_results_dir) as d:
             # d: /var/lib/lava/dispatcher/tmp/time/device_hostname
             # _mk_runner_dirs() create below 3 folders in dispatcher
-            # /var/lib/lava/dispatcher/tmp/time/device_hostname/bin
-            # /var/lib/lava/dispatcher/tmp/time/device_hostname/tests
-            # /var/lib/lava/dispatcher/tmp/time/device_hostname/results
+            # /var/lib/lava/dispatcher/tmp/tempdir/time/device_hostname/bin
+            # /var/lib/lava/dispatcher/tmp/tempdir/time/device_hostname/tests
+            # /var/lib/lava/dispatcher/tmp/tempdir/time/device_hostname/results
             self._mk_runner_dirs(d)
             # target = bootloader
-            # copy scripts in lava_test_shell to /var/lib/lava/dispatcher/tmp/time/device_hostname/bin
+            # copy scripts in lava_test_shell to /var/lib/lava/dispatcher/tmp/tempdir/time/device_hostname/bin
             self._copy_runner(d, target)
             if 'target_group' in self.context.test_data.metadata:
                 self._inject_multi_node_api(d, target)
             if 'lmp_module' in self.context.test_data.metadata:
                 self._inject_lmp_api(d, target)
 
-            # scratch_dir = /var/lib/lava/dispatcher/tmp
+            # scratch_dir = /var/lib/lava/dispatcher/tmp/tempdir
             testdef_loader = TestDefinitionLoader(self.context, target.scratch_dir)
 
             if testdef_urls:
@@ -1124,7 +1125,7 @@ class cmd_lava_test_shell(BaseAction):
                 # android mount the partition under /system, while ubuntu
                 # mounts under /, so we have hdir for where it is on the
                 # host and tdir for how the target will see the path
-                # hdir = /var/lib/lava/dispatcher/tmp/time/device_hostname/tests/id_uuid
+                # hdir = /var/lib/lava/dispatcher/tmp/tempdir/time/device_hostname/tests/id_uuid
                 # tdir = /data/local/tmp/lava-device_hostname/tests/id_uuid
                 hdir = '%s/tests/%s' % (d, testdef.dirname)
                 tdir = '%s/tests/%s' % (target.lava_test_dir,

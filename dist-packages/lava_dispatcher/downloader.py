@@ -163,6 +163,9 @@ def _url_mapping(url, context):
     return url
 
 
+# url = http://ip:http_port/fs.tgz
+# context
+# imgdir = /var/lib/lava/dispatcher/tmp
 def download_image(url_string, context, imgdir=None,
                    delete_on_exit=True, decompress=True, timeout=300):
     """downloads a image that's been compressed as .bz2 or .gz and

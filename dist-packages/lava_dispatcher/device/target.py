@@ -398,11 +398,12 @@ class Target(object):
             self.context.test_data.add_result("skip_guide_whaley", "fail")
 
     def _install_busybox_whaley(self, connection):
-        logging.info("install busybox in /system/xbin")
+        logging.info("Install busybox in /system/xbin")
         connection.sendline('su')
         connection.sendline('mount -o remount,rw /system')
         connection.sendline('cd /system/xbin')
         connection.sendline('busybox --install .')
+        logging.info("End installation of busybox")
 
     def _auto_login(self, connection, is_master=False):
         if is_master:
@@ -910,10 +911,11 @@ class Target(object):
                 # targetdir = /data/local/tmp/lava-%s
                 targetdir = os.path.abspath(os.path.join('/', directory))
 
+            # mkdir -p /data/local/tmp/lava-mstar01
             runner.run('mkdir -p %s' % targetdir)
 
             # parent_dir = /data/local/tmp
-            # target_name = device_hostname
+            # target_name = lava-mstar01
             parent_dir, target_name = os.path.split(targetdir)
 
             # change command to busybox
@@ -946,12 +948,12 @@ class Target(object):
                 utils.ensure_directory(tfdir)
                 self.context.run_command('/bin/tar -C %s -xzf %s'
                                          % (tfdir, tf))
-                # tfdir = /var/lib/lava/dispatcher/tmp/time
+                # tfdir = /var/lib/lava/dispatcher/tmp/tempdir/time
                 # target_name = device hostname
-                # /var/lib/lava/dispatcher/tmp/time/device_hostname
+                # /var/lib/lava/dispatcher/tmp/tempdir/time/device_hostname
                 yield os.path.join(tfdir, target_name)
             finally:
-                # tf = /var/lib/lava/dispatcher/tmp/fs.tgz
+                # tf = /var/lib/lava/dispatcher/tmp/tempdir/fs.tgz
                 tf = os.path.join(self.scratch_dir, 'fs.tgz')
                 utils.mk_targz(tf, tfdir)
                 utils.rmtree(tfdir)
@@ -962,6 +964,7 @@ class Target(object):
                 # targetdir = /data/local/tmp/lava-%s
                 runner.run('rm -rf %s' % targetdir)
                 # (runner, /tmp/fs.tgz, /data/local/tmp, True)
+                # download the fs.tgz and extract into /data/local/tmp
                 self._target_extract(runner, tf, parent_dir, busybox=True)
         finally:
             if not error_detected:
