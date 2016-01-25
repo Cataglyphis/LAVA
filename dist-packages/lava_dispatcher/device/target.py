@@ -369,11 +369,11 @@ class Target(object):
             pos1 = connection.expect(pattern, timeout=10)
             if pos1 == 0:
                 logging.warning("Can't find service: window")
-                time.sleep(60)
+                time.sleep(100)
                 continue
             elif pos1 == 1:
                 logging.info("Now in com.helios.guide activity")
-                time.sleep(30)
+                time.sleep(100)
                 connection.sendcontrol('c')
                 connection.sendline('')
                 connection.expect('shell', timeout=5)
@@ -391,7 +391,7 @@ class Target(object):
                 logging.info("Already in com.helios.launch activity")
                 break
             else:
-                time.sleep(20)
+                time.sleep(30)
                 continue
         else:
             logging.error("Can't skip the guide. Please have a check")
