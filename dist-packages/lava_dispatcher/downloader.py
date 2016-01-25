@@ -183,6 +183,7 @@ def download_image(url_string, context, imgdir=None,
             url = _url_mapping(url_string, context)
 
             url = urlparse.urlparse(url)
+
             if url.scheme == 'scp':
                 reader = _scp_stream
             elif url.scheme == 'http' or url.scheme == 'https':

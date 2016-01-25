@@ -351,6 +351,9 @@ class Target(object):
         if rc >= 1:
             logging.info("SELinux support disabled in test image. The current image has no selinux support in 'tar'.")
             return False
+        elif rc is None:
+            logging.info("No SELinux support in test image. The Current image has no selinux support in 'tar'.")
+            return False
         else:
             logging.debug("Retaining SELinux support in the current image.")
             return True
@@ -777,7 +780,7 @@ class Target(object):
     def _target_extract(self, runner, tar_file, dest, timeout=-1, busybox=False):
         # tar_file = /tmp/fs.tgz
         # dest = /data/local/tmp
-        # tmpdir = /var/lib/lava/dispatcher/tmp
+        # tmpdir = /var/lib/lava/dispatcher/tmp/
         # url = http://%(LAVA_SERVER_IP)s/tmp
         tmpdir = self.context.config.lava_image_tmpdir
         url = self.context.config.lava_image_url
@@ -821,6 +824,7 @@ class Target(object):
         # runner.run('wget %s -O - %s %s | /bin/tar %s -C %s -xmf -'
         #            % (wget_options, tar_url, decompression_cmd, self.context.selinux, dest),
         #            timeout=timeout)
+        # download fs.tgz and extract into /data/local/tmp/
         runner.run('busybox wget %s -O - %s %s | busybox tar %s -C %s -xmf -'
                    % (wget_options, tar_url, decompression_cmd, self.context.selinux, dest),
                    timeout=timeout)
@@ -932,6 +936,7 @@ class Target(object):
             # url = http://ip:http_port/fs.tgz
             url = url_base + '/fs.tgz'
             logging.info("Fetching url: %s", url)
+            # scratch_dir = /var/lib/lava/dispatcher/tmp/tempdir/
             tf = download_image(url, self.context, self.scratch_dir,
                                 decompress=False)
 

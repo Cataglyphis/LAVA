@@ -81,7 +81,7 @@ whaley = deployment_data_dict({
     'boot_cmds': "boot_cmds",
 
     # for lava-test-shell
-    'distro': "android",
+    'distro': "ubuntu",
     'lava_test_sh_cmd': "/system/bin/sh",
     'lava_test_dir': "/data/local/tmp/lava-%s",
     'lava_test_results_part_attr': "data_part_android_org",
