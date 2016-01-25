@@ -23,6 +23,7 @@ class NP1601(object):
     def _get_connection(self):
         logging.debug("Connection to NP1601 PDU with: %s" % self.exec_string)
         self.connection = pexpect.spawn(self.exec_string)
+        self.connection.expect("Synaccess", timeout=10)
         username = self.pdus[self.hostname]["username"]
         password = self.pdus[self.hostname]["password"]
         self._pdu_login(username, password)
