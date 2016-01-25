@@ -787,7 +787,7 @@ class Target(object):
         url = self.context.config.lava_image_url
         # tar_file = /tmp/fs.tgz
         tar_file = tar_file.replace(tmpdir, '')
-        # tar_url = http://lava_server_ip/tmp/tmp/fs.tgz
+        # tar_url = http://lava_server_ip/fs.tgz
         tar_url = '/'.join(u.strip('/') for u in [url, tar_file])
         self._target_extract_url(runner, tar_url, dest, timeout=timeout, busybox=busybox)
 
@@ -865,8 +865,7 @@ class Target(object):
             port = connection.match.groups()[match_id]
 
             url = "http://%s:%s/fs.tgz" % (ip, port)
-            tf = download_image(url,
-                                self.context, self.scratch_dir, decompress=False)
+            tf = download_image(url, self.context, self.scratch_dir, decompress=False)
 
             tfdir = os.path.join(self.scratch_dir, str(time.time()))
             try:

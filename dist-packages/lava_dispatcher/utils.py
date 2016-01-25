@@ -98,7 +98,8 @@ def mkdtemp(basedir='/tmp'):
 def mk_targz(tfname, rootdir, basedir='.', asroot=False):
     """ Similar shutil.make_archive but it doesn't blow up with unicode errors
     """
-    cmd = 'tar --selinux -C %s -czf %s %s' % (rootdir, tfname, basedir)
+    # cmd = 'tar --selinux -C %s -czf %s %s' % (rootdir, tfname, basedir)
+    cmd = 'tar -C %s -czf %s %s' % (rootdir, tfname, basedir)
     if asroot:
         cmd = 'nice sudo %s' % cmd
     if logging_system(cmd):
@@ -119,7 +120,9 @@ def extract_tar(tfname, tmpdir):
             raise CriticalError('Unable to extract tarball: %s' % tfname)
     elif tfname.endswith('.gz') or tfname.endswith('.tgz'):
         try:
-            output = subprocess.check_output(['nice', 'tar', '--selinux', '-C',
+            # output = subprocess.check_output(['nice', 'tar', '--selinux', '-C',
+            #                                   tmpdir, '-xvzf', tfname]
+            output = subprocess.check_output(['nice', 'tar', '-C',
                                               tmpdir, '-xvzf', tfname])
         except subprocess.CalledProcessError:
             raise CriticalError('Unable to extract tarball: %s' % tfname)
