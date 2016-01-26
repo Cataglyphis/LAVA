@@ -632,6 +632,8 @@ class URLTestDefinition(object):
         if repeat_cnt > 0:
             fout.write('%s=\'%s\'\n' % ('REPEAT_COUNT', repeat_cnt))
             fout.write('###save REPEAT_COUNT as named attribute###\n')
+            # mkdir attributes, otherwise echo %s error
+            fout.write('mkdir -p $LAVA_RESULT_DIR/attributes\n')
             fout.write('echo %s > $LAVA_RESULT_DIR/attributes/repeat_count\n' % repeat_cnt)
         fout.write('######\n')
 
