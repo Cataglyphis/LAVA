@@ -463,10 +463,13 @@ class LavaClient(object):
         just-booted system.
         """
 
-        if self.target_device.target_distro != 'android':
-            self.boot_linaro_image()
-        else:
-            self.boot_linaro_android_image()
+        # change below lines, 2016.01.25
+        # if self.target_device.target_distro != 'android':
+        #     self.boot_linaro_image()
+        # else:
+        #     self.boot_linaro_android_image()
+
+        self.boot_whaley_image()
 
         ps1_pattern = self.target_device.tester_ps1_pattern
         ps1_includes_rc = self.target_device.tester_ps1_includes_rc

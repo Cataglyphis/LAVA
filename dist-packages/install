@@ -24,5 +24,8 @@ sudo cp -f lava_dispatcher/deployment_data.py ${packages}lava_dispatcher/
 
 sudo cp -f lava_dispatcher/utils.py ${packages}lava_dispatcher/
 
+sudo cp -f lava_dispatcher/downloader.py ${packages}lava_dispatcher/
+
+sudo cp -f lava_dispatcher/lava_test_shell/distro/android/lava-test-runner ${packages}lava_dispatcher/lava_test_shell/distro/android/
 
 sudo service lava-server start
