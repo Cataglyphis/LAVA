@@ -167,10 +167,10 @@ def _url_mapping(url, context):
 # context
 # imgdir = /var/lib/lava/dispatcher/tmp
 def download_image(url_string, context, imgdir=None,
-                   delete_on_exit=True, decompress=True, timeout=300):
+                   delete_on_exit=True, decompress=True, timeout=600):
     """downloads a image that's been compressed as .bz2 or .gz and
     optionally decompresses it on the file to the cache directory
-    will retry if the download fails, default five minute timeout
+    will retry if the download fails, default ten minute timeout
     """
     logging.debug("About to download %s to the host", url_string)
     now = time.time()
