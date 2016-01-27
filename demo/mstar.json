@@ -1,0 +1,38 @@
+{
+    "actions": [
+        {
+            "command": "deploy_whaley_image",
+            "parameters": {
+                "image": "h02p55-development/H02P55D-01.07.01-1603703-159/helios/auto_update.txt",
+                "image_server_ip": "172.16.11.28"
+            }
+        },
+        {
+            "command": "boot_whaley_image"
+        },
+        {
+            "command": "lava_test_shell",
+            "parameters": {
+                "testdef_repos": [
+                    {
+                        "git-repo": "git://git.linaro.org/qa/test-definitions.git",
+                        "testdef": "android/busybox.yaml"
+                    }
+                ],
+                "timeout": 900
+            }
+        },
+		{
+           "command": "submit_results",
+           "parameters": {
+               "stream": "/anonymous/wangbo/",
+               "server": "http://172.16.117.50/RPC2/"
+           }	
+		}
+    ],
+    "device_type": "mstar",
+    "health_check": false,
+    "job_name": "mstar01-test",
+    "logging_level": "DEBUG",
+    "timeout": 1200
+}
