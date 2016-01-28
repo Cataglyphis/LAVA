@@ -408,4 +408,20 @@ class BootloaderTarget(MasterImageTarget):
                     partition, directory) as path:
                 yield path
 
+    @contextlib.contextmanager
+    def whaley_test(self, partition, directory):
+        if self._is_bootloader() and not self._booted:
+            self.context.client.boot_whaley_image()
+        if self._is_bootloader():
+            # pat = 'TESTER_PS1': "shell@helios:/ # "
+            # incrc = 'TESTER_PS1_INCLUDES_RC': False
+            pat = self.tester_ps1_pattern
+            incrc = self.tester_ps1_includes_rc
+            runner = NetworkCommandRunner(self, pat, incrc)
+            yield runner
+        else:
+            with super(BootloaderTarget, self).file_system(
+                    partition, directory) as path:
+                yield path
+
 target_class = BootloaderTarget
