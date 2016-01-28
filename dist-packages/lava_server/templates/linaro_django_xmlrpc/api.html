@@ -1,0 +1,105 @@
+{% extends "layouts/content-bootstrap.html" %}
+{% load i18n %}
+
+{% block title %}
+{{ block.super }} | {% trans "XML-RPC" %}
+{% endblock %}
+
+
+{% block breadcrumbs %}
+{{ block.super }}
+<li><a href="{% url 'lava.home' %}">{% trans "LAVA" %}</a></li>
+<li>{% trans "API" %}</li>
+<li><a href="{% url 'lava.api_help' %}">{% trans "Available Methods" %}</a></li>
+{% endblock %}
+
+
+{% block navigation %}
+<div id="lava-extension-navigation">
+  <ul>
+    <li><a class="lava-back" href="{% url 'lava.home' %}"
+      >{% trans "Back to LAVA" %}</a></li>
+    <li><a href="{% url 'lava.api_help' %}">{% trans "API Help" %}</a></li>
+    <li><a href="{% url 'linaro_django_xmlrpc.views.tokens' %}">{% trans "Authentication Tokens" %}</a></li>
+  </ul>
+</div>
+{% endblock %}
+
+
+{% block content %}
+<h2>About XML-RPC API</h2>
+<p>LAVA Server offers API services as an XML-RPC server. You can interact with it using any XML-RPC
+client. For example, in python you can do this:</p>
+<pre>
+import xmlrpclib
+server = xmlrpclib.ServerProxy("{{ site_url }}{% url 'lava.api_handler' %}")
+print server.system.listMethods()
+</pre>
+<p>The following python code shows how to authenticate using an
+  XML-RPC client, when a method requires authentication.</p>
+<pre>
+  import xmlrpclib
+  username = "USERNAME"
+  token = "TOKEN_STRING"
+  hostname = "HOSTNAME"
+  server = xmlrpclib.ServerProxy("http://%s:%s@%s{% url 'lava.api_handler' %}" % (username, token, hostname))
+  print server.system.listMethods()
+</pre>
+<p class="text-info">NOTE: <code>USERNAME</code> is a valid username
+  in this LAVA instance. <code>TOKEN_STRING</code> is a valid token
+  associated with the above username in this LAVA
+  instance. <code>HOSTNAME</code> is the fully qualified domain name
+  or IP address of this LAVA instance.
+</p>
+<p class="text-info"> In the above code snippet the ServerProxy string
+  is constructed from different components, with separators, which are
+  clearly illustrated as follows:<br>
+  <code>USERNAME:TOKEN_STRING@HOSTNAME/HANDLER</code>
+</p>
+<p class="text-warning"><strong>WARNING: <code>https://</code> scheme
+    is preferred as some calls require authentication.</strong></p>
+<h2 id="top">Available functions</h2>
+<div>
+      <h2>Dashboard</h2>
+      {% for method in methods.dashboard %}
+        [&nbsp;<a href="#{{method.name}}">{{ method.name }}</a>&nbsp;]
+      {% endfor %}
+      <h2>Scheduler</h2>
+      {% for method in methods.scheduler %}
+        [&nbsp;<a href="#{{method.name}}">{{ method.name }}</a>&nbsp;]
+      {% endfor %}
+      <h2>System and Authentication</h2>
+      {% for method in methods.system %}
+        [&nbsp;<a href="#{{method.name}}">{{ method.name }}</a>&nbsp;]
+      {% endfor %}
+</div>
+
+{% for method in methods.dashboard %}
+    <hr/>
+<div id="{{ method.name }}">
+  <h3><a href="#{{method.name}}">{{ method.name }}</a></h3>
+  <div><pre>{{ method.help }}</pre></div>
+  <a href="#top">Available functions</a>
+</div>
+{% endfor %}
+
+{% for method in methods.scheduler %}
+    <hr/>
+<div id="{{ method.name }}">
+  <h3><a href="#{{method.name}}">{{ method.name }}</a></h3>
+  <div><pre>{{ method.help }}</pre></div>
+  <a href="#top">Available functions</a>
+</div>
+{% endfor %}
+
+{% for method in methods.system %}
+    <hr/>
+<div id="{{ method.name }}">
+  <h3><a href="#{{method.name}}">{{ method.name }}</a></h3>
+  <div><pre>{{ method.help }}</pre></div>
+  <a href="#top">Available functions</a>
+</div>
+{% endfor %}
+
+
+{% endblock %}
