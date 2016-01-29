@@ -98,7 +98,8 @@ def mkdtemp(basedir='/tmp'):
 def mk_targz(tfname, rootdir, basedir='.', asroot=False):
     """ Similar shutil.make_archive but it doesn't blow up with unicode errors
     """
-    cmd = 'tar --selinux -C %s -czf %s %s' % (rootdir, tfname, basedir)
+    # cmd = 'tar --selinux -C %s -czf %s %s' % (rootdir, tfname, basedir)
+    cmd = 'tar -C %s -czf %s %s' % (rootdir, tfname, basedir)
     if asroot:
         cmd = 'nice sudo %s' % cmd
     if logging_system(cmd):
@@ -119,7 +120,9 @@ def extract_tar(tfname, tmpdir):
             raise CriticalError('Unable to extract tarball: %s' % tfname)
     elif tfname.endswith('.gz') or tfname.endswith('.tgz'):
         try:
-            output = subprocess.check_output(['nice', 'tar', '--selinux', '-C',
+            # output = subprocess.check_output(['nice', 'tar', '--selinux', '-C',
+            #                                   tmpdir, '-xvzf', tfname]
+            output = subprocess.check_output(['nice', 'tar', '-C',
                                               tmpdir, '-xvzf', tfname])
         except subprocess.CalledProcessError:
             raise CriticalError('Unable to extract tarball: %s' % tfname)
@@ -504,7 +507,9 @@ class logging_spawn(pexpect.spawn):
                 ['.+', pexpect.EOF, pexpect.TIMEOUT],
                 timeout=0.1, lava_no_logging=1)
 
-
+############################################################
+# modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+############################################################
 def connect_to_serial(context):
     """
     Attempts to connect to a serial console server like conmux or cyclades
@@ -512,17 +517,27 @@ def connect_to_serial(context):
     retry_count = 0
     retry_limit = 3
 
-    port_stuck_message = 'Data Buffering Suspended\.'
-    conn_closed_message = 'Connection closed by foreign host\.'
+    port_stuck_message = 'Data Buffering Suspended'
+    conn_closed_message = 'Connection closed by foreign host'
     connection_refused_message = 'Connection refused'
+    connection_succeed_message = 'ser2net port'
+
+    # expectations = {
+    #     port_stuck_message: 'reset-port',
+    #     context.device_config.connection_command_pattern: 'all-good',
+    #     conn_closed_message: 'retry',
+    #     pexpect.TIMEOUT: 'all-good',
+    #     connection_refused_message: 'retry',
+    # }
 
     expectations = {
         port_stuck_message: 'reset-port',
-        context.device_config.connection_command_pattern: 'all-good',
         conn_closed_message: 'retry',
-        pexpect.TIMEOUT: 'all-good',
         connection_refused_message: 'retry',
+        connection_succeed_message: 'all-good',
+        pexpect.TIMEOUT: 'timeout'
     }
+
     patterns = []
     results = []
     for pattern, result in expectations.items():
@@ -531,20 +546,25 @@ def connect_to_serial(context):
 
     while retry_count < retry_limit:
         try:
-            proc = context.spawn(
-                context.device_config.connection_command,
-                timeout=120)
+            proc = context.spawn(context.device_config.connection_command, timeout=120)
             logging.info('Attempting to connect to device using: %s', context.device_config.connection_command)
-            match = proc.expect(patterns, timeout=10)
+            match = proc.expect(patterns, timeout=20)
             result = results[match]
             logging.info('Matched %r which means %s', patterns[match], result)
-            if result == 'retry' or result == 'reset-port':
+            if result == 'retry' or result == 'reset-port' or result == 'timeout':
                 reset_cmd = context.device_config.reset_port_command
                 if reset_cmd:
                     logging.warning('attempting to reset serial port')
                     context.run_command(reset_cmd)
                 else:
-                    logging.warning('no reset_port command configured')
+                    logging.warning('no reset_port command configured, try to kill the process')
+                    proc_telnet = subprocess.Popen(['ps', 'a'], stdout=subprocess.PIPE)
+                    out, err = proc_telnet.communicate()
+                    for line in out.splitlines():
+                        if context.device_config.connection_command in line:
+                            pid = int(line.split()[0])
+                            logging.warning('kill process: %s', context.device_config.connection_command)
+                            os.kill(pid, signal.SIGKILL)  # SIGKILL for Linux
                 proc.close(True)
                 retry_count += 1
                 time.sleep(5)

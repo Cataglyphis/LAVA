@@ -19,6 +19,13 @@
 # along
 # with this program; if not, see <http://www.gnu.org/licenses>.
 
+
+############################################################
+# modified by Wang Bo (wang.bo@whaley.cn), 2016.01.20
+# add function deploy_whaley_image in class LavaClient
+# add function boot_whaley_image in class LavaClient
+############################################################
+
 import commands
 import contextlib
 import logging
@@ -133,7 +140,9 @@ class CommandRunner(object):
 
     def get_wget_options(self):
         patterns = ["GNU Wget", "BusyBox", pexpect.EOF, pexpect.TIMEOUT]
-        cmd = "LANG=C wget --help 2>&1 | head -n1"
+        # change below line, 2016.01.22
+        # cmd = "LANG=C wget --help 2>&1 | head -n1"
+        cmd = "LANG=C busybox wget --help 2>&1 | busybox head -n1"
         self.run(cmd, patterns, timeout=10)
         wget_options = ""
         if self.match_id == 0:
@@ -159,10 +168,14 @@ class NetworkCommandRunner(CommandRunner):
         except NetworkError:
             logging.exception("Unable to reach LAVA server")
             raise
-
+        # add by Bo, 2016.01.22
+        # use busybox commands
         pattern1 = "<(\d?\d?\d?\.\d?\d?\d?\.\d?\d?\d?\.\d?\d?\d?)>"
-        cmd = ("ifconfig `ip route get %s | sed 's/.*via\ //' | cut -d ' ' -f3` | grep 'inet addr' |"
-               "awk -F: '{split($2,a,\" \"); print \"<\" a[1] \">\"}'" %
+        # cmd = ("ifconfig `ip route get %s | sed 's/.*via\ //' | cut -d ' ' -f3` | grep 'inet addr' |"
+        #        "awk -F: '{split($2,a,\" \"); print \"<\" a[1] \">\"}'" %
+        #        self._client.context.config.lava_server_ip)
+        cmd = ("busybox ifconfig `ip route get %s | busybox sed 's/.*via\ //' | busybox cut -d ' ' -f3` | grep "
+               "'inet addr' | busybox awk -F: '{split($2,a,\" \"); print \"<\" a[1] \">\"}'" %
                self._client.context.config.lava_server_ip)
         self.run(
             cmd, [pattern1, pexpect.EOF, pexpect.TIMEOUT], timeout=300)
@@ -267,7 +280,7 @@ class AndroidTesterCommandRunner(NetworkCommandRunner):
         if self._client.target_device.config.android_adb_over_tcp:
             self.android_adb_over_tcp_disconnect()
 
-    # adb cound be connected through network
+    # adb could be connected through network
     def android_adb_over_tcp_connect(self):
         dev_ip = self.dev_ip
         pattern1 = "connected to (\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5})"
@@ -392,6 +405,13 @@ class LavaClient(object):
         self.target_device = get_target(context, config)
         self.vm_group = VmGroupHandler(self)
 
+    ############################################################
+    # created by Wang Bo (wang.bo@whaley.cn), 2016.01.21
+    # call lava_dispatcher.device.bootloader: deploy_whaley_image
+    ############################################################
+    def deploy_whaley_image(self, image, image_server_ip, rootfstype, bootloadertype):
+        self.target_device.deploy_whaley_image(image, image_server_ip, rootfstype, bootloadertype)
+
     def deploy_linaro_android(self, images, rootfstype,
                               bootloadertype, target_type):
         self.target_device.deploy_android(images, rootfstype,
@@ -439,10 +459,13 @@ class LavaClient(object):
         just-booted system.
         """
 
-        if self.target_device.target_distro != 'android':
-            self.boot_linaro_image()
-        else:
-            self.boot_linaro_android_image()
+        # change below lines, 2016.01.25
+        # if self.target_device.target_distro != 'android':
+        #     self.boot_linaro_image()
+        # else:
+        #     self.boot_linaro_android_image()
+
+        self.boot_whaley_image()
 
         ps1_pattern = self.target_device.tester_ps1_pattern
         ps1_includes_rc = self.target_device.tester_ps1_includes_rc
@@ -531,6 +554,37 @@ class LavaClient(object):
             time.sleep(3)
 
         self._boot_linaro_image()
+
+    def boot_whaley_image(self):
+        """
+        Reboot the system to the test image
+        """
+        logging.info('Start to boot test image')
+        boot_attempts = self.config.boot_retries
+        attempts = 0
+        in_whaley_image = False
+        while (attempts < boot_attempts) and (not in_whaley_image):
+            logging.info("Booting the test image. Attempt: %d", attempts + 1)
+
+            self.vm_group.wait_for_vms()
+
+            try:
+                self._boot_linaro_image()
+            except (OperationFailed, pexpect.TIMEOUT):
+                self.context.test_data.add_metadata({'boot_retries': str(attempts)})
+                attempts += 1
+                continue
+
+            logging.info("System is in whaley image now, deploy and boot image successfully")
+            self.context.test_data.add_result('boot_whaley_image', 'pass')
+
+            in_whaley_image = True
+
+        if not in_whaley_image:
+            msg = "Test Image Error: Could not get whaley image booted properly"
+            logging.error(msg)
+            self.context.test_data.add_result('boot_whaley_image', 'fail')
+            raise CriticalError(msg)
 
     def boot_linaro_image(self):
         """

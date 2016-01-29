@@ -73,6 +73,20 @@ android = deployment_data_dict({
     'lava_test_results_dir': 'local/tmp/lava-%s',
 })
 
+# ?
+whaley = deployment_data_dict({
+    'TESTER_PS1': "shell@helios:/ # ",
+    'TESTER_PS1_PATTERN': "shell@helios:/ # ",
+    'TESTER_PS1_INCLUDES_RC': False,
+    'boot_cmds': "boot_cmds",
+
+    # for lava-test-shell
+    'distro': "android",
+    'lava_test_sh_cmd': "/system/bin/sh",
+    'lava_test_dir': "/data/local/tmp/lava-%s",
+    'lava_test_results_part_attr': "data_part_android_org",
+    'lava_test_results_dir': "/data/local/tmp/lava-%s",
+})
 
 ubuntu = deployment_data_dict({
     'TESTER_PS1': "linaro-test [rc=$(echo \$?)]# ",

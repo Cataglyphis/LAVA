@@ -342,13 +342,66 @@ class Target(object):
             return True
 
     def _image_has_selinux_support(self, runner, timeout):
-        rc = runner.run("LANG=C tar --help 2>&1 | grep selinux", failok=True)
+        # rc = runner.run("LANG=C tar --help 2>&1 | grep selinux", failok=True)
+        # add below 2 lines, 2016.01.22
+        rc = runner.run("LANG=C busybox tar --help 2>&1 | grep selinux", failok=True, timeout=timeout)
+        logging.info("image_has_selinux_support: %s" % rc)
         if rc >= 1:
             logging.info("SELinux support disabled in test image. The current image has no selinux support in 'tar'.")
+            return False
+        elif rc is None:
+            logging.info("No SELinux support in test image. The Current image has no selinux support in 'tar'.")
             return False
         else:
             logging.debug("Retaining SELinux support in the current image.")
             return True
+
+    def _skip_guide_whaley(self, connection):
+        pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", pexpect.TIMEOUT]
+        for i in range(10):
+            logging.info("Try to skip the guide. Attempt: %s" % str(i+1))
+            connection.sendcontrol('c')
+            connection.sendline('')
+            connection.expect('shell', timeout=5)
+            connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
+            pos1 = connection.expect(pattern, timeout=10)
+            if pos1 == 0:
+                logging.warning("Can't find service: window")
+                time.sleep(100)
+                continue
+            elif pos1 == 1:
+                logging.info("Now in com.helios.guide activity")
+                time.sleep(100)
+                connection.sendcontrol('c')
+                connection.sendline('')
+                connection.expect('shell', timeout=5)
+                connection.sendline('su')
+                connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
+                time.sleep(20)
+                connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
+                pos2 = connection.expect(pattern, timeout=10)
+                if pos2 == 2:
+                    logging.info("Now in com.helios.launcher activity, skip the guide successfully")
+                    break
+                else:
+                    logging.info("Can't skip the guide, try it again")
+            elif pos1 == 2:
+                logging.info("Already in com.helios.launch activity")
+                break
+            else:
+                time.sleep(30)
+                continue
+        else:
+            logging.error("Can't skip the guide. Please have a check")
+            self.context.test_data.add_result("skip_guide_whaley", "fail")
+
+    def _install_busybox_whaley(self, connection):
+        logging.info("Install busybox in /system/xbin")
+        connection.sendline('su')
+        connection.sendline('mount -o remount,rw /system')
+        connection.sendline('cd /system/xbin')
+        connection.sendline('busybox --install .')
+        logging.info("End installation of busybox")
 
     def _auto_login(self, connection, is_master=False):
         if is_master:
@@ -474,37 +527,55 @@ class Target(object):
 
         return boot_cmds
 
+    ############################################################
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+    # modify 'Restarting system.' to 'Restarting system'
+    # to match the whaley platform
+    ############################################################
     def _soft_reboot(self, connection):
         logging.info("Perform soft reboot the system")
         # Try to C-c the running process, if any.
         connection.sendcontrol('c')
+        connection.expect('shell')
         connection.sendline(self.config.soft_boot_cmd)
         # Looking for reboot messages or if they are missing, the U-Boot
         # message will also indicate the reboot is done.
-        match_id = connection.expect(
-            [pexpect.TIMEOUT, 'Restarting system.',
-             'The system is going down for reboot NOW',
-             'Will now restart', 'U-Boot'], timeout=120)
-        if match_id == 0:
-            raise OperationFailed("Soft reboot failed")
+        # patterns = [pexpect.TIMEOUT, 'Restarting system',
+        #             'The system is going down for reboot NOW',
+        #             'Will now restart', 'U-Boot']
+        # # change timeout from 120 to 5
+        # match_id = connection.expect(patterns, timeout=5)
+        # logging.info('Matched %s', patterns[match_id])
+        # if match_id == 0:
+        #     raise OperationFailed("Soft reboot failed")
+        for i in range(200):
+            connection.sendline("")
 
     def _hard_reboot(self, connection):
         logging.info("Perform hard reset on the system")
         if self.config.hard_reset_command != "":
             self.context.run_command(self.config.hard_reset_command)
+            for i in range(200):
+                connection.sendline("")
         else:
-            connection.send("~$")
-            connection.sendline("hardreset")
+            # comment below 2 lines, 2016.01.21
+            # connection.send("~$")
+            # connection.sendline("hardreset")
+            self._soft_reboot(connection)
 
     def _enter_bootloader(self, connection):
         try:
             start = time.time()
+            # expect Hit any key to stop autoboot
             connection.expect(self.config.interrupt_boot_prompt,
                               timeout=self.config.bootloader_timeout)
             if self.config.interrupt_boot_control_character:
                 connection.sendcontrol(self.config.interrupt_boot_control_character)
             else:
-                connection.send(self.config.interrupt_boot_command)
+                connection.send(self.config.interrupt_boot_command, delay=50)
+                connection.sendcontrol('c')
+            # add below line, 2016.01.21
+            connection.expect(self.config.bootloader_prompt, timeout=self.config.bootloader_timeout)
             # Record the time it takes to enter the bootloader.
             enter_bootloader_time = "{0:.2f}".format(time.time() - start)
             self.context.test_data.add_result('enter_bootloader', 'pass',
@@ -512,8 +583,7 @@ class Target(object):
         except pexpect.TIMEOUT:
             msg = 'Infrastructure Error: failed to enter the bootloader.'
             logging.error(msg)
-            self.context.test_data.add_result('enter_bootloader', 'fail',
-                                              message=msg)
+            self.context.test_data.add_result('enter_bootloader', 'fail', message=msg)
             raise
 
     def _boot_cmds_preprocessing(self, boot_cmds):
@@ -549,6 +619,7 @@ class Target(object):
             wait_for_login_prompt = 'wait_for_login_prompt'
             kernel_exception = 'test_kernel_exception_'
             wait_for_image_prompt = 'wait_for_test_image_prompt'
+            image_boot = 'test_image_boot_time'
             kernel_boot = 'test_kernel_boot_time'
             userspace_boot = 'test_userspace_boot_time'
         else:
@@ -562,16 +633,16 @@ class Target(object):
 
         if self.config.has_kernel_messages:
             try:
+                start = time.time()
                 connection.expect(self.config.image_boot_msg,
                                   timeout=self.config.image_boot_msg_timeout)
+                image_boot_time = "{0:.2f}".format(time.time() - start)
                 start = time.time()
-                self.context.test_data.add_result(wait_for_image_boot,
-                                                  good)
+                self.context.test_data.add_result(wait_for_image_boot, good)
             except pexpect.TIMEOUT:
                 msg = "Kernel Error: did not start booting."
                 logging.error(msg)
-                self.context.test_data.add_result(wait_for_image_boot,
-                                                  bad, message=msg)
+                self.context.test_data.add_result(wait_for_image_boot, bad, message=msg)
                 raise
 
             try:
@@ -582,8 +653,7 @@ class Target(object):
                           'Freeing init memory',
                           '-+\[ cut here \]-+\s+(.*\s+-+\[ end trace (\w*) \]-+)',
                           '(Unhandled fault.*)\r\n']
-                    i = connection.expect(pl,
-                                          timeout=self.config.kernel_boot_msg_timeout)
+                    i = connection.expect(pl, timeout=self.config.kernel_boot_msg_timeout)
                     if i == 0 or i == 1:
                         # Kernel booted normally
                         done = True
@@ -602,21 +672,24 @@ class Target(object):
                         self.context.test_data.add_result(kwarn, 'fail', message=kwarnings)
                         continue
                 kernel_boot_time = "{0:.2f}".format(time.time() - start)
-                self.context.test_data.add_result(wait_for_kernel_boot,
-                                                  good)
+                self.context.test_data.add_result(wait_for_kernel_boot, good)
                 start = time.time()
             except pexpect.TIMEOUT:
-                self.context.test_data.add_result(wait_for_kernel_boot,
-                                                  bad)
+                self.context.test_data.add_result(wait_for_kernel_boot, bad)
                 raise
+
+            # add below 2 functions to skip guide and install busybox
+            # add is_skip in the future
+            self._skip_guide_whaley(connection)
+            # install busybox, need add judgement later
+            self._install_busybox_whaley(connection)
 
         try:
             self._auto_login(connection, is_master)
         except pexpect.TIMEOUT:
             msg = "Userspace Error: auto login prompt not found."
             logging.error(msg)
-            self.context.test_data.add_result(wait_for_login_prompt,
-                                              bad, message=msg)
+            self.context.test_data.add_result(wait_for_login_prompt, bad, message=msg)
             raise
 
         try:
@@ -624,7 +697,7 @@ class Target(object):
                 pattern = self.config.master_str
             else:
                 pattern = self.config.test_image_prompts
-
+            logging.info("test image prompts pattern: %s" % pattern)
             self._wait_for_prompt(connection, pattern, self.config.boot_linaro_timeout)
             if not is_master:
                 if self.target_distro == 'android':
@@ -640,8 +713,7 @@ class Target(object):
         except pexpect.TIMEOUT:
             msg = "Userspace Error: image prompt not found."
             logging.error(msg)
-            self.context.test_data.add_result(wait_for_image_prompt,
-                                              bad)
+            self.context.test_data.add_result(wait_for_image_prompt, bad)
             raise
 
         # Record results
@@ -649,17 +721,20 @@ class Target(object):
         boot_meta['dtb-append'] = str(self.config.append_dtb)
         self.context.test_data.add_metadata(boot_meta)
         if self.config.has_kernel_messages:
+            self.context.test_data.add_result(image_boot, 'pass',
+                                              image_boot_time, 'seconds')
             self.context.test_data.add_result(kernel_boot, 'pass',
                                               kernel_boot_time, 'seconds')
             self.context.test_data.add_result(userspace_boot, 'pass',
                                               userspace_boot_time, 'seconds')
+            logging.info("Image boot time: %s seconds" % image_boot_time)
             logging.info("Kernel boot time: %s seconds" % kernel_boot_time)
             logging.info("Userspace boot time: %s seconds" % userspace_boot_time)
 
     def _customize_bootloader(self, connection, boot_cmds):
-        start = time.time()
         delay = self.config.bootloader_serial_delay_ms
         _boot_cmds = self._boot_cmds_preprocessing(boot_cmds)
+        start = time.time()
 
         try:
             for line in _boot_cmds:
@@ -684,13 +759,12 @@ class Target(object):
                         connection.expect(command,
                                           timeout=self.config.boot_cmd_timeout)
                 else:
-                    self._wait_for_prompt(connection,
-                                          self.config.bootloader_prompt,
+                    self._wait_for_prompt(connection, self.config.bootloader_prompt,
                                           timeout=self.config.boot_cmd_timeout)
-                    connection.sendline(line, delay,
-                                        send_char=self.config.send_char)
-            self.context.test_data.add_result('execute_boot_cmds',
-                                              'pass')
+                    # add below line to record boot commands
+                    logging.info("boot command: %s" % line)
+                    connection.sendline(line, delay, send_char=self.config.send_char)
+            self.context.test_data.add_result('execute_boot_cmds', 'pass')
         except pexpect.TIMEOUT:
             msg = "Bootloader Error: boot command execution failed."
             logging.error(msg)
@@ -704,20 +778,38 @@ class Target(object):
                                           execution_time, 'seconds')
 
     def _target_extract(self, runner, tar_file, dest, timeout=-1, busybox=False):
+        # tar_file = /tmp/fs.tgz
+        # dest = /data/local/tmp
+        # tmpdir = /var/lib/lava/dispatcher/tmp/
+        # url = http://%(LAVA_SERVER_IP)s/tmp
         tmpdir = self.context.config.lava_image_tmpdir
         url = self.context.config.lava_image_url
+        # tar_file = /tmp/fs.tgz
         tar_file = tar_file.replace(tmpdir, '')
+        # tar_url = http://lava_server_ip/fs.tgz
         tar_url = '/'.join(u.strip('/') for u in [url, tar_file])
         self._target_extract_url(runner, tar_url, dest, timeout=timeout, busybox=busybox)
 
     def _target_extract_url(self, runner, tar_url, dest, timeout=-1, busybox=False):
         decompression_cmd = ''
+
+        # if tar_url.endswith('.gz') or tar_url.endswith('.tgz'):
+        #     decompression_cmd = '| /bin/gzip -dc'
+        # elif tar_url.endswith('.bz2'):
+        #     decompression_cmd = '| /bin/bzip2 -dc'
+        # elif tar_url.endswith('.xz'):
+        #     decompression_cmd = '| /usr/bin/xz -dc'
+        # elif tar_url.endswith('.tar'):
+        #     decompression_cmd = ''
+        # else:
+        #     raise RuntimeError('bad file extension: %s' % tar_url)
+
         if tar_url.endswith('.gz') or tar_url.endswith('.tgz'):
-            decompression_cmd = '| /bin/gzip -dc'
+            decompression_cmd = '| busybox gzip -dc'
         elif tar_url.endswith('.bz2'):
-            decompression_cmd = '| /bin/bzip2 -dc'
+            decompression_cmd = '| busybox bzip2 -dc'
         elif tar_url.endswith('.xz'):
-            decompression_cmd = '| /usr/bin/xz -dc'
+            decompression_cmd = '| busybox xz -dc'
         elif tar_url.endswith('.tar'):
             decompression_cmd = ''
         else:
@@ -729,7 +821,11 @@ class Target(object):
             self.context.selinux = '--selinux'
         else:
             self.context.selinux = ''
-        runner.run('wget %s -O - %s %s | /bin/tar %s -C %s -xmf -'
+        # runner.run('wget %s -O - %s %s | /bin/tar %s -C %s -xmf -'
+        #            % (wget_options, tar_url, decompression_cmd, self.context.selinux, dest),
+        #            timeout=timeout)
+        # download fs.tgz and extract into /data/local/tmp/
+        runner.run('busybox wget %s -O - %s %s | busybox tar %s -C %s -xmf -'
                    % (wget_options, tar_url, decompression_cmd, self.context.selinux, dest),
                    timeout=timeout)
 
@@ -768,8 +864,7 @@ class Target(object):
             port = connection.match.groups()[match_id]
 
             url = "http://%s:%s/fs.tgz" % (ip, port)
-            tf = download_image(url,
-                                self.context, self.scratch_dir, decompress=False)
+            tf = download_image(url, self.context, self.scratch_dir, decompress=False)
 
             tfdir = os.path.join(self.scratch_dir, str(time.time()))
             try:
@@ -804,22 +899,33 @@ class Target(object):
 
     @contextlib.contextmanager
     def _busybox_file_system(self, runner, directory, mounted=False):
+        # runner: NetworkCommandRunner
+        # directory: 'lava_test_results_dir': "/data/local/tmp/lava-device_host_name",
         error_detected = False
         try:
             if mounted:
                 targetdir = os.path.abspath(os.path.join('/mnt/%s' % directory))
             else:
+                # targetdir = /data/local/tmp/lava-%s
                 targetdir = os.path.abspath(os.path.join('/', directory))
 
+            # mkdir -p /data/local/tmp/lava-mstar01
             runner.run('mkdir -p %s' % targetdir)
 
+            # parent_dir = /data/local/tmp
+            # target_name = lava-mstar01
             parent_dir, target_name = os.path.split(targetdir)
 
-            runner.run('/bin/tar -cmzf /tmp/fs.tgz -C %s %s'
+            # change command to busybox
+            # runner.run('/bin/tar -cmzf /tmp/fs.tgz -C %s %s'
+            #            % (parent_dir, target_name))
+            # tar parent_dir/target_name to /tmp/fs.tgz
+            runner.run('busybox tar -cmzf /tmp/fs.tgz -C %s %s'
                        % (parent_dir, target_name))
             runner.run('cd /tmp')  # need to be in same dir as fs.tgz
 
             try:
+                # get the target device ip
                 ip = runner.get_target_ip()
             except NetworkError as e:
                 error_detected = True
@@ -827,8 +933,10 @@ class Target(object):
 
             url_base = self._start_busybox_http_server(runner, ip)
 
+            # url = http://ip:http_port/fs.tgz
             url = url_base + '/fs.tgz'
             logging.info("Fetching url: %s", url)
+            # scratch_dir = /var/lib/lava/dispatcher/tmp/tempdir/
             tf = download_image(url, self.context, self.scratch_dir,
                                 decompress=False)
 
@@ -838,15 +946,23 @@ class Target(object):
                 utils.ensure_directory(tfdir)
                 self.context.run_command('/bin/tar -C %s -xzf %s'
                                          % (tfdir, tf))
+                # tfdir = /var/lib/lava/dispatcher/tmp/tempdir/time
+                # target_name = device hostname
+                # /var/lib/lava/dispatcher/tmp/tempdir/time/device_hostname
                 yield os.path.join(tfdir, target_name)
             finally:
+                # tf = /var/lib/lava/dispatcher/tmp/tempdir/fs.tgz
                 tf = os.path.join(self.scratch_dir, 'fs.tgz')
                 utils.mk_targz(tf, tfdir)
                 utils.rmtree(tfdir)
 
                 # get the last 2 parts of tf, ie "scratchdir/tf.tgz"
+                # tf = /tmp/fs.tgz
                 tf = '/'.join(tf.split('/')[-2:])
+                # targetdir = /data/local/tmp/lava-%s
                 runner.run('rm -rf %s' % targetdir)
+                # (runner, /tmp/fs.tgz, /data/local/tmp, True)
+                # download the fs.tgz and extract into /data/local/tmp
                 self._target_extract(runner, tf, parent_dir, busybox=True)
         finally:
             if not error_detected:

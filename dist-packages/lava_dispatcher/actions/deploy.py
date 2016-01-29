@@ -348,3 +348,64 @@ class cmd_deploy_lxc_image(BaseAction):
             persist=False):
         self.client.deploy_lxc_image(name=name, release=release, arch=arch,
                                      target_type=target_type, persist=persist)
+
+
+# Author: Wang Bo <wang.bo@whaley.cn>
+# Created time: 2016.01.14, add deploy class to MStar platform
+
+class cmd_deploy_whaley_image(BaseAction):
+
+    parameters_schema = {
+        'type': 'object',
+        'properties': {
+            'image': {'type': 'string', 'optional': True},
+            'image_server_ip': {'type': 'string', 'optional': True},
+            'rootfstype': {'type': 'string', 'optional': True},
+            'bootloadertype': {'type': 'string', 'optional': True, 'default': 'u_boot'},
+            'login_prompt': {'type': 'string', 'optional': True},
+            'password_prompt': {'type': 'string', 'optional': True},
+            'username': {'type': 'string', 'optional': True},
+            'password': {'type': 'string', 'optional': True},
+            'login_commands': {'type': 'array', 'items': {'type': 'string'}, 'optional': True},
+            'customize': {'type': 'object', 'optional': True},
+            'role': {'type': 'string', 'optional': True},
+        },
+        'additionalProperties': False,
+    }
+
+    @classmethod
+    def validate_parameters(cls, parameters):
+        super(cmd_deploy_whaley_image, cls).validate_parameters(parameters)
+        if 'image' not in parameters:
+            raise ValueError('must specify image in whaley deploying')
+        if 'image_server_ip' not in parameters:
+            raise ValueError('must specify image server ip address in whaley deploying')
+        if 'login_prompt' in parameters:
+            if 'username' not in parameters:
+                raise ValueError('must specify a username when specifying a login prompt')
+        if 'password_prompt' in parameters:
+            if 'password' not in parameters:
+                raise ValueError('must specify a password when specifying a password prompt')
+        if 'login_prompt' not in parameters or 'password_prompt' not in parameters:
+            if 'login_commands' in parameters:
+                raise ValueError('must specify a login prompt or password prompt when specifying login commands')
+
+    def run(self, image=None, image_server_ip=None, rootfstype='ext4', bootloadertype='u_boot',
+            login_prompt=None, password_prompt=None, username=None, password=None, login_commands=None,
+            customize=None):
+        if login_prompt is not None:
+            self.client.config.login_prompt = login_prompt
+        if password_prompt is not None:
+            self.client.config.password_prompt = password_prompt
+        if username is not None:
+            self.client.config.username = username
+        if password is not None:
+            self.client.config.password = password
+        if login_commands is not None:
+            self.client.config.login_commands = login_commands
+        if customize is not None:
+            self.client.config.customize = customize
+        self.client.deploy_whaley_image(image=image, image_server_ip=image_server_ip,
+                                        rootfstype=rootfstype, bootloadertype=bootloadertype)
+
+cmd_deploy_whaley = cmd_deploy_whaley_image

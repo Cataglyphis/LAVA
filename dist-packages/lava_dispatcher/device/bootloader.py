@@ -18,6 +18,12 @@
 # along
 # with this program; if not, see <http://www.gnu.org/licenses>.
 
+
+############################################################
+# modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+# add function deploy_whaley_image in class BootloaderTarget
+############################################################
+
 import logging
 import contextlib
 import subprocess
@@ -155,8 +161,26 @@ class BootloaderTarget(MasterImageTarget):
         else:
             raise CriticalError("Unknown bootloader type")
 
-    def deploy_linaro_kernel(self, kernel, ramdisk, dtb, overlays, rootfs, nfsrootfs, image, bootloader, firmware, bl0, bl1,
-                             bl2, bl31, rootfstype, bootloadertype, target_type, qemu_pflash=None):
+    ############################################################
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.21
+    # add function deploy_whaley_image in class BootloaderTarget
+    ############################################################
+
+    def deploy_whaley_image(self, image, image_server_ip, rootfstype, bootloadertype):
+        if self.__deployment_data__ is None:
+            # Get deployment data
+            logging.debug("Attempting to set deployment data")
+            self.deployment_data = deployment_data.whaley
+        logging.debug("Set bootloader type to u_boot in whaley platform")
+        self._set_boot_type(bootloadertype)
+        self._default_boot_cmds = 'boot_cmds'
+        if self._is_uboot():
+            self._boot_tags['{IMAGE}'] = image
+            self._boot_tags['{IMAGE_SERVER_IP}'] = image_server_ip
+            logging.info("Set {IMAGE} to %s, and {IMAGE_SERVER_IP} to %s" % (image, image_server_ip))
+
+    def deploy_linaro_kernel(self, kernel, ramdisk, dtb, overlays, rootfs, nfsrootfs, image, bootloader, firmware,
+                             bl0, bl1, bl2, bl31, rootfstype, bootloadertype, target_type, qemu_pflash=None):
         if self.__deployment_data__ is None:
             # Get deployment data
             logging.debug("Attempting to set deployment data")
@@ -302,10 +326,12 @@ class BootloaderTarget(MasterImageTarget):
 
     def _run_boot(self):
         self._load_test_firmware()
+        # enter bootloader, 2016.01.21
         self._enter_bootloader(self.proc)
         boot_cmds = self._load_boot_cmds(default=self._default_boot_cmds,
                                          boot_tags=self._boot_tags)
         # Sometimes a command must be run to clear u-boot console buffer
+        logging.info("boot cmds: %s", boot_cmds)
         if self.config.pre_boot_cmd:
             self.proc.sendline(self.config.pre_boot_cmd,
                                send_char=self.config.send_char)
@@ -319,6 +345,7 @@ class BootloaderTarget(MasterImageTarget):
             finalize_process(self.proc)
             self.proc = None
         self.proc = connect_to_serial(self.context)
+        # bootloader and not booted, 2016.01.21
         if self._is_bootloader() and not self._booted:
             if self.config.hard_reset_command or self.config.hard_reset_command == "":
                 self._hard_reboot(self.proc)
@@ -327,6 +354,7 @@ class BootloaderTarget(MasterImageTarget):
                 self._soft_reboot(self.proc)
                 self._run_boot()
             self._booted = True
+        # bootloader and booted, 2016.01.21
         elif self._is_bootloader() and self._booted:
             self.proc.sendline('export PS1="%s"'
                                % self.tester_ps1,
@@ -342,20 +370,32 @@ class BootloaderTarget(MasterImageTarget):
         self._booted = False
         self._in_test_shell = in_test_shell
 
+    # comment at 2015.01.22
     @contextlib.contextmanager
     def file_system(self, partition, directory):
+        # whaley
+        # partition = 5
+        # directory = None
         if self._is_bootloader() and self._reset_boot:
             self._reset_boot = False
             if self._in_test_shell:
                 self._in_test_shell = False
                 raise Exception("Operation timed out, resetting platform!")
+        # bootloader and not booted
         if self._is_bootloader() and not self._booted:
-            self.context.client.boot_linaro_image()
+            # self.context.client.boot_linaro_image()
+            # reboot the system to the test image
+            # if we don't use boot_whaley_image in job, use lava_test_shell directly, then boot the image
+            self.context.client.boot_whaley_image()
+        # for deploy linaro kernel, pass here
         if self._is_bootloader() and self._lava_nfsrootfs:
             path = '%s/%s' % (self._lava_nfsrootfs, directory)
             ensure_directory(path)
             yield path
+        # bootloader
         elif self._is_bootloader():
+            # pat = 'TESTER_PS1': "shell@helios:/ # "
+            # incrc = 'TESTER_PS1_INCLUDES_RC': False
             pat = self.tester_ps1_pattern
             incrc = self.tester_ps1_includes_rc
             runner = NetworkCommandRunner(self, pat, incrc)
