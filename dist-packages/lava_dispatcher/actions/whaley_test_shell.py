@@ -37,5 +37,5 @@ class cmd_whaley_test_shell(BaseAction):
         # add 755 file permissions
         os.chmod(script, XMOD)
         logging.info("Run command in file: %s", script)
-        # self.context.run_command_get_output(script)
-        subprocess.call(script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        self.context.run_command(script)
+        # subprocess.call(script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
