@@ -406,4 +406,15 @@ class BootloaderTarget(MasterImageTarget):
                     partition, directory) as path:
                 yield path
 
+    def whaley_file_system(self):
+        if self.proc:
+            logging.warning("Disconnect the serial connection, try to run the script")
+            if self.config.connection_command_terminate:
+                self.proc.sendline(self.config.connection_command_terminate)
+            finalize_process(self.proc)
+            self.proc = None
+        else:
+            logging.warning("Reconnect the serial connection")
+            self.proc = connect_to_serial(self.context)
+
 target_class = BootloaderTarget
