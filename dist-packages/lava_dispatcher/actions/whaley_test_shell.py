@@ -3,7 +3,6 @@
 # Author: Bo Wang <wang.bo@whaley.cn>
 # Date: 2016.01.29
 
-import subprocess
 import logging
 import stat
 import os
@@ -13,6 +12,7 @@ from lava_dispatcher.utils import finalize_process
 
 # 755 file permissions
 XMOD = stat.S_IRWXU | stat.S_IXGRP | stat.S_IRGRP | stat.S_IXOTH | stat.S_IROTH
+
 
 class cmd_whaley_test_shell(BaseAction):
 
@@ -38,4 +38,3 @@ class cmd_whaley_test_shell(BaseAction):
         os.chmod(script, XMOD)
         logging.info("Run command in file: %s", script)
         self.context.run_command(script)
-        # subprocess.call(script, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
