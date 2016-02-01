@@ -13,6 +13,7 @@ sudo cp -f ${lava_dispatcher}mstar.conf ${packages}${lava_dispatcher}
 sudo cp -f lava_dispatcher/actions/deploy.py ${packages}lava_dispatcher/actions/
 sudo cp -f lava_dispatcher/actions/boot_control.py ${packages}lava_dispatcher/actions/
 sudo cp -f lava_dispatcher/actions/lava_test_shell.py ${packages}lava_dispatcher/actions/
+sudo cp -f lava_dispatcher/actions/whaley_test_shell.py ${packages}lava_dispatcher/actions/
 
 sudo cp -f lava_dispatcher/client/base.py ${packages}lava_dispatcher/client/
 

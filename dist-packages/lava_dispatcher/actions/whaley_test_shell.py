@@ -8,7 +8,7 @@ import stat
 import os
 
 from lava_dispatcher.actions import BaseAction
-from lava_dispatcher.utils import finalize_process
+from lava_dispatcher.utils import finalize_process, connect_to_serial
 
 # 755 file permissions
 XMOD = stat.S_IRWXU | stat.S_IXGRP | stat.S_IRGRP | stat.S_IXOTH | stat.S_IROTH
@@ -33,8 +33,10 @@ class cmd_whaley_test_shell(BaseAction):
         logging.warning("Disconnect the serial connection, try to run the script")
         if proc:
             finalize_process(proc)
-            self.client.target_device.proc = None
+            target.proc = None
         # add 755 file permissions
         os.chmod(script, XMOD)
         logging.info("Run command in file: %s", script)
         self.context.run_command(script)
+        logging.warning("Reconnect the serial connection")
+        target.proc = connect_to_serial(self.context)
