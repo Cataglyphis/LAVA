@@ -117,7 +117,7 @@ class MasterImageTarget(Target):
         if self.config.power_off_cmd != "":
             self.context.run_command(self.config.power_off_cmd)
         else:
-            proc.send("~$")
+            # proc.send("~$")
             proc.sendline("off")
         if self.config.connection_command_terminate:
                 self.proc.sendline(self.config.connection_command_terminate)
