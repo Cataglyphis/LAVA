@@ -417,7 +417,6 @@ class BootloaderTarget(MasterImageTarget):
         else:
             logging.warning("Reconnect the serial connection")
             self.proc = connect_to_serial(self.context)
-            self.proc.sendline("")
             self.context.client.proc = self.proc
 
 target_class = BootloaderTarget
