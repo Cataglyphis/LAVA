@@ -18,3 +18,6 @@ cd dist-packages
 sudo chmod a+x install
 sudo ./install
 ```
+
+### Add ser2net configuration
+since the serial port may change after reboot, so traverse the definition in /sys/class/tty/, and modify the corresponding device defined in ser2net.conf
