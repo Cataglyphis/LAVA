@@ -1145,6 +1145,7 @@ class cmd_lava_test_shell(BaseAction):
         """
         results_part = target.deployment_data['lava_test_results_part_attr']
         results_part = getattr(target.config, results_part)
+        # rdir = /var/lib/lava/dispatcher/tmp/
         rdir = self.context.host_result_dir
         parse_err_msg = None
 
@@ -1152,6 +1153,7 @@ class cmd_lava_test_shell(BaseAction):
 
         try:
             with target.file_system(results_part, target.lava_test_results_dir) as d:
+                # d: /var/lib/lava/dispatcher/tmp/time/device_hostname
                 filesystem_access_failure = False
                 err_log = os.path.join(d, 'parse_err.log')
                 results_dir = os.path.join(d, 'results')
