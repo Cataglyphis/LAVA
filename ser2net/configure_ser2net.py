@@ -32,15 +32,50 @@
 # 2006 -> usb3/3-9/3-9.3/3-9.3:1.0 -> MSTAR-43-006
 # 2007 -> usb3/3-9/3-9.2/3-9.2:1.0 -> MSTAR-43-007
 
+import os
 from subprocess import Popen, PIPE
 
 proc = Popen('ls -l /sys/class/tty', shell=True, stdout=PIPE, stderr=PIPE)
 proc.wait()
 
-ttyUSBResults = []
+ttyUSBResults = {}
+portDef = ['2000:', '2001:', '2002:', '2003:', '2004:', '2005:', '2006:', '2007:']
+ser2netPort = {'2000:': '3-2.3',
+               '2001:': '3-2.2',
+               '2002:': '3-1.3',
+               '2003:': '3-1.2',
+               '2004:': '5-4',
+               '2005:': '5-3',
+               '2006:': '3-9.3',
+               '2007:': '3-9.2'
+               }
 
 for line in proc.stdout.readlines():
     if 'ttyUSB' in line:
-        print line
+        # 3-2.3, 3-2.2, etc.
+        port = line.split(':')[-2].split('/')[-1]
+        ttyUSB = line.split('/')[-1].strip()
+        ttyUSBResults[port] = ttyUSB
 
+# ttyUSBResults = {'3-2.3': 'ttyUSB0', '3-2.2': 'ttyUSB1', ...}
+print 'ttyUSB port: ', ttyUSBResults
 
+for key, value in ser2netPort.items():
+    ser2netPort[key] = ttyUSBResults[value]
+
+# ser2netPort = {'2000:': 'ttyUSB0', '2001:': 'ttyUSB1', ...}
+print 'ser2net port:', ser2netPort
+
+# modify ser2net.conf
+os.system('sudo service ser2net stop')
+# backup the original conf file
+os.rename('/etc/ser2net.conf', '/etc/ser2net_bak.conf')
+with open('/etc/ser2net_bak.conf', 'r') as fin:
+    with open('/etc/ser2net.conf', 'w') as fout:
+        for line in fin.readlines():
+            for port in portDef:
+                if port in line:
+                    line = line.replace(line.split(':')[3], '/dev/'+ser2netPort[port])
+            fout.write('%s' % line)
+
+os.system('sudo service ser2net start')
