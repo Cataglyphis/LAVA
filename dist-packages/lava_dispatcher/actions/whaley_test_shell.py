@@ -31,7 +31,10 @@ class cmd_whaley_test_shell(BaseAction):
         target = self.client.target_device
         target.whaley_file_system()
         # add 755 file permissions
-        os.chmod(script, XMOD)
-        logging.info("Run command in file: %s", script)
-        self.context.run_command(script)
+        if script != '' and os.path.isfile(script):
+            os.chmod(script, XMOD)
+            logging.info("Run command in file: %s", script)
+            self.context.run_command(script)
+        else:
+            logging.warning("Invalid script parameter")
         target.whaley_file_system()
