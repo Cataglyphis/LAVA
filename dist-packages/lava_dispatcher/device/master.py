@@ -114,11 +114,12 @@ class MasterImageTarget(Target):
         return self.proc
 
     def power_off(self, proc):
-        if self.config.power_off_cmd != "":
-            self.context.run_command(self.config.power_off_cmd)
-        else:
-            # proc.send("~$")
-            proc.sendline("off")
+        # if self.config.power_off_cmd != "":
+        #     self.context.run_command(self.config.power_off_cmd)
+        # else:
+        #     # proc.send("~$")
+        #     proc.sendline("off")
+        logging.warning("comment the power_off function at 2016.02.16")
         if self.config.connection_command_terminate:
                 self.proc.sendline(self.config.connection_command_terminate)
         finalize_process(self.proc)
