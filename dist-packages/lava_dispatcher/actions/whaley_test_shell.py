@@ -38,6 +38,8 @@ class cmd_whaley_test_shell(BaseAction):
                 logging.info("Run command in file: %s", start)
                 self.context.run_command(start)
         else:
-            logging.error("Invalid script parameter")
+            # script invalid, use '/tmp/' instead
+            logging.warning("Invalid script parameter, use /tmp/ instead")
+            target.whaley_file_system('/tmp/')
 
         target.whaley_file_system(script)
