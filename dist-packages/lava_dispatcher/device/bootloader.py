@@ -453,4 +453,20 @@ class BootloaderTarget(MasterImageTarget):
             self.proc = connect_to_serial(self.context)
             self.context.client.proc = self.proc
 
+    # add in 2016.02.17
+    # override
+    def get_device_version(self):
+        logging.info("Get device version, ro.helios.version")
+        self.proc.sendcontrol('c')
+        self.proc.sendline('')
+        self.proc.expect('shell', timeout=5)
+        # empty the buffer
+        self.proc.empty_buffer()
+        self.proc.sendline('getprop ro.helios.version')
+        self.proc.expect('shell', timeout=2)
+        # 'getprop ro.helios.version\r\r\n01.07.01\r\n'
+        # 01.07.01
+        device_version = self.proc.before.strip().split('\n')[1]
+        return device_version
+
 target_class = BootloaderTarget

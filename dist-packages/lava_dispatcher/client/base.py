@@ -576,7 +576,9 @@ class LavaClient(object):
                 continue
 
             logging.info("System is in whaley image now, deploy and boot image successfully")
-            self.context.test_data.add_result('boot_whaley_image', 'pass')
+            # don't need add result here, since job.py will add it finally
+            # comment at 2016.02.17
+            # self.context.test_data.add_result('boot_whaley_image', 'pass')
 
             in_whaley_image = True
 
