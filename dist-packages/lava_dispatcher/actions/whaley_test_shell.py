@@ -27,14 +27,17 @@ class cmd_whaley_test_shell(BaseAction):
         super(cmd_whaley_test_shell, self).__init__(context)
 
     def run(self, script=None):
-        # bootloader
-        target = self.client.target_device
-        target.whaley_file_system()
-        # add 755 file permissions
-        if script != '' and os.path.isfile(script):
-            os.chmod(script, XMOD)
-            logging.info("Run command in file: %s", script)
-            self.context.run_command(script)
+        # script: dir of job, shell, deviceInfo
+        if script != '' and os.path.isdir(script):
+            # bootloader
+            target = self.client.target_device
+            target.whaley_file_system(script)
+            start = os.path.join(script, 'start.sh')
+            if os.path.isfile(start):
+                os.chmod(start, XMOD)
+                logging.info("Run command in file: %s", start)
+                self.context.run_command(start)
         else:
-            logging.warning("Invalid script parameter")
-        target.whaley_file_system()
+            logging.error("Invalid script parameter")
+
+        target.whaley_file_system(script)

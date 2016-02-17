@@ -27,6 +27,7 @@
 import logging
 import contextlib
 import subprocess
+import os
 
 from lava_dispatcher.device.master import (
     MasterImageTarget
@@ -47,7 +48,9 @@ from lava_dispatcher.utils import (
 )
 from lava_dispatcher.errors import (
     CriticalError,
+    NetworkError
 )
+
 from lava_dispatcher.downloader import (
     download_image,
 )
@@ -406,8 +409,39 @@ class BootloaderTarget(MasterImageTarget):
                     partition, directory) as path:
                 yield path
 
-    def whaley_file_system(self):
+    # modify at 2016.02.17
+    def whaley_file_system(self, script):
         if self.proc:
+            logging.info("Get the target device serial number and ip address")
+            # get the serial number info
+            # telnet localhost 2000, etc
+            connection_command = self.config.connection_command
+            # port = ['telnet', 'localhost', '2000']
+            # port = '2000:', should add ':' here
+            port = connection_command.strip().split(' ')[-1] + ':'
+            with open('/etc/ser2net.conf', 'r') as fin:
+                for line in fin.readlines():
+                    if port in line and not line.startswith('#'):
+                        serial = line.split(':')[3]
+                        break
+            logging.info("Serial number is: %s" % serial)
+
+            # get the ip address info
+            pat = self.tester_ps1_pattern
+            incrc = self.tester_ps1_includes_rc
+            runner = NetworkCommandRunner(self, pat, incrc)
+            try:
+                # get the target device ip
+                ip = runner.get_target_ip()
+            except NetworkError as e:
+                raise CriticalError("Network error detected..aborting")
+
+            # deviceInfo.conf to store the serial & ip info
+            deviceInfo = os.path.join(script, 'deviceInfo.conf')
+            with open(deviceInfo, 'w') as fout:
+                fout.write('serial=%s\n' % serial)
+                fout.write('ip=%s\n' % ip)
+
             logging.warning("Disconnect the serial connection, try to run the script")
             if self.config.connection_command_terminate:
                 self.proc.sendline(self.config.connection_command_terminate)
