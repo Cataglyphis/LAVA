@@ -23,6 +23,8 @@ sudo cp -f lava_dispatcher/device/target.py ${packages}lava_dispatcher/device/
 
 sudo cp -f lava_dispatcher/deployment_data.py ${packages}lava_dispatcher/
 
+sudo cp -f lava_dispatcher/job.py ${packages}lava_dispatcher/
+
 sudo cp -f lava_dispatcher/utils.py ${packages}lava_dispatcher/
 
 sudo cp -f lava_dispatcher/downloader.py ${packages}lava_dispatcher/

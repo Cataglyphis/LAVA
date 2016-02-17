@@ -490,12 +490,15 @@ class LavaTestJob(object):
             self.context.test_data.job_status = 'fail'
             raise
         finally:
-            # comment below line, 2015.01.25
             # self.context.finish()
+            # move self.context.finish() to line 499, since get_device_version need connection to device
             device_version = self.context.get_device_version() or 'error'
             self.context.test_data.add_metadata({
                 'target.device_version': device_version
             })
+            ######################
+            self.context.finish()
+            ######################
             if 'target_group' in self.job_data:
                 # all nodes call aggregate, even if there is no submit_results command
                 self._aggregate_bundle(transport, lava_commands, submit_results)

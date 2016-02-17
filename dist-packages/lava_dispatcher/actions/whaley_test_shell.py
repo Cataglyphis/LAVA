@@ -27,10 +27,10 @@ class cmd_whaley_test_shell(BaseAction):
         super(cmd_whaley_test_shell, self).__init__(context)
 
     def run(self, script=None):
+        # bootloader
+        target = self.client.target_device
         # script: dir of job, shell, deviceInfo
         if script != '' and os.path.isdir(script):
-            # bootloader
-            target = self.client.target_device
             target.whaley_file_system(script)
             start = os.path.join(script, 'start.sh')
             if os.path.isfile(start):
