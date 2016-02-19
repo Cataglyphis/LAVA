@@ -20,6 +20,7 @@
 from lava_dispatcher.actions import BaseAction
 from lava_dispatcher import deployment_data
 
+import logging
 
 class cmd_deploy_linaro_image(BaseAction):
 
@@ -369,6 +370,7 @@ class cmd_deploy_whaley_image(BaseAction):
             'login_commands': {'type': 'array', 'items': {'type': 'string'}, 'optional': True},
             'customize': {'type': 'object', 'optional': True},
             'role': {'type': 'string', 'optional': True},
+            'skip': {'type': 'boolean', 'default': False, 'optional': True}
         },
         'additionalProperties': False,
     }
@@ -392,7 +394,7 @@ class cmd_deploy_whaley_image(BaseAction):
 
     def run(self, image=None, image_server_ip=None, rootfstype='ext4', bootloadertype='u_boot',
             login_prompt=None, password_prompt=None, username=None, password=None, login_commands=None,
-            customize=None):
+            customize=None, skip=False):
         if login_prompt is not None:
             self.client.config.login_prompt = login_prompt
         if password_prompt is not None:
@@ -405,7 +407,10 @@ class cmd_deploy_whaley_image(BaseAction):
             self.client.config.login_commands = login_commands
         if customize is not None:
             self.client.config.customize = customize
-        self.client.deploy_whaley_image(image=image, image_server_ip=image_server_ip,
-                                        rootfstype=rootfstype, bootloadertype=bootloadertype)
+        if skip is False:
+            self.client.deploy_whaley_image(image=image, image_server_ip=image_server_ip,
+                                            rootfstype=rootfstype, bootloadertype=bootloadertype)
+        else:
+            logging.warning("Skip deploy_whaley_image")
 
 cmd_deploy_whaley = cmd_deploy_whaley_image
