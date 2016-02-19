@@ -30,16 +30,23 @@ class cmd_whaley_test_shell(BaseAction):
         # bootloader
         target = self.client.target_device
         # script: dir of job, shell, deviceInfo
-        if script != '' and os.path.isdir(script):
-            target.whaley_file_system(script)
-            start = os.path.join(script, 'start.sh')
-            if os.path.isfile(start):
-                os.chmod(start, XMOD)
-                logging.info("Run command in file: %s", start)
-                self.context.run_command(start)
+        # script = "/home/to/path/demo.sh"
+        # script = "/home/to/path/demo.sh par1 par2"
+        # path = "/home/to/path
+        path = script.strip().rsplit('/', 1)
+        script_name = script.strip().split(' ')[0]
+        logging.info("Script path is: %s", path)
+        if path != '' and os.path.isdir(path):
+            target.whaley_file_system(path)
+            if os.path.isfile(script_name):
+                # add execute to script_name, and run script with parm
+                os.chmod(script_name, XMOD)
+                logging.info("Run command in file: %s", script_name)
+                self.context.run_command(script)
         else:
             # script invalid, use '/tmp/' instead
             logging.warning("Invalid script parameter, use /tmp/ instead")
             target.whaley_file_system('/tmp/')
 
+        # reconnect the serial connection
         target.whaley_file_system(script)

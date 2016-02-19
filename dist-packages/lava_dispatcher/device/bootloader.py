@@ -410,7 +410,7 @@ class BootloaderTarget(MasterImageTarget):
                 yield path
 
     # modify at 2016.02.17
-    def whaley_file_system(self, script):
+    def whaley_file_system(self, path):
         if self.proc:
             logging.info("Get the target device serial number and ip address")
             # get the serial number info
@@ -437,7 +437,7 @@ class BootloaderTarget(MasterImageTarget):
                 raise CriticalError("Network error detected..aborting")
 
             # deviceInfo.conf to store the serial & ip info
-            deviceInfo = os.path.join(script, 'deviceInfo.conf')
+            deviceInfo = os.path.join(path, 'deviceInfo.conf')
             with open(deviceInfo, 'w') as fout:
                 fout.write('serial=%s\n' % serial)
                 fout.write('ip=%s\n' % ip)
