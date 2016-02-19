@@ -32,8 +32,10 @@ class cmd_whaley_test_shell(BaseAction):
         # script: dir of job, shell, deviceInfo
         # script = "/home/to/path/demo.sh"
         # script = "/home/to/path/demo.sh par1 par2"
-        # path = "/home/to/path
-        path = script.strip().rsplit('/', 1)
+        # path = "/home/to/path"
+        # change unicode to string
+        script = str(script)
+        path = script.strip().rsplit('/', 1)[0]
         script_name = script.strip().split(' ')[0]
         logging.info("Script path is: %s", path)
         if path != '' and os.path.isdir(path):
