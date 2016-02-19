@@ -195,6 +195,7 @@ class NetworkCommandRunner(CommandRunner):
     def _check_network_up(self):
         """Internal function for checking network once."""
         lava_server_ip = self._client.context.config.lava_server_ip
+        self.run('su')
         self.run(
             "LC_ALL=C ping -W4 -c1 %s" % lava_server_ip,
             ["1 received|1 packets received", "0 received|0 packets received", "Network is unreachable"],

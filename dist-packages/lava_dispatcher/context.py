@@ -142,7 +142,9 @@ class LavaContext(object):
     def run_command(self, command, failok=True):
         """run command 'command' with output going to output-dir if specified"""
         if isinstance(command, (str, unicode)):
-            command = ['nice', 'sh', '-c', command]
+            # command = ['nice', 'sh', '-c', command]
+            command = ['nice', 'sudo', '-u', 'dqa', 'sh', '-c', command]
+
         logging.debug("Executing on host : '%r'" % command)
         output_args = {
             'stdout': self.logfile_read,
