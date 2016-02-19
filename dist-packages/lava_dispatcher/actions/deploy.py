@@ -369,8 +369,7 @@ class cmd_deploy_whaley_image(BaseAction):
             'password': {'type': 'string', 'optional': True},
             'login_commands': {'type': 'array', 'items': {'type': 'string'}, 'optional': True},
             'customize': {'type': 'object', 'optional': True},
-            'role': {'type': 'string', 'optional': True},
-            'skip': {'type': 'boolean', 'default': False, 'optional': True}
+            'role': {'type': 'string', 'optional': True}
         },
         'additionalProperties': False,
     }
@@ -394,7 +393,7 @@ class cmd_deploy_whaley_image(BaseAction):
 
     def run(self, image=None, image_server_ip=None, rootfstype='ext4', bootloadertype='u_boot',
             login_prompt=None, password_prompt=None, username=None, password=None, login_commands=None,
-            customize=None, skip=False):
+            customize=None):
         if login_prompt is not None:
             self.client.config.login_prompt = login_prompt
         if password_prompt is not None:
@@ -407,10 +406,7 @@ class cmd_deploy_whaley_image(BaseAction):
             self.client.config.login_commands = login_commands
         if customize is not None:
             self.client.config.customize = customize
-        if skip is False:
-            self.client.deploy_whaley_image(image=image, image_server_ip=image_server_ip,
-                                            rootfstype=rootfstype, bootloadertype=bootloadertype)
-        else:
-            logging.warning("Skip deploy whaley image")
+        self.client.deploy_whaley_image(image=image, image_server_ip=image_server_ip,
+                                        rootfstype=rootfstype, bootloadertype=bootloadertype)
 
 cmd_deploy_whaley = cmd_deploy_whaley_image
