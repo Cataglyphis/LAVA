@@ -174,8 +174,16 @@ class cmd_boot_whaley_image(BaseAction):
     """
     call client code to boot the whaley image
     """
-    parameters_schema = null_or_empty_schema
 
-    def run(self):
+    parameters_schema = {
+        'type': 'object',
+        'properties': {
+            'skip': {'type': 'boolean', 'default': False, 'optional': True}
+        },
+        'additionalProperties': False,
+    }
+
+    def run(self, skip=False):
         client = self.client
-        client.boot_whaley_image()
+        client.boot_whaley_image(skip)
+

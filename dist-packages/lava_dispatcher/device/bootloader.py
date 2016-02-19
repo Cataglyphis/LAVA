@@ -341,13 +341,18 @@ class BootloaderTarget(MasterImageTarget):
         self._customize_bootloader(self.proc, boot_cmds)
         self._monitor_boot(self.proc, self.tester_ps1, self.tester_ps1_pattern)
 
-    def _boot_linaro_image(self):
+    def _boot_linaro_image(self, skip):
         if self.proc:
             if self.config.connection_command_terminate:
                 self.proc.sendline(self.config.connection_command_terminate)
             finalize_process(self.proc)
             self.proc = None
         self.proc = connect_to_serial(self.context)
+        # add below part
+        # skip=True, only connect to the device, don't reboot & deploy the image
+        # skip=False, connect to the device, then reboot to bootloader & deploy the image
+        if skip is True:
+            self._booted = True
         # bootloader and not booted, 2016.01.21
         if self._is_bootloader() and not self._booted:
             if self.config.hard_reset_command or self.config.hard_reset_command == "":

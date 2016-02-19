@@ -541,8 +541,11 @@ class LavaClient(object):
     def boot_master_image(self):
         raise NotImplementedError(self.boot_master_image)
 
-    def _boot_linaro_image(self):
-        self.proc = self.target_device.power_on()
+    def _boot_linaro_image(self, skip):
+        # add parameter skip
+        # skip=True, only connect to the device, don't reboot & deploy the image
+        # skip=False, connect to the device, then reboot to bootloader & deploy the image
+        self.proc = self.target_device.power_on(skip)
 
     def _boot_linaro_android_image(self):
         """Booting android or ubuntu style images don't differ much"""
@@ -555,11 +558,11 @@ class LavaClient(object):
 
         self._boot_linaro_image()
 
-    def boot_whaley_image(self):
+    def boot_whaley_image(self, skip):
         """
         Reboot the system to the test image
         """
-        logging.info('Start to boot test image')
+        logging.info("Start to boot whaley image")
         boot_attempts = self.config.boot_retries
         attempts = 0
         in_whaley_image = False
@@ -569,7 +572,7 @@ class LavaClient(object):
             self.vm_group.wait_for_vms()
 
             try:
-                self._boot_linaro_image()
+                self._boot_linaro_image(skip)
             except (OperationFailed, pexpect.TIMEOUT):
                 self.context.test_data.add_metadata({'boot_retries': str(attempts)})
                 attempts += 1

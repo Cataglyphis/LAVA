@@ -411,6 +411,6 @@ class cmd_deploy_whaley_image(BaseAction):
             self.client.deploy_whaley_image(image=image, image_server_ip=image_server_ip,
                                             rootfstype=rootfstype, bootloadertype=bootloadertype)
         else:
-            logging.warning("Skip deploy_whaley_image")
+            logging.warning("Skip deploy whaley image")
 
 cmd_deploy_whaley = cmd_deploy_whaley_image
