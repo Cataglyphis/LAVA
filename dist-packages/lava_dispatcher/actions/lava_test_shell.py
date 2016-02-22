@@ -1199,7 +1199,8 @@ class cmd_lava_test_shell(BaseAction):
         test_id = params[0].decode('utf-8')
         testdef = self._testdefs_by_name[test_id]
 
-        now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        # now = datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+        now = datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
         test_run = {
             'test_id': testdef.test_id,
             'analyzer_assigned_date': now,

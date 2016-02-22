@@ -22,7 +22,7 @@ sudo cp -f lava_dispatcher/device/bootloader.py ${packages}lava_dispatcher/devic
 sudo cp -f lava_dispatcher/device/master.py ${packages}lava_dispatcher/device/
 sudo cp -f lava_dispatcher/device/target.py ${packages}lava_dispatcher/device/
 
-sudo cp -f lava_dispatcher/context.py ${packages}lava_dispatcher/
+# sudo cp -f lava_dispatcher/context.py ${packages}lava_dispatcher/
 
 sudo cp -f lava_dispatcher/deployment_data.py ${packages}lava_dispatcher/
 
@@ -36,5 +36,7 @@ sudo cp -f lava_dispatcher/lava_test_shell/distro/android/lava-test-runner ${pac
 
 # lava_server change timezone from utc to utc+8
 sudo cp -f lava_server/settings/common.py ${packages}lava_server/settings/
+sudo cp -f lava_dispatcher/lava_test_shell.py ${packages}lava_dispatcher/
+sudo cp -f lava_dispatcher/actions/lava_command.py ${packages}lava_dispatcher/actions/
 
 sudo service lava-server start
