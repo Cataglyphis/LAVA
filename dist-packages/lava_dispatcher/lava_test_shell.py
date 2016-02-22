@@ -426,7 +426,8 @@ def get_testdef_obj_with_uuid(testdef_objs, uuid):
 
 
 def _get_test_run(test_run_dir, testdef_objs, err_log):
-    now = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    # now = datetime.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')
+    now = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%SZ')
 
     testdef = read_content(os.path.join(test_run_dir, 'testdef.yaml'))
     stdout = read_content(os.path.join(test_run_dir, 'stdout.log'))
