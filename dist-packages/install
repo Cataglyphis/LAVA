@@ -39,4 +39,7 @@ sudo cp -f lava_server/settings/common.py ${packages}lava_server/settings/
 sudo cp -f lava_dispatcher/lava_test_shell.py ${packages}lava_dispatcher/
 sudo cp -f lava_dispatcher/actions/lava_command.py ${packages}lava_dispatcher/actions/
 
+# add hisi.conf
+sudo cp -f ${lava_dispatcher}hisi.conf ${packages}${lava_dispatcher}
+
 sudo service lava-server start
