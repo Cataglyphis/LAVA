@@ -417,7 +417,7 @@ class BootloaderTarget(MasterImageTarget):
     # modify at 2016.02.17
     def whaley_file_system(self, path):
         if self.proc:
-            logging.info("Get the target device serial number and ip address")
+            logging.info("Get the target device serial number, ip address and pdu port")
             # get the serial number info
             # telnet localhost 2000, etc
             connection_command = self.config.connection_command
@@ -441,11 +441,22 @@ class BootloaderTarget(MasterImageTarget):
             except NetworkError as e:
                 raise CriticalError("Network error detected..aborting")
 
+            # get the pdu port info
+            # hard_reset_command = /usr/bin/pduclient --daemon lcoalhost --hostname 172.16.x.x --command reboot --port 05
+            hard_reset_command = self.config.hard_reset_command
+            command = hard_reset_command.strip().split(' ')
+            pdu = ''
+            if '--port' in command:
+                index = command.index('--port')
+                pdu = command[index+1]
+            logging.info("PDU port number is: %s" % pdu)
+
             # deviceInfo.conf to store the serial & ip info
             deviceInfo = os.path.join(path, 'deviceInfo.conf')
             with open(deviceInfo, 'w') as fout:
                 fout.write('serial=%s\n' % serial)
                 fout.write('ip=%s\n' % ip)
+                fout.write('pdu=%s\n' % pdu)
 
             logging.warning("Disconnect the serial connection, try to run the script")
             if self.config.connection_command_terminate:
