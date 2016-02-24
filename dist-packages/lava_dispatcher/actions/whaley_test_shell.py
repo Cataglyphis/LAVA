@@ -2,11 +2,17 @@
 
 # Author: Bo Wang <wang.bo@whaley.cn>
 # Date: 2016.01.29
+# add _results() at 2016.02.24
 
+import shutil
+import time
 import logging
 import stat
 import os
 
+from selenium import webdriver
+from selenium.webdriver.firefox.firefox_binary import FirefoxBinary
+from pyvirtualdisplay import Display
 from lava_dispatcher.actions import BaseAction
 
 # 755 file permissions
@@ -52,3 +58,51 @@ class cmd_whaley_test_shell(BaseAction):
 
         # reconnect the serial connection
         target.whaley_file_system(script)
+        self._results()
+
+    def _results(self):
+        logging.info("Copy report to current log directory")
+        logging.info("log directory: %s" % self.context.output.output_dir)
+        source = "/home/conan/Desktop/output"
+        target = os.path.join(self.context.output.output_dir, "output")
+        if os.path.exists(target):
+            shutil.rmtree(target)
+        shutil.copytree(source, target)
+        logging.info("Extract report.html")
+        log_file = open("/home/conan/Desktop/log.log", "w")
+        display = Display(visible=0, size=(1024, 768))
+        display.start()
+        firefox_binary = FirefoxBinary(log_file=log_file)
+        browser = webdriver.Firefox(firefox_binary=firefox_binary)
+        file_path = "file://" + os.path.join(target, "report.html")
+        browser.get(file_path)
+        time.sleep(5)
+        try:
+            browser.find_element_by_css_selector("a[href=\"#totals?all\"]").click()
+            browser.find_element_by_id("test-details")
+            logging.info("Click all tests successfully")
+            browser.find_element_by_css_selector("th[title=\"Start Time / End Time\"]").click()
+            table = "//div/table[@id=\"test-details\"]/tbody/tr"
+            for element in browser.find_elements_by_xpath(table):
+                name = element.get_attribute("title").split(".")[-1]
+                status = element.find_element_by_class_name("details-col-status").text
+                if status == "FAIL":
+                    status = "fail"
+                else:
+                    status = "pass"
+                # change elapsed from "00:01:20.234" to seconds
+                elapsed = element.find_element_by_class_name("details-col-elapsed").text.strip().split(".")[0]
+                elapsed = elapsed.split(":")
+                elapsed = map(int, elapsed)
+                execution_time = elapsed[0] * 60.0 * 60.0 + elapsed[1] * 60.0 + elapsed[2]
+                execution_time = "{0:.2f}".format(execution_time)
+                msg = element.find_element_by_class_name("details-col-msg").text
+                self.context.test_data.add_result(name, status, execution_time, 'seconds', message=msg)
+        except Exception, e:
+            logging.warning("Cant't get test results from report.html")
+            logging.warning("Exception info: %s" % unicode(str(e)))
+        finally:
+            # close browser, display and log_file
+            browser.quit()
+            display.stop()
+            log_file.close()
