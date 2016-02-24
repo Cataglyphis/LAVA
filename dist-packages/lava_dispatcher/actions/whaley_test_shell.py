@@ -74,15 +74,19 @@ class cmd_whaley_test_shell(BaseAction):
         display.start()
         firefox_binary = FirefoxBinary(log_file=log_file)
         browser = webdriver.Firefox(firefox_binary=firefox_binary)
+        browser.set_window_size(1024, 768)
+        # file:///, os.path.join already add /
         file_path = "file://" + os.path.join(target, "report.html")
         browser.get(file_path)
-        time.sleep(5)
+        time.sleep(3)
         try:
             browser.find_element_by_css_selector("a[href=\"#totals?all\"]").click()
+            time.sleep(5)
             browser.find_element_by_id("test-details")
             logging.info("Click all tests successfully")
-            browser.find_element_by_css_selector("th[title=\"Start Time / End Time\"]").click()
-            table = "//div/table[@id=\"test-details\"]/tbody/tr"
+            browser.find_element_by_css_selector("//table[@id=\"test-details\"]/thead/tr/th[8]").click()
+            time.sleep(5)
+            table = "//table[@id=\"test-details\"]/tbody/tr"
             for element in browser.find_elements_by_xpath(table):
                 name = element.get_attribute("title").split(".")[-1]
                 status = element.find_element_by_class_name("details-col-status").text
