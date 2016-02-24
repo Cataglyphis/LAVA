@@ -401,6 +401,8 @@ class Target(object):
         connection.sendline('mount -o remount,rw /system')
         connection.sendline('cd /system/xbin')
         connection.sendline('busybox --install .')
+        # go back to /, otherwise block the next step in whaley_test_shell
+        connection.sendline('cd /')
         logging.info("End installation of busybox")
 
     def _auto_login(self, connection, is_master=False):
