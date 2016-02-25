@@ -100,8 +100,9 @@ class cmd_whaley_test_shell(BaseAction):
                 elapsed = map(int, elapsed)
                 execution_time = elapsed[0] * 60.0 * 60.0 + elapsed[1] * 60.0 + elapsed[2]
                 execution_time = "{0:.2f}".format(execution_time)
-                msg = element.find_element_by_class_name("details-col-msg").text
-                self.context.test_data.add_result(name, status, execution_time, 'seconds', message=msg)
+                # msg = element.find_element_by_class_name("details-col-msg").text
+                tag = element.find_element_by_class_name("details-col-tags").text
+                self.context.test_data.add_result(name, status, execution_time, 'seconds', message=tag)
         except Exception, e:
             logging.warning("Cant't get test results from report.html")
             logging.warning("Exception info: %s" % unicode(str(e)))
