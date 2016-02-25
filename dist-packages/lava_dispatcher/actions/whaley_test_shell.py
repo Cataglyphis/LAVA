@@ -84,7 +84,7 @@ class cmd_whaley_test_shell(BaseAction):
             time.sleep(5)
             browser.find_element_by_id("test-details")
             logging.info("Click all tests successfully")
-            browser.find_element_by_css_selector("//table[@id=\"test-details\"]/thead/tr/th[8]").click()
+            browser.find_element_by_xpath("//table[@id=\"test-details\"]/thead/tr/th[8]").click()
             time.sleep(5)
             table = "//table[@id=\"test-details\"]/tbody/tr"
             for element in browser.find_elements_by_xpath(table):
