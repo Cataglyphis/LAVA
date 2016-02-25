@@ -58,18 +58,30 @@ class cmd_whaley_test_shell(BaseAction):
 
         # reconnect the serial connection
         target.whaley_file_system(script)
-        self._results()
+        # script will write report_path to path/deviceInfo.conf
+        self._results(path)
 
-    def _results(self):
-        logging.info("Copy report to current log directory")
+    # report_path: path of report.html
+    def _results(self, path):
         logging.info("log directory: %s" % self.context.output.output_dir)
-        source = "/home/conan/Desktop/output"
+        logging.debug("Get the current directory of report.html")
+        deviceinfo_path = os.path.join(path, "deviceInfo.conf")
+        report_path = ""
+        with open(deviceinfo_path, 'r') as fin:
+            for line in fin.readlines():
+                if 'output' in line:
+                    report_path = line.strip().split("=")[1]
+                    break
+        logging.info("Current directory of report.html is: %s" % report_path)
         target = os.path.join(self.context.output.output_dir, "output")
+        logging.info("Copy report.html from %s to %s" % (report_path, target))
         if os.path.exists(target):
             shutil.rmtree(target)
-        shutil.copytree(source, target)
+        shutil.copytree(report_path, target)
         logging.info("Extract report.html")
-        log_file = open("/home/conan/Desktop/log.log", "w")
+        log_file_path = os.path.join(self.context.output.output_dir, "browser.log")
+        log_file = open(log_file_path, "w")
+        # open one xvfb, set size to (1024, 768)
         display = Display(visible=0, size=(1024, 768))
         display.start()
         firefox_binary = FirefoxBinary(log_file=log_file)
