@@ -69,9 +69,13 @@ class cmd_whaley_test_shell(BaseAction):
         report_path = ""
         with open(deviceinfo_path, 'r') as fin:
             for line in fin.readlines():
-                if 'output' in line:
+                # use "output=" instead of "output"
+                if "output=" in line:
                     report_path = line.strip().split("=")[1]
                     break
+            else:
+                logging.warning("No output path found in deviceInfo.conf")
+                return
         logging.info("Current directory of report.html is: %s" % report_path)
         target = os.path.join(self.context.output.output_dir, "output")
         logging.info("Copy report.html from %s to %s" % (report_path, target))
