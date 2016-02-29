@@ -405,6 +405,11 @@ class Target(object):
         connection.sendline('cd /')
         logging.info("End installation of busybox")
 
+    def _close_shutdown_whaley(self, connection):
+        logging.info("modify hardwareprotect.db, set shutdown time to -1")
+        connection.sendline("sqlite3 /data/system/hardwareprotect.db \"update hwprotect set timeout=-1 where name='shutdown'\"")
+        logging.info("End modify hardwareprotect.db")
+
     def _auto_login(self, connection, is_master=False):
         if is_master:
             if self.config.master_login_prompt is not None:
@@ -685,6 +690,8 @@ class Target(object):
             self._skip_guide_whaley(connection)
             # install busybox, need add judgement later
             self._install_busybox_whaley(connection)
+            # set shutdown time to -1, no shutdown
+            self._close_shutdown_whaley(connection)
 
         try:
             self._auto_login(connection, is_master)
