@@ -235,6 +235,12 @@ job_schema = {
             'type': 'string',
             'optional': True,
         },
+        'platform_tags': {
+            'type': 'array',
+            'uniqueItem': True,
+            'items': {'type': 'string'},
+            'optional': True
+        },
     },
 }
 

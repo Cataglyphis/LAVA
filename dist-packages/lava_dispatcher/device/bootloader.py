@@ -28,6 +28,7 @@ import logging
 import contextlib
 import subprocess
 import os
+import json
 
 from lava_dispatcher.device.master import (
     MasterImageTarget
@@ -451,12 +452,30 @@ class BootloaderTarget(MasterImageTarget):
                 pdu = command[index+1]
             logging.info("PDU port number is: %s" % pdu)
 
+            # get the case directory
+            case = json.load(open("/etc/lava-dispatcher/case.json", 'r'))
+            tags = self.context.job_data.get('tags', [])
+            dirs = ""
+            logging.info("Current tag is: %s" % tags)
+            if len(tags) == 0:
+                logging.warning("No tags found in the json job, please have a check")
+            else:
+                if tags[0] in case:
+                    for i in range(len(case[tags[0]])):
+                        dirs += case[tags[0]][i]
+                        if i < len(case[tags[0]]) - 1:
+                            dirs += ";"
+                else:
+                    logging.warning("No tag %s found in /etc/lava-dispatcher/case.json" % tags[0])
+            logging.info("Case directory is: %s" % dirs)
+
             # deviceInfo.conf to store the serial & ip info
             deviceInfo = os.path.join(path, 'deviceInfo.conf')
             with open(deviceInfo, 'w') as fout:
                 fout.write('serial=%s\n' % serial)
                 fout.write('ip=%s\n' % ip)
                 fout.write('pdu=%s\n' % pdu)
+                fout.write('case=%s\n' % dirs)
 
             logging.warning("Disconnect the serial connection, try to run the script")
             if self.config.connection_command_terminate:
