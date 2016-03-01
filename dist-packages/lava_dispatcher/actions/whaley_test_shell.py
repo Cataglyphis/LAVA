@@ -58,18 +58,34 @@ class cmd_whaley_test_shell(BaseAction):
 
         # reconnect the serial connection
         target.whaley_file_system(script)
-        self._results()
+        # script will write report_path to path/deviceInfo.conf
+        self._results(path)
 
-    def _results(self):
-        logging.info("Copy report to current log directory")
+    # report_path: path of report.html
+    def _results(self, path):
         logging.info("log directory: %s" % self.context.output.output_dir)
-        source = "/home/conan/Desktop/output"
+        logging.debug("Get the current directory of report.html")
+        deviceinfo_path = os.path.join(path, "deviceInfo.conf")
+        report_path = ""
+        with open(deviceinfo_path, 'r') as fin:
+            for line in fin.readlines():
+                # use "output=" instead of "output"
+                if "output=" in line:
+                    report_path = line.strip().split("=")[1]
+                    break
+            else:
+                logging.warning("No output path found in deviceInfo.conf")
+                return
+        logging.info("Current directory of report.html is: %s" % report_path)
         target = os.path.join(self.context.output.output_dir, "output")
+        logging.info("Copy report.html from %s to %s" % (report_path, target))
         if os.path.exists(target):
             shutil.rmtree(target)
-        shutil.copytree(source, target)
+        shutil.copytree(report_path, target)
         logging.info("Extract report.html")
-        log_file = open("/home/conan/Desktop/log.log", "w")
+        log_file_path = os.path.join(self.context.output.output_dir, "browser.log")
+        log_file = open(log_file_path, "w")
+        # open one xvfb, set size to (1024, 768)
         display = Display(visible=0, size=(1024, 768))
         display.start()
         firefox_binary = FirefoxBinary(log_file=log_file)
@@ -100,9 +116,10 @@ class cmd_whaley_test_shell(BaseAction):
                 elapsed = map(int, elapsed)
                 execution_time = elapsed[0] * 60.0 * 60.0 + elapsed[1] * 60.0 + elapsed[2]
                 execution_time = "{0:.2f}".format(execution_time)
-                msg = element.find_element_by_class_name("details-col-msg").text
-                self.context.test_data.add_result(name, status, execution_time, 'seconds', message=msg)
-        except Exception, e:
+                # msg = element.find_element_by_class_name("details-col-msg").text
+                tag = element.find_element_by_class_name("details-col-tags").text
+                self.context.test_data.add_result(name, status, execution_time, 'seconds', message=tag)
+        except Exception as e:
             logging.warning("Cant't get test results from report.html")
             logging.warning("Exception info: %s" % unicode(str(e)))
         finally:
