@@ -470,7 +470,7 @@ class BootloaderTarget(MasterImageTarget):
             logging.info("Case directory is: %s" % dirs)
 
             # get current job state: debug or not
-            debug = self.context.job_data.get('debug', False)
+            debug = self.context.job_data.get('debug')
             logging.info("Debug value: %s" % debug)
 
             # deviceInfo.conf to store the serial & ip info
