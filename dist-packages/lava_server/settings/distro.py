@@ -136,11 +136,15 @@ if AUTH_LDAP_SERVER_URI:
             [x for x in AUTHENTICATION_BACKENDS if "OpenID" not in x]
 
     # Load credentials
+    # AUTH_LDAP_BIND_DN, e.g. "cn=Manager,dc=smarthome,dc=com"
     AUTH_LDAP_BIND_DN = distro_settings.get_setting("AUTH_LDAP_BIND_DN")
+    # AUTH_LDAP_BIND_PASSWORD, e.g. "secret" the password to AUTH_LDAP_BIND_DN
     AUTH_LDAP_BIND_PASSWORD = distro_settings.get_setting(
         "AUTH_LDAP_BIND_PASSWORD")
+    # AUTH_LDAP_USER_DN_TEMPLATE, e.g. "uid=%(user)s,ou=Tester,dc=smarthome,dc=com"
     AUTH_LDAP_USER_DN_TEMPLATE = distro_settings.get_setting(
         "AUTH_LDAP_USER_DN_TEMPLATE")
+    # AUTH_LDAP_USER_ATTR_MAP, e.g. {"first_name": "givenName","last_name":"sn","email":"mail"}
     AUTH_LDAP_USER_ATTR_MAP = distro_settings.get_setting(
         "AUTH_LDAP_USER_ATTR_MAP")
 

@@ -469,13 +469,19 @@ class BootloaderTarget(MasterImageTarget):
                     logging.warning("No tag %s found in /etc/lava-dispatcher/case.json" % tags[0])
             logging.info("Case directory is: %s" % dirs)
 
+            # get current job state: debug or not
+            debug = self.context.job_data.get('debug', False)
+
             # deviceInfo.conf to store the serial & ip info
             deviceInfo = os.path.join(path, 'deviceInfo.conf')
             with open(deviceInfo, 'w') as fout:
                 fout.write('serial=%s\n' % serial)
                 fout.write('ip=%s\n' % ip)
                 fout.write('pdu=%s\n' % pdu)
-                fout.write('case=%s\n' % dirs)
+                if debug:
+                    fout.write('case=debug\n')
+                else:
+                    fout.write('case=%s\n' % dirs)
 
             logging.warning("Disconnect the serial connection, try to run the script")
             if self.config.connection_command_terminate:
