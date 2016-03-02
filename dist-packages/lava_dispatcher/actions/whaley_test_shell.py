@@ -24,7 +24,8 @@ class cmd_whaley_test_shell(BaseAction):
     parameters_schema = {
         'type': 'object',
         'properties': {
-            'script': {'type': 'string', 'optional': False}
+            'script': {'type': 'string', 'optional': False},
+            'debug': {'type': 'boolean', 'optional': True, 'default': False}
         },
         'additionalProperties': False,
     }
@@ -32,7 +33,7 @@ class cmd_whaley_test_shell(BaseAction):
     def __init__(self, context):
         super(cmd_whaley_test_shell, self).__init__(context)
 
-    def run(self, script=None):
+    def run(self, script=None, debug=False):
         # bootloader
         target = self.client.target_device
         # script: dir of job, shell, deviceInfo
@@ -45,7 +46,7 @@ class cmd_whaley_test_shell(BaseAction):
         script_name = script.strip().split(' ')[0]
         logging.info("Script path is: %s", path)
         if path != '' and os.path.isdir(path):
-            target.whaley_file_system(path)
+            target.whaley_file_system(path, debug)
             if os.path.isfile(script_name):
                 # add execute to script_name, and run script with parm
                 os.chmod(script_name, XMOD)
@@ -54,10 +55,10 @@ class cmd_whaley_test_shell(BaseAction):
         else:
             # script invalid, use '/tmp/' instead
             logging.warning("Invalid script parameter, use /tmp/ instead")
-            target.whaley_file_system('/tmp/')
+            target.whaley_file_system('/tmp/', debug)
 
         # reconnect the serial connection
-        target.whaley_file_system(script)
+        target.whaley_file_system(path, debug)
         # script will write report_path to path/deviceInfo.conf
         self._results(path)
 

@@ -241,10 +241,6 @@ job_schema = {
             'items': {'type': 'string'},
             'optional': True,
         },
-        'debug': {
-            'type': 'boolean',
-            'optional': True,
-        },
     },
 }
 

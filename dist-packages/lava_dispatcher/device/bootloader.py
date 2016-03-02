@@ -416,7 +416,7 @@ class BootloaderTarget(MasterImageTarget):
                 yield path
 
     # modify at 2016.02.17
-    def whaley_file_system(self, path):
+    def whaley_file_system(self, path, debug):
         if self.proc:
             logging.info("Get the target device serial number, ip address and pdu port")
             # get the serial number info
@@ -469,9 +469,7 @@ class BootloaderTarget(MasterImageTarget):
                     logging.warning("No tag %s found in /etc/lava-dispatcher/case.json" % tags[0])
             logging.info("Case directory is: %s" % dirs)
 
-            # get current job state: debug or not
-            debug = self.context.job_data.get('debug')
-            logging.info("Debug value: %s" % debug)
+            logging.info("Debug value is: %s" % debug)
 
             # deviceInfo.conf to store the serial & ip info
             deviceInfo = os.path.join(path, 'deviceInfo.conf')
