@@ -471,6 +471,7 @@ class BootloaderTarget(MasterImageTarget):
 
             # get current job state: debug or not
             debug = self.context.job_data.get('debug', False)
+            logging.info("Debug value: %s" % debug)
 
             # deviceInfo.conf to store the serial & ip info
             deviceInfo = os.path.join(path, 'deviceInfo.conf')
