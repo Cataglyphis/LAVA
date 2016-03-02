@@ -469,16 +469,16 @@ class BootloaderTarget(MasterImageTarget):
                     logging.warning("No tag %s found in /etc/lava-dispatcher/case.json" % tags[0])
             logging.info("Case directory is: %s" % dirs)
 
-            logging.info("Debug value is: %s" % debug)
-
             # deviceInfo.conf to store the serial & ip info
             deviceInfo = os.path.join(path, 'deviceInfo.conf')
             with open(deviceInfo, 'w') as fout:
                 fout.write('serial=%s\n' % serial)
                 fout.write('ip=%s\n' % ip)
                 fout.write('pdu=%s\n' % pdu)
+                logging.info("Debug value is: %s" % debug)
                 if debug:
                     fout.write('case=debug\n')
+                    logging.info("In debug mode, set case=debug to deviceInfo.conf")
                 else:
                     fout.write('case=%s\n' % dirs)
 
