@@ -492,6 +492,9 @@ class BootloaderTarget(MasterImageTarget):
             logging.warning("Reconnect the serial connection")
             self.proc = connect_to_serial(self.context)
             self.context.client.proc = self.proc
+            # install busybox, close shutdown again
+            self._install_busybox_whaley(self.proc)
+            self._close_shutdown_whaley(self.proc)
 
     # add in 2016.02.17
     # override

@@ -195,6 +195,9 @@ class NetworkCommandRunner(CommandRunner):
     def _check_network_up(self):
         """Internal function for checking network once."""
         lava_server_ip = self._client.context.config.lava_server_ip
+        # add below line to su the os
+        # firstly return to /, otherwise su return shell@helios:xxx/ doesn't match ps1
+        self.run('cd /')
         self.run('su')
         self.run(
             "LC_ALL=C ping -W4 -c1 %s" % lava_server_ip,
