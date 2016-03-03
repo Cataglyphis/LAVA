@@ -469,6 +469,7 @@ class BootloaderTarget(MasterImageTarget):
                     logging.warning("No tag %s found in /etc/lava-dispatcher/case.json" % tags[0])
             logging.info("Case directory is: %s" % dirs)
 
+            logging.info("Current job output directory: %s" % self.context.output.output_dir)
             # deviceInfo.conf to store the serial & ip info
             deviceInfo = os.path.join(path, 'deviceInfo.conf')
             with open(deviceInfo, 'w') as fout:
