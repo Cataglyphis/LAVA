@@ -58,7 +58,7 @@
   </div>
   {% endif %}
   <div class="col-md-6">
-    <h4 class="modal-header">Local account</h4>
+    <h4 class="modal-header">Local Account</h4>
     <form class="form-horizontal" method="post" action="{% url 'login' %}">
       {% csrf_token %}
       <div class="form-group{% if form.errors %} has-error{% endif %}">
