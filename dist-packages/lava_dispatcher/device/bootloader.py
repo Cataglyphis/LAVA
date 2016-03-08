@@ -174,7 +174,14 @@ class BootloaderTarget(MasterImageTarget):
         if self.__deployment_data__ is None:
             # Get deployment data
             logging.debug("Attempting to set deployment data")
-            self.deployment_data = deployment_data.whaley
+            if self.config.device_type == 'mstar':
+                logging.info("Set deployment data to whaley mstar platform")
+                self.deployment_data = deployment_data.whaley_mstar
+            elif self.config.device_type == 'hisi':
+                logging.info("Set deployment data to whaley hisi platform")
+                self.deployment_data = deployment_data.whaley_hisi
+            else:
+                logging.warning("No deployment data, please have a check")
         logging.debug("Set bootloader type to u_boot in whaley platform")
         self._set_boot_type(bootloadertype)
         self._default_boot_cmds = 'boot_cmds'
