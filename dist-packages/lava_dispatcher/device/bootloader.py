@@ -514,14 +514,19 @@ class BootloaderTarget(MasterImageTarget):
         logging.info("Get device version, ro.helios.version")
         self.proc.sendcontrol('c')
         self.proc.sendline('')
-        self.proc.expect('shell', timeout=5)
+        # self.proc.expect('shell', timeout=5)
+        self.proc.expect('@', timeout=5)
         # empty the buffer
         self.proc.empty_buffer()
-        self.proc.sendline('getprop ro.helios.version')
-        self.proc.expect('shell', timeout=2)
+        # self.proc.sendline('getprop ro.helios.version')
+        self.proc.sendline('getprop ro.build.version.rom')
+        self.proc.expect('@', timeout=2)
         # 'getprop ro.helios.version\r\r\n01.07.01\r\n'
         # 01.07.01
-        device_version = self.proc.before.strip().split('\n')[1]
+        try:
+            device_version = self.proc.before.strip().split('\n')[1]
+        except:
+            device_version = '0.0.0'
         return device_version
 
 target_class = BootloaderTarget

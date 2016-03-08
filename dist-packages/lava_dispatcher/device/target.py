@@ -362,7 +362,8 @@ class Target(object):
             logging.info("Try to skip the guide. Attempt: %s" % str(i+1))
             connection.sendcontrol('c')
             connection.sendline('')
-            connection.expect('shell', timeout=5)
+            # connection.expect('shell', timeout=5)
+            connection.expect('@', timeout=5)
             connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
             pos1 = connection.expect(pattern, timeout=10)
             if pos1 == 0:
@@ -374,7 +375,8 @@ class Target(object):
                 time.sleep(100)
                 connection.sendcontrol('c')
                 connection.sendline('')
-                connection.expect('shell', timeout=5)
+                # connection.expect('shell', timeout=5)
+                connection.expect('@', timeout=5)
                 connection.sendline('su')
                 connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
                 time.sleep(20)
@@ -543,7 +545,8 @@ class Target(object):
         logging.info("Perform soft reboot the system")
         # Try to C-c the running process, if any.
         connection.sendcontrol('c')
-        connection.expect('shell')
+        # connection.expect('shell')
+        connection.expect('@')
         connection.sendline(self.config.soft_boot_cmd)
         # Looking for reboot messages or if they are missing, the U-Boot
         # message will also indicate the reboot is done.
