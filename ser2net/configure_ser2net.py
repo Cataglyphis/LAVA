@@ -5,26 +5,33 @@
 
 # ttyUSB0 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-2/3-2.3/3-2.3:1.0/ttyUSB0/tty/ttyUSB0
 # ttyUSB1 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-2/3-2.2/3-2.2:1.0/ttyUSB1/tty/ttyUSB1
-
 # ttyUSB2 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-1/3-1.3/3-1.3:1.0/ttyUSB2/tty/ttyUSB2
 # ttyUSB3 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-1/3-1.2/3-1.2:1.0/ttyUSB3/tty/ttyUSB3
 
-# ttyUSB4 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-9/3-9.3/3-9.3:1.0/ttyUSB4/tty/ttyUSB4
+# ttyUSB4 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-10/3-10.2/3-10.2:1.0/ttyUSB4/tty/ttyUSB4
+# ttyUSB5 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-10/3-10.3/3-10.3:1.0/ttyUSB5/tty/ttyUSB5
+# ttyUSB6 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-10/3-10.4/3-10.4:1.0/ttyUSB6/tty/ttyUSB6
+# ttyUSB7 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-10/3-10.1/3-10.1.2/3-10.1.2:1.0/ttyUSB7/tty/ttyUSB7
 
-# ttyUSB5 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-10/3-10.2/3-10.2:1.0/ttyUSB5/tty/ttyUSB5
-# ttyUSB6 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-10/3-10.3/3-10.3:1.0/ttyUSB6/tty/ttyUSB6
-# ttyUSB7 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-10/3-10.4/3-10.4:1.0/ttyUSB7/tty/ttyUSB7
-# ttyUSB8 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-10/3-10.1/3-10.1.2/3-10.1.2:1.0/ttyUSB8/tty/ttyUSB8
+# ttyUSB8 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-9/3-9.3/3-9.3:1.0/ttyUSB8/tty/ttyUSB8
+# ttyUSB9 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-9/3-9.2/3-9.2:1.0/ttyUSB9/tty/ttyUSB9
+# ttyUSB10 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-9/3-9.1/3-9.1:1.0/ttyUSB10/tty/ttyUSB10
+# ttyUSB11 -> ../../devices/pci0000:00/0000:00:14.0/usb3/3-9/3-9.4/3-9.4:1.0/ttyUSB11/tty/ttyUSB11
 
 # 2000:telnet:600:/dev/ttyUSB0:115200 8DATABITS NONE 1STOPBIT banner
 # 2001:telnet:600:/dev/ttyUSB2:115200 8DATABITS NONE 1STOPBIT banner
 # 2002:telnet:600:/dev/ttyUSB1:115200 8DATABITS NONE 1STOPBIT banner
 # 2003:telnet:600:/dev/ttyUSB3:115200 8DATABITS NONE 1STOPBIT banner
+
 # 2004:telnet:600:/dev/ttyUSB4:115200 8DATABITS NONE 1STOPBIT banner
 # 2005:telnet:600:/dev/ttyUSB5:115200 8DATABITS NONE 1STOPBIT banner
 # 2006:telnet:600:/dev/ttyUSB6:115200 8DATABITS NONE 1STOPBIT banner
 # 2007:telnet:600:/dev/ttyUSB7:115200 8DATABITS NONE 1STOPBIT banner
-# 2008:telnet:600:/dev/ttyUSB7:115200 8DATABITS NONE 1STOPBIT banner
+
+# 2008:telnet:600:/dev/ttyUSB8:115200 8DATABITS NONE 1STOPBIT banner
+# 2009:telnet:600:/dev/ttyUSB9:115200 8DATABITS NONE 1STOPBIT banner
+# 2010:telnet:600:/dev/ttyUSB10:115200 8DATABITS NONE 1STOPBIT banner
+# 2011:telnet:600:/dev/ttyUSB11:115200 8DATABITS NONE 1STOPBIT banner
 
 # follow below rules:
 # 2000 -> usb3/3-2/3-2.3/3-2.3:1.0 -> H01P43D_01
@@ -32,12 +39,16 @@
 # 2002 -> usb3/3-2/3-2.2/3-2.2:1.0 -> H01P43D_03
 # 2003 -> usb3/3-1/3-1.2/3-1.2:1.0 -> H01P43D_04
 
-# 2004 -> usb3/3-9/3-9.3/3-9.3:1.0 -> H01P55D_01
+# 2004 -> usb3/3-10/3-10.2/3-10.2:1.0 -> A02F43D_01
+# 2005 -> usb3/3-10/3-10.3/3-10.3:1.0 -> A02F43D_02
+# 2006 -> usb3/3-10/3-10.4/3-10.4:1.0 -> A02F43D_03
+# 2007 -> usb3/3-10/3-10.1/3-10.1.2/3-10.1.2:1.0 -> A02F43D_04
 
-# 2005 -> usb3/3-10/3-10.2/3-10.2:1.0 -> A02F43D_01
-# 2006 -> usb3/3-10/3-10.3/3-10.3:1.0 -> A02F43D_02
-# 2007 -> usb3/3-10/3-10.4/3-10.4:1.0 -> A02F43D_03
-# 2008 -> usb3/3-10/3-10.1/3-10.1.2/3-10.1.2:1.0 -> A02F43D_04
+# 2008 -> usb3/3-9/3-9.3/3-9.3:1.0 -> H01P43D_01
+# 2009 -> usb3/3-9/3-9.2/3-9.2:1.0 -> H01P43D_02
+# 2010 -> usb3/3-9/3-9.1/3-9.1:1.0 -> H01P43D_03
+# 2011 -> usb3/3-9/3-9.4/3-9.4:1.0 -> H01P43D_04
+
 
 import os
 from subprocess import Popen, PIPE
@@ -46,7 +57,10 @@ proc = Popen('ls -l /sys/class/tty', shell=True, stdout=PIPE, stderr=PIPE)
 proc.wait()
 
 ttyUSBResults = {}
-portDef = ['2000:', '2001:', '2002:', '2003:', '2004:', '2005:', '2006:', '2007:']
+portDef = ['2000:', '2001:', '2002:', '2003:',
+           '2004:', '2005:', '2006:', '2007:',
+           '2008:', '2009:', '2010:', '2011:'
+           ]
 ser2netPort = {'2000:': '3-2.3',
                '2001:': '3-1.3',
                '2002:': '3-2.2',
@@ -54,7 +68,11 @@ ser2netPort = {'2000:': '3-2.3',
                '2004:': '3-10.2',
                '2005:': '3-10.3',
                '2006:': '3-10.4',
-               '2007:': '3-10.1.2'
+               '2007:': '3-10.1.2',
+               '2008:': '3-9.3',
+               '2009:': '3-9.2',
+               '2010:': '3-9.1',
+               '2011:': '3-9.4'
                }
 
 for line in proc.stdout.readlines():
