@@ -20,6 +20,7 @@
 # along with this program; if not, see <http://www.gnu.org/licenses>.
 
 import os
+import sys
 import logging
 import tempfile
 import urllib2
@@ -253,6 +254,8 @@ class cmd_submit_results(BaseAction):
             result = dashboard.put_ex(json_bundle, job_name, stream)
             self.context.output.write_named_data('result-bundle', result)
             logging.info("Dashboard : %s" % result)
+            # modify @2016.03.09
+            sys.exit(0)
         except xmlrpclib.Fault, err:
             logging.warning("xmlrpclib.Fault occurred")
             logging.warning("Fault code: %d" % err.faultCode)
