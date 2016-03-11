@@ -58,7 +58,7 @@ class TCPRequestHandler(SocketServer.BaseRequestHandler):
         logging.getLogger().name = "TCPRequestHandler"
         logging.getLogger().setLevel(self.server.settings["logging_level"])
         array = data.split(" ")
-        delay = 2
+        delay = 3
         custom_delay = False
         now = int(time.time())
         if (len(array) < 3) or (len(array) > 4):

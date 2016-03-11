@@ -61,6 +61,7 @@ class submit_job(Command):
                             help="Blocks until the job gets executed")
 
     def invoke(self):
+        # ServerProxy for lava@172.16.10.41/RPC2/
         server = AuthenticatingServerProxy(
             self.args.SERVER, auth_backend=KeyringAuthBackend())
         if not os.path.exists(self.args.JSON_FILE):

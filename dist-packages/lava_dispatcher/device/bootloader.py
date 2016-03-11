@@ -511,7 +511,7 @@ class BootloaderTarget(MasterImageTarget):
     # add in 2016.02.17
     # override
     def get_device_version(self):
-        logging.info("Get device version, ro.helios.version")
+        logging.info("Get device version, ro.build.version.rom")
         self.proc.sendcontrol('c')
         self.proc.sendline('')
         # self.proc.expect('shell', timeout=5)
@@ -524,7 +524,7 @@ class BootloaderTarget(MasterImageTarget):
         # 'getprop ro.helios.version\r\r\n01.07.01\r\n'
         # 01.07.01
         try:
-            device_version = self.proc.before.strip().split('\n')[1]
+            device_version = self.proc.before.strip().split('\n')[1].strip()
         except:
             device_version = '0.0.0'
         return device_version

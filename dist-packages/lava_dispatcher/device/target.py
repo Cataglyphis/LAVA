@@ -558,15 +558,17 @@ class Target(object):
         # logging.info('Matched %s', patterns[match_id])
         # if match_id == 0:
         #     raise OperationFailed("Soft reboot failed")
-        for i in range(200):
+        for i in range(100):
             connection.sendline("")
+            time.sleep(0.05)
 
     def _hard_reboot(self, connection):
         logging.info("Perform hard reset on the system")
         if self.config.hard_reset_command != "":
             self.context.run_command(self.config.hard_reset_command)
-            for i in range(200):
+            for i in range(100):
                 connection.sendline("")
+                time.sleep(0.05)
         else:
             # comment below 2 lines, 2016.01.21
             # connection.send("~$")
