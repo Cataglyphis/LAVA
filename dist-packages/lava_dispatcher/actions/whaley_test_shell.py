@@ -91,6 +91,8 @@ class cmd_whaley_test_shell(BaseAction):
         display.start()
         firefox_binary = FirefoxBinary(log_file=log_file)
         browser = webdriver.Firefox(firefox_binary=firefox_binary)
+        # set browser size to the same value as display window
+        # otherwise, can't click some element in the website
         browser.set_window_size(1024, 768)
         # file:///, os.path.join already add /
         file_path = "file://" + os.path.join(target, "report.html")

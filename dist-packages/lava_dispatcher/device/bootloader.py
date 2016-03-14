@@ -435,6 +435,8 @@ class BootloaderTarget(MasterImageTarget):
             with open('/etc/ser2net.conf', 'r') as fin:
                 for line in fin.readlines():
                     if port in line and not line.startswith('#'):
+                        # 2000:telnet:600:/dev/ttyUSB0:115200 8DATABITS NONE 1STOPBIT banner
+                        # serial = /dev/ttyUSB0
                         serial = line.split(':')[3]
                         break
             logging.info("Serial number is: %s" % serial)
