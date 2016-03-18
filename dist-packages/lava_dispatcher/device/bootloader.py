@@ -439,7 +439,9 @@ class BootloaderTarget(MasterImageTarget):
                         # serial = /dev/ttyUSB0
                         serial = line.split(':')[3]
                         break
+            port = connection_command.strip().split(' ')[-1]
             logging.info("Serial number is: %s" % serial)
+            logging.info("Telnet number is: %s" % port)
 
             # get the ip address info
             pat = self.tester_ps1_pattern
@@ -486,6 +488,7 @@ class BootloaderTarget(MasterImageTarget):
             deviceInfo = os.path.join(path, 'deviceInfo.conf')
             with open(deviceInfo, 'w') as fout:
                 fout.write('serial=%s\n' % serial)
+                fout.write('telnet=%s\n' % port)
                 fout.write('ip=%s\n' % ip)
                 fout.write('pdu=%s\n' % pdu)
                 logging.info("Debug value is: %s" % debug)
