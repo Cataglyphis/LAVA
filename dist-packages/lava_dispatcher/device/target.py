@@ -565,10 +565,14 @@ class Target(object):
     def _hard_reboot(self, connection):
         logging.info("Perform hard reset on the system")
         if self.config.hard_reset_command != "":
-            self.context.run_command(self.config.hard_reset_command)
+            # use power_off and power_on to instead of hard_reset_command
+            # self.context.run_command(self.config.hard_reset_command)
+            self.context.run_command(self.config.power_off_cmd)
+            time.sleep(5)
+            self.context.run_command(self.config.power_on_cmd)
             for i in range(100):
                 connection.sendline("")
-                time.sleep(0.05)
+                time.sleep(0.06)
         else:
             # comment below 2 lines, 2016.01.21
             # connection.send("~$")
