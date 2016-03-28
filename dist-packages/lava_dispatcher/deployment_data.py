@@ -89,8 +89,8 @@ whaley_mstar = deployment_data_dict({
 })
 
 whaley_hisi = deployment_data_dict({
-    'TESTER_PS1': "root@apollo:/ # ",
-    'TESTER_PS1_PATTERN': "root@apollo:/ # ",
+    'TESTER_PS1': "shell@apollo:/ # ",
+    'TESTER_PS1_PATTERN': "shell@apollo:/ # ",
     'TESTER_PS1_INCLUDES_RC': False,
     'boot_cmds': "boot_cmds",
 
