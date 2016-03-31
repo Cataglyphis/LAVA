@@ -518,8 +518,6 @@ class LavaTestJob(object):
                 try:
                     logging.info("Submitting the test result with parameters = %s", params_for_display)
                     action.run(**params)
-                    logging.warning("Run sys.exit(0) in job.py")
-                    sys.exit(0)
                 except Exception as err:
                     logging.error("Failed to submit the test result. Error = %s", err)
                     raise
