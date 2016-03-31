@@ -498,8 +498,6 @@ class BootloaderTarget(MasterImageTarget):
             with open(case_json, "w") as fout:
                 json.dump(LAVA_data, fout, indent=4)
 
-            return case_json
-
             # get the case directory
             # dirs = ""
             # tags = self.context.job_data.get('tags', [])
@@ -552,6 +550,7 @@ class BootloaderTarget(MasterImageTarget):
             finalize_process(self.proc)
             self.proc = None
             self.context.client.proc = self.proc
+            return case_json
         else:
             logging.warning("Reconnect the serial connection")
             self.proc = connect_to_serial(self.context)
