@@ -423,7 +423,7 @@ class BootloaderTarget(MasterImageTarget):
                 yield path
 
     # modify at 2016.02.17
-    def whaley_file_system(self, path, debug):
+    def whaley_file_system(self, path, debug, case_debug):
         if self.proc:
             logging.info("Get the target device serial number, ip address and pdu port")
             # get the serial number info
@@ -438,9 +438,10 @@ class BootloaderTarget(MasterImageTarget):
                         # 2000:telnet:600:/dev/ttyUSB0:115200 8DATABITS NONE 1STOPBIT banner
                         # serial = /dev/ttyUSB0
                         serial = line.split(':')[3]
+                        tty = serial.split('/')[-1]
                         break
             port = connection_command.strip().split(' ')[-1]
-            logging.info("Serial number is: %s" % serial)
+            logging.info("Serial number is: %s" % tty)
             logging.info("Telnet number is: %s" % port)
 
             # get the ip address info
@@ -463,30 +464,7 @@ class BootloaderTarget(MasterImageTarget):
                 pdu = command[index+1]
             logging.info("PDU port number is: %s" % pdu)
 
-            # get the case directory
-            dirs = ""
-            tags = self.context.job_data.get('tags', [])
-            dirs = ""
-            logging.info("Current tag is: %s" % tags)
-
-            if os.path.isfile("/etc/lava-dispatcher/case.json"):
-                with open("/etc/lava-dispatcher/case.json", 'r') as fin:
-                    case = json.load(fin)
-                    if len(tags) == 0:
-                        logging.warning("No tags found in json job, please have a check")
-                    else:
-                        if tags[0] in case:
-                            for i in range(len(case[tags[0]])):
-                                dirs += case[tags[0]][i]
-                                if i < len(case[tags[0]]) - 1:
-                                    dirs += ";"
-                        else:
-                            logging.warning("No tag %s found in /etc/lava-dispatcher/case.json" % tags[0])
-            else:
-                dirs = "debug"
-                logging.warning("No case.json found in /etc/lava-dispatcher, use debug instead")
-            logging.info("Case directory is: %s" % dirs)
-
+            job_id = ''
             output_dir = self.context.output.output_dir
             if output_dir:
                 logging.info("Current job output directory: %s" % output_dir)
@@ -494,20 +472,78 @@ class BootloaderTarget(MasterImageTarget):
             else:
                 job_id = ""
 
+            LAVA_json = os.path.join(path, "plan", "LAVA.json")
+            if os.path.isfile(LAVA_json):
+                with open(LAVA_json, "r") as fin:
+                    LAVA_data = json.load(fin)
+
+            LAVA_data["device"]["target"] = str(ip) + ":5555"
+            LAVA_data["device"]["telnet"] = int(port)
+            LAVA_data["device"]["tty"] = str(tty)
+            LAVA_data["device"]["pdu"] = str(pdu)
+            LAVA_data["device"]["image"] = self.context.job_data.get("job_name")
+            LAVA_data["device"]["platform"] = self.context.job_data.get("tags")[0]
+
+            case_json = ''  # json file for whaleyTAP.py
+            if debug is True:
+                LAVA_data["mode"]["debug"] = True
+                LAVA_data["mode"]["case"] = str(case_debug)
+                case_json = "LAVA_debug" + job_id + ".json"
+                case_json = os.path.join(path, "plan", case_json)
+            else:
+                case_json = "LAVA.json"
+                case_json = os.path.join(path, "case", "result", self.context.job_data.get("job_name"), case_json)
+
+            with open(case_json, "w") as fout:
+                json.dump(LAVA_data, fout)
+
+            return case_json
+
+            # get the case directory
+            # dirs = ""
+            # tags = self.context.job_data.get('tags', [])
+            # dirs = ""
+            # logging.info("Current tag is: %s" % tags)
+            #
+            # if os.path.isfile("/etc/lava-dispatcher/case.json"):
+            #     with open("/etc/lava-dispatcher/case.json", 'r') as fin:
+            #         case = json.load(fin)
+            #         if len(tags) == 0:
+            #             logging.warning("No tags found in json job, please have a check")
+            #         else:
+            #             if tags[0] in case:
+            #                 for i in range(len(case[tags[0]])):
+            #                     dirs += case[tags[0]][i]
+            #                     if i < len(case[tags[0]]) - 1:
+            #                         dirs += ";"
+            #             else:
+            #                 logging.warning("No tag %s found in /etc/lava-dispatcher/case.json" % tags[0])
+            # else:
+            #     dirs = "debug"
+            #     logging.warning("No case.json found in /etc/lava-dispatcher, use debug instead")
+            # logging.info("Case directory is: %s" % dirs)
+            #
+            # output_dir = self.context.output.output_dir
+            # if output_dir:
+            #     logging.info("Current job output directory: %s" % output_dir)
+            #     job_id = output_dir.strip().split('/')[-1]
+            # else:
+            #     job_id = ""
+
             # deviceInfo.conf to store the serial & ip info
-            deviceInfo = os.path.join(path, 'deviceInfo.conf')
-            with open(deviceInfo, 'w') as fout:
-                fout.write('serial=%s\n' % serial)
-                fout.write('telnet=%s\n' % port)
-                fout.write('ip=%s\n' % ip)
-                fout.write('pdu=%s\n' % pdu)
-                logging.info("Debug value is: %s" % debug)
-                if debug:
-                    fout.write('case=debug\n')
-                    logging.info("In debug mode, set case=debug to deviceInfo.conf")
-                else:
-                    fout.write('case=%s\n' % dirs)
-                fout.write('job=%s\n' % job_id)
+            # deviceInfo = os.path.join(path, 'deviceInfo.conf')
+            # with open(deviceInfo, 'w') as fout:
+            #     fout.write('serial=%s\n' % serial)
+            #     fout.write('telnet=%s\n' % port)
+            #     fout.write('ip=%s\n' % ip)
+            #     fout.write('pdu=%s\n' % pdu)
+            #     logging.info("Debug value is: %s" % debug)
+            #     if debug:
+            #         fout.write('case=debug\n')
+            #         logging.info("In debug mode, set case=debug to deviceInfo.conf")
+            #     else:
+            #         fout.write('case=%s\n' % dirs)
+            #     fout.write('job=%s\n' % job_id)
 
             logging.warning("Disconnect the serial connection, try to run the script")
             if self.config.connection_command_terminate:

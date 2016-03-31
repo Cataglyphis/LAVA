@@ -25,7 +25,8 @@ class cmd_whaley_test_shell(BaseAction):
         'type': 'object',
         'properties': {
             'script': {'type': 'string', 'optional': False},
-            'debug': {'type': 'boolean', 'optional': True, 'default': False}
+            'debug': {'type': 'boolean', 'optional': True, 'default': False},
+            'case_debug': {'type': 'string', 'optional': True},
         },
         'additionalProperties': False,
     }
@@ -33,34 +34,33 @@ class cmd_whaley_test_shell(BaseAction):
     def __init__(self, context):
         super(cmd_whaley_test_shell, self).__init__(context)
 
-    def run(self, script=None, debug=False):
+    def run(self, script=None, debug=False, case_debug=None):
         # bootloader
         target = self.client.target_device
-        # script: dir of job, shell, deviceInfo
-        # script = "/home/to/path/demo.sh"
-        # script = "/home/to/path/demo.sh par1 par2"
-        # path = "/home/to/path"
-        # change unicode to string
-        script = str(script)
-        path = script.strip().rsplit('/', 1)[0]
-        script_name = script.strip().split(' ')[0]
-        logging.info("Script path is: %s", path)
-        if path != '' and os.path.isdir(path):
-            target.whaley_file_system(path, debug)
-            if os.path.isfile(script_name):
-                # add execute to script_name, and run script with parm
-                os.chmod(script_name, XMOD)
-                logging.info("Run command in file: %s", script_name)
-                self.context.run_command(script)
+        # script = "/home/dqa/workspace/android-automation/TAP/whaleyTAP.py /home/.../LAVA.json"
+        # script_name = "/home/dqa/workspace/android-automation/TAP/whaleyTAP.py"
+        # script_path = "/home/dqa/workspace/android-automation/TAP"
+        script = str(script).strip()
+        script_name = script.split(' ')[0]
+        script_path = os.path.split(script_name)[0]
+        logging.info("Script name is: %s", script_name)
+        logging.info("Script path is: %s", script_path)
+        if os.path.isfile(script_name) and os.path.isdir(script_path):
+            case_json = target.whaley_file_system(script_path, debug, case_debug)
+            os.chmod(script_name, XMOD)
+            logging.info("Run command in file: %s", script_name)
+            logging.info("Command parameter: %s", case_json)
+            script_name = script_name + " " + case_json
+            self.context.run_command(script_name)
         else:
             # script invalid, use '/tmp/' instead
             logging.warning("Invalid script parameter, use /tmp/ instead")
             target.whaley_file_system('/tmp/', debug)
 
         # reconnect the serial connection
-        target.whaley_file_system(path, debug)
+        target.whaley_file_system(script_path, debug, case_debug)
         # script will write report_path to path/deviceInfo.conf
-        self._results(path)
+        # self._results(script_path)
 
     # report_path: path of report.html
     def _results(self, path):
