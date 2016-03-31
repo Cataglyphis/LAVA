@@ -469,6 +469,7 @@ class BootloaderTarget(MasterImageTarget):
             if output_dir:
                 logging.info("Current job output directory: %s" % output_dir)
                 job_id = output_dir.strip().split('/')[-1]
+                job_id = job_id.split('-')[-1]
             else:
                 job_id = ""
 
@@ -488,14 +489,14 @@ class BootloaderTarget(MasterImageTarget):
             if debug is True:
                 LAVA_data["mode"]["debug"] = True
                 LAVA_data["mode"]["case"] = str(case_debug)
-                case_json = "LAVA_debug" + job_id + ".json"
+                case_json = "LAVA_debug_" + job_id + ".json"
                 case_json = os.path.join(path, "plan", case_json)
             else:
                 case_json = "LAVA.json"
                 case_json = os.path.join(path, "case", "result", self.context.job_data.get("job_name"), case_json)
 
             with open(case_json, "w") as fout:
-                json.dump(LAVA_data, fout)
+                json.dump(LAVA_data, fout, indent=4)
 
             return case_json
 
