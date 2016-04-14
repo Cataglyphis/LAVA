@@ -37,15 +37,23 @@ class cmd_whaley_test_shell(BaseAction):
     def run(self, script=None, debug=False, case_debug=None):
         # bootloader
         target = self.client.target_device
-        # script = "/home/dqa/workspace/android-automation/TAP/whaleyTAP.py /home/.../LAVA.json"
-        # script_name = "/home/dqa/workspace/android-automation/TAP/whaleyTAP.py"
-        # script_path = "/home/dqa/workspace/android-automation/TAP"
+        # script = "/home/dqa/workspace/LAVA/android-automation/TAP/whaleyTAP.py /home/.../LAVA.json"
+        # script_name = "/home/dqa/workspace/LAVA/android-automation/TAP/whaleyTAP.py"
+        # script_path = "/home/dqa/workspace/LAVA/android-automation/TAP"
         script = str(script).strip()
         script_name = script.split(' ')[0]
         script_path = os.path.split(script_name)[0]
         logging.info("Script name is: %s", script_name)
         logging.info("Script path is: %s", script_path)
         if os.path.isfile(script_name) and os.path.isdir(script_path):
+            current_dir = os.getcwd()
+            target_dir = script_path
+            logging.info("change dir to %s", target_dir)
+            os.chdir(target_dir)
+            current_user = os.path.expanduser("~").split(os.sep)[-1]
+            logging.info("pull the latest code with cmd: sudo -u %s git pull", current_user)
+            os.system("sudo -u %s git pull" % current_user)
+            os.chdir(current_dir)
             case_json = target.whaley_file_system(script_path, debug, case_debug)
             os.chmod(script_name, XMOD)
             logging.info("Run command in file: %s", script_name)
