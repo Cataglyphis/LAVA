@@ -493,7 +493,14 @@ class BootloaderTarget(MasterImageTarget):
                 case_json = os.path.join(path, "plan", case_json)
             else:
                 case_json = "LAVA.json"
-                case_json = os.path.join(path, "case", "result", self.context.job_data.get("job_name"), case_json)
+                LAVA_dir = os.path.join(path, "case", "result", self.context.job_data.get("job_name"))
+                os.makedirs(LAVA_dir)
+                if os.path.isdir(LAVA_dir):
+                    logging.info("makedirs %s successfully", LAVA_dir)
+                else:
+                    logging.warning("can't makedirs %s, try again", LAVA_dir)
+                    os.makedirs(LAVA_dir)
+                case_json = os.path.join(LAVA_dir, case_json)
 
             with open(case_json, "w") as fout:
                 json.dump(LAVA_data, fout, indent=4)
