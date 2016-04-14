@@ -50,7 +50,7 @@ class cmd_whaley_test_shell(BaseAction):
             target_dir = script_path
             logging.info("change dir to %s", target_dir)
             os.chdir(target_dir)
-            current_user = os.path.expanduser("~").split(os.sep)[-1]
+            current_user = os.listdir("/home")[0]
             logging.info("pull the latest code with cmd: sudo -u %s git pull", current_user)
             os.system("sudo -u %s git pull" % current_user)
             os.chdir(current_dir)
@@ -63,7 +63,7 @@ class cmd_whaley_test_shell(BaseAction):
         else:
             # script invalid, use '/tmp/' instead
             logging.warning("Invalid script parameter, use /tmp/ instead")
-            target.whaley_file_system('/tmp/', debug)
+            target.whaley_file_system('/tmp/', debug, case_debug)
 
         # reconnect the serial connection
         target.whaley_file_system(script_path, debug, case_debug)

@@ -143,7 +143,8 @@ class LavaContext(object):
         """run command 'command' with output going to output-dir if specified"""
         if isinstance(command, (str, unicode)):
             # command = ['nice', 'sh', '-c', command]
-            current_user = os.path.expanduser("~").split(os.sep)[-1]
+            # current_user = os.path.expanduser("~").split(os.sep)[-1]
+            current_user = os.listdir("/home")[0]
             logging.info("current user: %s", current_user)
             command = ['nice', 'sudo', '-u', current_user, 'sh', '-c', command]
 
