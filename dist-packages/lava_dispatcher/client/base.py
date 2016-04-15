@@ -197,6 +197,7 @@ class NetworkCommandRunner(CommandRunner):
         lava_server_ip = self._client.context.config.lava_server_ip
         # add below line to su the os
         # firstly return to /, otherwise su return shell@helios:xxx/ doesn't match ps1
+        self.run('export PS1="%s"' % self._promt_str)
         self.run('cd /')
         self.run('su')
         self.run(
