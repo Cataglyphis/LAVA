@@ -160,6 +160,7 @@ class NetworkCommandRunner(CommandRunner):
             self, client.proc, prompt_str,
             prompt_str_includes_rc=prompt_str_includes_rc)
         self._client = client
+        self._prompt_ps1 = prompt_str
 
     def get_target_ip(self):
         logging.info("Waiting for network to come up")
@@ -197,7 +198,7 @@ class NetworkCommandRunner(CommandRunner):
         lava_server_ip = self._client.context.config.lava_server_ip
         # add below line to su the os
         # firstly return to /, otherwise su return shell@helios:xxx/ doesn't match ps1
-        self.run('export PS1="%s"' % self._promt_str)
+        self.run('export PS1="%s"' % self._prompt_ps1)
         self.run('cd /')
         self.run('su')
         self.run(
