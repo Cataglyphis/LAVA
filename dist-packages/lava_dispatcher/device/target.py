@@ -407,8 +407,17 @@ class Target(object):
         connection.sendline('cd /')
         logging.info("End installation of busybox")
 
+    def _remove_helios_guide(self, connection):
+        logging.info("Remove helios guide")
+        connection.sendline('su')
+        connection.sendline('rm -rf /data/dalvik-cache/arm/system@priv-app@HeliosGuide@HeliosGuide.apk@classes.dex')
+        connection.sendline('mount -o remount,rw /system')
+        connection.sendline('rm -rf /system/priv-app/HeliosGuide')
+        connection.sendline('reboot')
+        logging.info("End remove helios guide")
+
     def _close_shutdown_whaley(self, connection):
-        logging.info("modify hardwareprotect.db, set shutdown time to -1")
+        logging.info("Modify hardwareprotect.db, set shutdown time to -1")
         connection.sendline("sqlite3 /data/system/hardwareprotect.db \"update hwprotect set timeout=-1 where name='shutdown'\"")
         logging.info("End modify hardwareprotect.db")
 
@@ -701,6 +710,10 @@ class Target(object):
             self._install_busybox_whaley(connection)
             # set shutdown time to -1, no shutdown
             self._close_shutdown_whaley(connection)
+            # remove helios guide, and reboot
+            self._remove_helios_guide(connection)
+            # wait for system reboot
+            self._skip_guide_whaley(connection)
 
         try:
             self._auto_login(connection, is_master)
