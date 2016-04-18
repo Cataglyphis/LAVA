@@ -400,7 +400,7 @@ class Target(object):
     def _install_busybox_whaley(self, connection):
         logging.info("Install busybox in /system/xbin")
         connection.sendline('su')
-        connection.sendline('mount -o remount,rw /system')
+        connection.sendline('mount -o remount /system')
         connection.sendline('cd /system/xbin')
         connection.sendline('busybox --install .')
         # go back to /, otherwise block the next step in whaley_test_shell
@@ -411,9 +411,10 @@ class Target(object):
         logging.info("Remove helios guide")
         connection.sendline('su')
         connection.sendline('rm -rf /data/dalvik-cache/arm/system@priv-app@HeliosGuide@HeliosGuide.apk@classes.dex')
-        connection.sendline('mount -o remount,rw /system')
+        connection.sendline('mount -o remount /system')
         connection.sendline('rm -rf /system/priv-app/HeliosGuide')
         connection.sendline('reboot')
+        time.sleep(30)
         logging.info("End remove helios guide")
 
     def _close_shutdown_whaley(self, connection):
@@ -577,7 +578,7 @@ class Target(object):
             # use power_off and power_on to instead of hard_reset_command
             # self.context.run_command(self.config.hard_reset_command)
             self.context.run_command(self.config.power_off_cmd)
-            time.sleep(5)
+            time.sleep(10)
             self.context.run_command(self.config.power_on_cmd)
             for i in range(100):
                 connection.sendline("")
