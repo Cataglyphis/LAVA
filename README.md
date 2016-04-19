@@ -1,7 +1,8 @@
 ## LAVA
-configuration of LAVA on Ubuntu 14.04 LTS
+branch master: configuration of LAVA on Ubuntu 14.04 LTS
+branch werewolf: configuration of LAVA on Ubuntu 15.10
 
-### Add bootstrap js file
+### Add bootstrap js file (for Ubuntu 14.04 only)
 ```shell
 sudo cp bootstrap-3.1.1.min.js /usr/lib/python2.7/dist-packages/lava_server/lava-server/js/
 ```
