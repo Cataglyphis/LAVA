@@ -1,0 +1,10 @@
+#!/bin/sh
+set -e
+
+if [ "$1" = "purge" ] ; then
+	update-rc.d lavapdu-runner remove >/dev/null
+	update-rc.d lavapdu-listen remove >/dev/null
+fi
+
+#DEBHELPER#
+

@@ -1,0 +1,73 @@
+{% extends "layouts/content-bootstrap.html" %}
+{% load django_tables2 %}
+
+{% block styles %}
+  <style>
+  .green {
+    color: green;
+  }
+  .grey {
+    color: grey;
+  }
+  </style>
+{% endblock %}
+
+{% block content %}
+<h2>Device Type Overview</h2>
+<div class="row">
+  <div class="col-md-6">
+    <h4 class="modal-header">Overall status</h4>
+    <ul class="nav nav-pills nav-stacked">
+      <li>
+        <a href="{% url 'lava.scheduler.online_devices' %}">
+          <span class="badge pull-right alert-{% if num_online == num_not_retired %}success{% elif not num_online == 0 %}warning{% else %}danger{% endif %}">
+            {{ num_online }} / {{ num_not_retired }}</span>
+          Online devices
+        </a>
+      </li>
+      <li>
+        <a href="{% url 'lava.scheduler.passing_health_checks' %}">
+          <span class="badge pull-right alert-{% if hc_completed == hc_total %}success{% elif not hc_completed == 0 %}warning{% else %}danger{% endif %}">
+            {{ hc_completed }} / {{ hc_total }}</span>Passing health checks
+        </a>
+      </li>
+      <li>
+          <a href="{% url 'lava.scheduler.running' %}">
+          <span class="badge pull-right alert-{% if num_jobs_running <= num_devices_running %}success{% else %}warning{% endif %}">
+              {{ num_jobs_running }} / {{ num_devices_running }}
+          </span>Running test jobs
+          </a>
+      </li>
+    </ul>
+  </div>
+  <div class="col-md-6">
+    <h4 class="modal-header">Reports</h4>
+    <ul class="nav nav-pills nav-stacked">
+      <li><a href="{% url 'lava.scheduler.alldevices' %}"><span class="glyphicon glyphicon-phone pull-right grey"></span> All devices</a></li>
+      <li><a href="{% url 'lava.scheduler.active_devices' %}"><span class="glyphicon glyphicon-phone pull-right green"></span> All Active Devices</a></li>
+      <li><a href="{% url 'lava.scheduler.labhealth' %}"><span class="glyphicon glyphicon-heart pull-right"></span> All Devices Health</a></li>
+    </ul>
+  </div>
+</div>
+
+<h4 class="modal-header">Device types</h4>
+{% render_table device_type_table %}
+
+<h2>Active Jobs <small><a href="{% url 'lava.scheduler.job.list' %}">(Show all)</a></small></h2>
+
+{% render_table active_jobs_table %}
+
+<h2>Workers</h2>
+
+{% render_table worker_table %}
+
+<span class="glyphicon glyphicon-thumbs-up text-success"></span>
+indicates the worker is <b>up</b>,
+<span class="glyphicon glyphicon-thumbs-down text-danger"></span>
+indicates the worker is <b>down</b>.
+
+{% endblock %}
+
+{% block scripts %}
+<script type="text/javascript" src="{{ STATIC_URL }}lava_scheduler_app/js/tables.js"></script>
+{% endblock %}

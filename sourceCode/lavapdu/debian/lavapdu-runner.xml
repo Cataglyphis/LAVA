@@ -1,0 +1,160 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "Matthew">
+  <!ENTITY dhsurname   "Hart">
+  <!ENTITY dhusername  "Matthew Hart">
+  <!ENTITY dhemail     "matthew.hart@linaro.org">
+  <!ENTITY dhsection   "8">
+  <!ENTITY dhtitle     "lavapdu-runner User Manual">
+  <!ENTITY dhucpackage "LAVAPDU">
+  <!ENTITY dhpackage   "lavapdu-runner">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhtitle;</title>
+    <productname>&dhpackage;</productname>
+    <authorgroup>
+      <author>
+       <firstname>&dhfirstname;</firstname>
+        <surname>&dhsurname;</surname>
+        <contrib>Wrote this manpage for the Debian system.</contrib>
+        <address>
+          <email>&dhemail;</email>
+        </address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2014</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>This manual page was written for the Debian system
+        (and may be used by others).</para>
+      <para>Permission is granted to copy, distribute and/or modify this
+        document under the terms of the GNU General Public License,
+        Version 2 or (at your option) any later version published by
+        the Free Software Foundation.</para>
+      <para>On Debian systems, the complete text of the GNU General Public
+        License can be found in
+        <filename>/usr/share/common-licenses/GPL</filename>.</para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhucpackage;</refentrytitle>
+    <manvolnum>&dhsection;</manvolnum>
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>daemon to control a PDU and implement instructions from
+    the lavapdu-listen daemon.</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="opt"><option>--logfile=<replaceable>LOGFILE</replaceable></option></arg>
+      <arg choice="opt"><option>--loglevel=<parameter>LOGLEVEL</parameter></option></arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <group choice="opt">
+        <arg choice="plain">
+          <group choice="req">
+            <arg choice="plain"><option>-h</option></arg>
+            <arg choice="plain"><option>--help</option></arg>
+          </group>
+        </arg>
+      </group>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+    <para>This manual page documents briefly the
+      <command>&dhpackage;</command> command.</para>
+    <para><command>&dhpackage;</command> is a daemon which reads the
+    queue created by lavapdu-listen and executes the commands on the
+    specified PDU. The daemon logs in to the PDU, navigates the menu
+    of the control interface, executes the requested command, logs out
+    and moves on to the next instruction in the queue.
+    </para>
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+    <variablelist>
+      <varlistentry>
+        <term><option>--logfile=<replaceable>LOGFILE</replaceable></option></term>
+        <listitem>
+          <para>Changes the logfile used by <application>&dhpackage;</application>.
+          By default this would be <filename>/var/log/lavapdu-runner.log</filename></para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--loglevel=<replaceable>LOGLEVEL</replaceable></option></term>
+        <listitem>
+          <para>Changes the logging level used by <application>&dhpackage;</application>.
+          By default this would be <emphasis>INFO</emphasis>. For more content,
+          use <emphasis>DEBUG</emphasis>.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1 id="files">
+    <title>FILES</title>
+    <variablelist>
+      <varlistentry>
+        <term><filename>/etc/lavapdu/lavapdu.conf</filename></term>
+        <listitem>
+          <para>The system-wide configuration file to control the
+            behaviour of <application>&dhpackage;</application>.
+          </para>
+          <para>With version 0.0.4, <application>&dhpackage;</application>
+          no longer tries to guess the type of interface on the specified
+          PDU as this proved to be unreliable.
+          </para>
+          <para><application>&dhpackage;</application> requires that
+          the driver for your PDU is specified in the 
+          <filename>/etc/lavapdu/lavapdu.conf</filename> file. Examples
+          are given in the default file but you will need to edit this
+          file to specify the PDU address (hostname or IP address) and
+          the driver to use for that PDU.
+          </para>
+          <para>Check the <filename>/var/log/lavapdu-runner.log</filename>
+          logfile to ensure that the driver specified is working with
+          your PDU and restart the lavapdu-runner daemon when changing
+          the configuration file.
+          <emphasis>sudo service lavapdu-runner restart</emphasis>
+          </para>
+          <para>Note that <filename>/etc/lavapdu/lavapdu.conf</filename>
+          is in JSON format, use http://www.jsonlint.com to verify
+          the syntax.</para>
+          <para>Setting the logging level to DEBUG will help you see
+          what the runner is doing - set the level back to INFO once
+          the PDU is working.
+          </para>
+          <para>https://wiki.debian.org/PDUDaemon</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1 id="see_also">
+    <title>SEE ALSO</title>
+    <!-- In alpabetical order. -->
+    <para><citerefentry>
+        <refentrytitle>lavapdu-listen</refentrytitle>
+        <manvolnum>8</manvolnum>
+      </citerefentry>, <citerefentry>
+        <refentrytitle>pduclient</refentrytitle>
+        <manvolnum>1</manvolnum>
+      </citerefentry></para>
+  </refsect1>
+</refentry>
+

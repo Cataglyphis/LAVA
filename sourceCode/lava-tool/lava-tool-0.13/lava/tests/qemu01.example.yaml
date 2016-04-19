@@ -1,0 +1,5 @@
+{% extends qemu.yaml %}
+{% set root_part = 1 %}
+{% set arch = 'amd64' %}
+{% set mac_addr = '52:54:00:12:34:58' %}
+{% set memory = 512 %}

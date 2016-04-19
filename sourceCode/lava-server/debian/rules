@@ -1,0 +1,103 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+#
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+#
+# Modified to make a template file for a multi-binary package with separated
+# build-arch and build-indep targets  by Bill Allombert 2001
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# Prevent setuptools/distribute from accessing the internet.
+export http_proxy = http://127.0.9.1:9
+
+export LAST_CHANGE=$(shell dpkg-parsechangelog -S Date)
+export BUILD_DATE=$(shell LC_ALL=C date -u "+%B %d, %Y" -d "$(LAST_CHANGE)")
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
+
+PYTHON2:=$(shell pyversions -r)
+install_dir=$(call py_libdir, $(PYTHON2))
+
+# embedded JS
+SOURCE=/usr/share/javascript/jquery-flot/
+# dashboard jquery-flot replacements
+DASHBOARD_DIR=$(CURDIR)/debian/lava-server/usr/lib/python2.7/dist-packages/dashboard_app/static/dashboard_app/js/
+DASHBOARD_JS=jquery.flot.navigate.min.js jquery.flot.navigate.js jquery.flot.canvas.min.js jquery.flot.canvas.js
+DASHBOARD_JS+=jquery.flot.min.js jquery.flot.js jquery.flot.selection.min.js jquery.flot.selection.js
+DASHBOARD_JS+=jquery.flot.stack.min.js jquery.flot.stack.js jquery.flot.time.min.js jquery.flot.time.js
+
+# scheduler jquery-flot replacements
+SCHEDULER_DIR=$(CURDIR)/debian/lava-server/usr/lib/python2.7/dist-packages/lava_scheduler_app/static/lava_scheduler_app/js/
+SCHEDULER_JS=jquery.flot.min.js jquery.flot.js jquery.flot.stack.min.js jquery.flot.stack.js
+
+%:
+	dh $@ --with sphinxdoc,python2
+
+override_dh_auto_build:
+	dh_auto_build
+	cp etc/lava-server.init debian/
+	[ ! -f etc/lava-master.init ] || cp etc/lava-master.init debian/
+	python setup.py build
+	make -C doc/ html SPHINXOPTS="-D today=\"$(BUILD_DATE)\""
+	make -C man/ man SPHINXOPTS="-D today=\"$(BUILD_DATE)\""
+
+override_dh_auto_install:
+	dh_auto_install
+	python setup.py install --root=$(CURDIR)/debian/lava-server/ --install-layout=deb
+	# dispatcher-master zeromq support, lava-server.init handled by auto_install.
+	[ ! -f etc/lava-master.init ] || dh_installinit --name lava-master
+	# jinja support
+	[ ! -d etc/dispatcher-config ] || cp -r etc/dispatcher-config $(CURDIR)/debian/lava-server/etc/lava-server/
+	dh_installman -plava-server man/_build/man/lava-server.1
+	dh_installman -plava-server man/_build/man/lava-daemon.1
+	[ ! -f man/_build/man/lava-master.1 ] || dh_installman -plava-server man/_build/man/lava-master.1
+	# FIXME: should not need this mv
+	mv debian/lava-server/usr/lib/python2.7/dist-packages/lava_server/htdocs/ debian/lava-server/usr/lib/python2.7/dist-packages/lava_server/lava-server
+	# move ssfs script to /usr/sbin
+	mkdir debian/lava-server/usr/sbin/
+	mv debian/lava-server/usr/bin/lava-mount-masterfs debian/lava-server/usr/sbin/
+	# skip unwanted licence file specified in copyright
+	$(RM) debian/lava-server/usr/lib/python2.7/dist-packages/google_analytics/LICENSE
+	# handle embedded JS
+	# jquery.flot
+	for file in $(DASHBOARD_JS); do \
+		$(RM) $(DASHBOARD_DIR)/$$file; \
+		ln -s $(SOURCE)/$$file $(DASHBOARD_DIR)/$$file; \
+	done
+	for file in $(SCHEDULER_JS); do \
+		$(RM) $(SCHEDULER_DIR)/$$file; \
+		ln -s $(SOURCE)/$$file $(SCHEDULER_DIR)/$$file; \
+	done
+	# other js libraries
+	$(RM) $(CURDIR)/debian/lava-server/usr/lib/python2.7/dist-packages/lava_server/lava-server/js/jquery.cookie.js
+	ln -s /usr/share/javascript/jquery-cookie/jquery.cookie.js \
+		$(CURDIR)/debian/lava-server/usr/lib/python2.7/dist-packages/lava_server/lava-server/js/jquery.cookie.js
+	$(RM) $(CURDIR)/debian/lava-server/usr/lib/python2.7/dist-packages/dashboard_app/static/dashboard_app/js/excanvas.js
+	ln -s /usr/share/javascript/excanvas/excanvas.js \
+		$(CURDIR)/debian/lava-server/usr/lib/python2.7/dist-packages/dashboard_app/static/dashboard_app/js/excanvas.js
+	$(RM) $(CURDIR)/debian/lava-server/usr/lib/python2.7/dist-packages/dashboard_app/static/dashboard_app/js/excanvas.min.js
+	ln -s /usr/share/javascript/excanvas/excanvas.min.js \
+		$(CURDIR)/debian/lava-server/usr/lib/python2.7/dist-packages/dashboard_app/static/dashboard_app/js/excanvas.min.js
+
+override_dh_auto_clean:
+	dh_auto_clean
+	$(RM) -r lava_server.egg-info doc/_build dist/ .idea/ jquery.cookie.js
+	$(RM) -r versiontools-*.egg/
+	[ ! -f doc/Makefile ] || make -C doc/ clean
+	[ ! -f man/Makefile ] || make -C man/ clean
+	debconf-updatepo
+
+# get upstream version for get-orig-source target
+VERSION:= $(shell dpkg-parsechangelog | grep '^Version: ' | sed -e 's/^Version: //' | sed -e 's/\-.*$$//')
+
+sdist-orig:
+	python setup.py sdist
+	mv -v dist/lava-server-$(VERSION).tar.gz ../lava-server_$(VERSION).orig.tar.gz
+	$(RM) -r versiontools-*.egg/

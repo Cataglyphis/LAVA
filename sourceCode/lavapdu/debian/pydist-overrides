@@ -1,0 +1,4 @@
+daemon python-daemon; PEP386
+lockfile python-lockfile; PEP386
+pexpect python-pexpect; PEP386
+psycopg2 python-psycopg2; PEP386

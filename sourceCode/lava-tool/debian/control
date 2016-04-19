@@ -1,0 +1,41 @@
+Source: lava-tool
+Section: python
+Priority: optional
+Maintainer: Debian LAVA team <pkg-linaro-lava-devel@lists.alioth.debian.org>
+Uploaders: Antonio Terceiro <terceiro@debian.org>,
+ Neil Williams <codehelp@debian.org>,
+ Fathi Boudra <fabo@debian.org>, Jordi Mallach <jordi@debian.org>
+Build-Depends: debhelper (>= 8.0.0), dh-python,
+ python | python-all | python-dev | python-all-dev,
+ python-sphinx (>= 1.0.7+dfsg) | python3-sphinx,
+ python-setuptools
+Build-Depends-Indep: python-json-schema-validator,
+ python-argcomplete (>= 0.3), python-keyring, python-xdg,
+ python-yaml (>= 3.10), python-mock, python-mocker
+X-Python-Version: 2.7
+XS-Testsuite: autopkgtest
+Standards-Version: 3.9.6
+Homepage: http://www.linaro.org/engineering/validation
+Vcs-Git: https://github.com/Linaro/pkg-lava-tool.git
+Vcs-Browser: https://github.com/Linaro/pkg-lava-tool
+
+Package: lava-tool
+Architecture: all
+Depends: python-setuptools, ${python:Depends}, ${misc:Depends}
+Breaks: lava-dashboard-tool (<< 0.8), lava-scheduler-tool (<< 0.6)
+Replaces: lava-dashboard-tool (<< 0.8), lava-scheduler-tool (<< 0.6)
+Description: command line utility for LAVA
+ LAVA is a continuous integration system for deploying operating
+ systems onto physical and virtual hardware for running tests.
+ Tests can be simple boot testing, bootloader testing and system
+ level testing, although extra hardware may be required for some
+ system tests. Results are tracked over time and data can be
+ exported for further analysis.
+ .
+ This package provides a user space connection to any LAVA
+ (Linaro Automated Validation Architecture) instance for
+ submitting test jobs or querying the instance for device and job
+ status over XMLRPC. A user account on the instance is needed to
+ create and use authentication tokens for some calls. The list
+ of calls supported is described on the API section of the LAVA
+ instance.

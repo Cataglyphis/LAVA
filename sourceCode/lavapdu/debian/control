@@ -1,0 +1,47 @@
+Source: lavapdu
+Section: net
+Priority: optional
+Maintainer: Debian LAVA team <pkg-linaro-lava-devel@lists.alioth.debian.org>
+Uploaders: Matt Hart <matt@blacklabsystems.com>,
+ Antonio Terceiro <terceiro@debian.org>,
+ Neil Williams <codehelp@debian.org>,
+ Fathi Boudra <fabo@debian.org>, Jordi Mallach <jordi@debian.org>
+Build-Depends: debhelper (>= 8.0.0), dh-python,
+ python | python-all | python-dev | python-all-dev,
+ python-setuptools, docbook-xsl, xsltproc
+X-Python-Version: 2.7
+Standards-Version: 3.9.6
+Homepage: http://www.linaro.org/projects/test-validation/
+Vcs-Git: https://github.com/Linaro/pkg-lavapdu.git
+Vcs-Browser: https://github.com/Linaro/pkg-lavapdu
+
+Package: lavapdu-daemon
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends},
+ postgresql, postgresql-client, telnet
+Conflicts: lavapdu
+Replaces: lavapdu
+Description: LAVA PDU control daemon
+ The Linaro Automated Validation Architecture (LAVA)
+ PDU daemon supports a number of APC power distribution
+ units which allow control over the power supplied
+ to individual devices. Operations are recorded in a
+ postgres database for the runner daemon to process.
+ .
+ This package contains the daemons to control
+ the PDU. One daemon can manage multiple PDUs.
+
+Package: lavapdu-client
+Architecture: all
+Depends: ${python:Depends}, ${misc:Depends}
+Conflicts: lavapdu
+Replaces: lavapdu
+Description: LAVA PDU client
+ The Linaro Automated Validation Architecture (LAVA)
+ can use the pduclient to control the power supply
+ to devices under test.
+ .
+ This package contains the pduclient to ensure
+ that devices get a hard reboot. The client connects
+ to the listen daemon on a local or remote host
+ running lavapdu-daemon.

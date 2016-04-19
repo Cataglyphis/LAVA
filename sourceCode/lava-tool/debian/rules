@@ -1,0 +1,59 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+# Sample debian/rules that uses debhelper.
+#
+# This file was originally written by Joey Hess and Craig Small.
+# As a special exception, when this file is copied by dh-make into a
+# dh-make output file, you may use that output file without restriction.
+# This special exception was added by Craig Small in version 0.37 of dh-make.
+
+# Uncomment this to turn on verbose mode.
+#export DH_VERBOSE=1
+
+# Prevent setuptools/distribute from accessing the internet.
+export http_proxy = http://127.0.9.1:9
+
+# This has to be exported to make some magic below work.
+export DH_OPTIONS
+
+TESTDIR = $(CURDIR)/debian/testhome
+
+PYTHON2:=$(shell pyversions -r)
+install_dir=$(call py_libdir, $(PYTHON2))
+
+%:
+	dh $@ --with python2
+
+override_dh_auto_build:
+	dh_auto_build
+	python setup.py build
+	make -C man/ man
+	mkdir -p $(TESTDIR)
+
+override_dh_auto_install:
+	dh_auto_install
+	python setup.py install --root=$(CURDIR)/debian/lava-tool/ --install-layout=deb
+	dh_installman -plava-tool man/_build/man/lava-tool.1
+
+override_dh_auto_clean:
+	dh_auto_clean
+	$(RM) -r lava_tool.egg-info setup.cfg .idea/
+	$(RM) -r versiontools-*.egg/
+	[ ! -f man/Makefile ] || make -C man/ clean
+
+# test suite not yet suitable for use on a buildd
+# tries to create files
+ifeq (,$(filter nocheck,$(DEB_BUILD_OPTIONS)))
+test-python%:
+	HOME=$(TESTDIR) python setup.py test -vv
+
+override_dh_auto_test: $(PYTHON2:%=test-python%)
+endif
+
+# get upstream version for get-orig-source target
+VERSION:= $(shell dpkg-parsechangelog | grep '^Version: ' | sed -e 's/^Version: //' | sed -e 's/\-.*$$//')
+
+sdist-orig:
+	python setup.py sdist
+	mv -v dist/lava-tool-$(VERSION).tar.gz ../lava-tool_$(VERSION).orig.tar.gz
+	$(RM) -r versiontools-*.egg/

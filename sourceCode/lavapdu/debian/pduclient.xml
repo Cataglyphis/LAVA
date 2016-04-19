@@ -1,0 +1,179 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+
+  <!ENTITY dhfirstname "Matthew">
+  <!ENTITY dhsurname   "Hart">
+  <!ENTITY dhusername  "Matthew Hart">
+  <!ENTITY dhemail     "matthew.hart@linaro.org">
+  <!ENTITY dhsection   "1">
+  <!ENTITY dhtitle     "pduclient User Manual">
+  <!ENTITY dhucpackage "PDUCLIENT">
+  <!ENTITY dhpackage   "pduclient">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhtitle;</title>
+    <productname>&dhpackage;</productname>
+    <authorgroup>
+      <author>
+       <firstname>&dhfirstname;</firstname>
+        <surname>&dhsurname;</surname>
+        <contrib>Wrote this manpage for the Debian system.</contrib>
+        <address>
+          <email>&dhemail;</email>
+        </address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2014</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>This manual page was written for the Debian system
+        (and may be used by others).</para>
+      <para>Permission is granted to copy, distribute and/or modify this
+        document under the terms of the GNU General Public License,
+        Version 2 or (at your option) any later version published by
+        the Free Software Foundation.</para>
+      <para>On Debian systems, the complete text of the GNU General Public
+        License can be found in
+        <filename>/usr/share/common-licenses/GPL</filename>.</para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhucpackage;</refentrytitle>
+    <manvolnum>&dhsection;</manvolnum>
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>program to automate power control of a device</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="plain"><option>--daemon <replaceable>daemonhostname</replaceable></option></arg>
+      <arg choice="plain"><option>--hostname <replaceable>pduhostname</replaceable></option></arg>
+      <arg choice="plain"><option>--port <replaceable>pduportnumber</replaceable></option></arg>
+      <arg choice="plain"><option>--command <replaceable>pducommand</replaceable></option></arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <group choice="opt">
+        <arg choice="plain">
+          <group choice="req">
+            <arg choice="plain"><option>-h</option></arg>
+            <arg choice="plain"><option>--help</option></arg>
+          </group>
+        </arg>
+      </group>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+    <para>This manual page documents briefly the
+      <command>&dhpackage;</command> command.</para>
+    <para><command>&dhpackage;</command> is the frontend for lavapdu to
+    issue commands to a Power Distribution Unit (PDU). Commands include
+    <emphasis>on</emphasis>, <emphasis>off</emphasis> and <emphasis>reboot</emphasis>.
+    </para>
+    <para>A particular device will be connected to a particular port on
+    a PDU. The <application>lavapdu-runner</application> is able to control
+    multiple PDUs, specified by hostname. <application>&dhpackage;
+    </application> connects to the <application>lavapdu-listen</application>
+    daemon which stores the command until the 
+    <application>lavapdu-runner</application> daemon is able to connect to the 
+    specified PDU and execute the command on the specified port.
+    </para>
+    <para>Typically, <application>&dhpackage;</application> will be
+    used from the device configuration file of
+    a LAVA instance, using <application>lava-dispatcher</application>.
+    </para>
+  </refsect1>
+  <refsect1 id="reverse">
+    <title>Reverse lookups</title>
+    <para><application>&dhpackage;</application> needs the hostname of
+    the calling machine to match a DNS reverse lookup. This means that
+    not only does <emphasis>hostname -f</emphasis> need to resolve
+    to an IP address but that IP address must resolve to that hostname:
+    </para>
+    <para>
+        <programlisting>
+        $ dig myhostname.domain
+        ...
+        192.168.0.56
+        ...
+        </programlisting>
+        <programlisting>
+        $ dig -x 192.168.0.56
+        ...
+        myhostname.domain
+        ...
+        </programlisting>
+    </para>
+    <para>If the second call does not work, you will need to fix the
+    local DNS resolution before <application>&dhpackage;</application>
+    will operate. Error messages will look something like:
+    </para>
+    <para>
+        <programlisting>
+            Unknown error sending command! control replied: nack
+        </programlisting>
+    </para>
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+    <variablelist>
+      <varlistentry>
+        <term><option>--daemon <replaceable>daemonhostname</replaceable></option></term>
+        <listitem>
+          <para>Determines the hostname of the hostname which is running
+          <application>lavapdu-listen</application> to which the client
+          can connect and add the command to the queue.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--hostname <replaceable>pduhostname</replaceable></option></term>
+        <listitem>
+          <para>The PDU which will run the command.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--port <replaceable>pduportnumber</replaceable></option></term>
+        <listitem>
+          <para>The port on the specified PDU to which the device is
+          connected.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>--command <replaceable>pducommand</replaceable></option></term>
+        <listitem>
+          <para>The command to run on the specified port of the specified
+          PDU.</para>
+        </listitem>
+      </varlistentry>
+
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show a summary of the required commands.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1 id="see_also">
+    <title>SEE ALSO</title>
+    <para><citerefentry>
+        <refentrytitle>lavapdu-listen</refentrytitle>
+        <manvolnum>8</manvolnum>
+      </citerefentry>, <citerefentry>
+        <refentrytitle>lavapdu-runner</refentrytitle>
+        <manvolnum>8</manvolnum>
+      </citerefentry></para>
+  </refsect1>
+</refentry>
+

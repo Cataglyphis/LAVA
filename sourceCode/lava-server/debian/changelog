@@ -1,0 +1,404 @@
+lava-server (2015.8.1-1) unstable; urgency=medium
+
+  * Hot fix production release
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 07 Aug 2015 10:29:08 +0100
+
+lava-server (2015.8-1) unstable; urgency=medium
+
+  * New production release
+  * Change from using return to exit in config script.
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 03 Aug 2015 08:32:45 +0100
+
+lava-server (2015.07-1) unstable; urgency=medium
+
+  * New upstream production release.
+  * Support old and new python-lockfile API for
+    trusty and jessie-backports support (Closes: #789907)
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 01 Jul 2015 17:11:18 +0100
+
+lava-server (2015.06-1) unstable; urgency=medium
+
+  *  New upstream production release
+  *  Add unit test support files. (Closes: #785607)
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 18 May 2015 12:57:56 +0100
+
+lava-server (2015.05-1~bpo8+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 15 May 2015 12:01:12 +0100
+
+lava-server (2015.05-1) unstable; urgency=medium
+
+  * New production release for unstable.
+  * Use Debian changelog date for sphinx timestamps. Patch from
+    Reiner Herrmann <reiner@reiner-h.de> (Closes: #782386)
+  * Symlink the source files as well as minified js files
+  * Tidy up lintian copyright Files matches.
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 08 May 2015 10:57:24 +0100
+
+lava-server (2015.04-1) experimental; urgency=medium
+
+  * New production release
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 08 Apr 2015 10:34:05 +0100
+
+lava-server (2015.03-1) experimental; urgency=medium
+
+  * New production release
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 09 Mar 2015 19:33:42 +0000
+
+lava-server (2015.01-1) experimental; urgency=medium
+
+  * New production release.
+  * [INTL:nl] Dutch translation of debconf messages
+    (Closes: #766547)
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 11 Feb 2015 13:39:42 +0800
+
+lava-server (2014.12-1) experimental; urgency=medium
+
+  * New production release
+  * Add dh-python to Build-Depends
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 04 Dec 2014 08:59:39 +0000
+
+lava-server (2014.09.1-1) unstable; urgency=medium
+
+  * New hotfix release cherry-picking upstream fixes,
+    reviews 3346, 3345, 3347, 3348 and 3331.
+    Includes fixes for django-tables2 update on filter
+    tables, multinode scheduling and a regression in
+    filter charts.
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 20 Oct 2014 18:00:39 +0100
+
+lava-server (2014.09-1) unstable; urgency=medium
+
+  * New upstream production release
+  * Fix upgrade issue with parallel migrations. (Closes: #763310)
+  * Use libjs-excanvas package as a dependency.
+  * Includes fix to trailing calls to python-django-longerusername.
+    (Closes: #763319)
+  * Add option to use LDAP authentication
+  * Update standards version, no changes
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 01 Oct 2014 14:13:30 +0100
+
+lava-server (2014.08.2-1) unstable; urgency=medium
+
+  * New production release includes fixes for multinode tagging,
+    multinode slave capability and documentation, fixup time
+    display in various places to be more human readable,
+    make test selection on image reports persistent and add
+    skipped and unknown test count to totals in image reports.
+  * Migrate to Django 1.7 support (Closes: #755610)
+  * Fix machine-readable sections of copyright lines
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 17 Sep 2014 10:24:09 -0700
+
+lava-server (2014.07.1-1) unstable; urgency=medium
+
+  * New upstream bug fix release, including fixes for
+    multinode device tags support and fixes for attaching
+    bug numbers to image reports.
+  * [INTL:pt] Portuguese translation for debconf messages
+    (Closes: #753907)
+  * [INTL:ru] Russian debconf templates translation
+    (Closes: #756644)
+  * [INTL:de] Initial German debconf translation
+    (Closes: #757519)
+  * [INTL:da] Danish translation of the debconf templates lava-
+    server (Closes: #757651)
+  * [INTL:fr] French debconf templates translation
+    (Closes: #757709)
+  * [INTL:es] Spanish translation of debconf messages
+    (Closes: #757894)
+  * [l10n:cs] Initial Czech translation of PO debconf template for
+    lava-server (Closes: #758018)
+  * [INTL:it] Italian translation of debconf messages
+    (Closes: #758028)
+  * [INTL:pt_BR] Brazilian Portuguese debconf templates
+    translation (Closes: #757728)
+  * [debconf_rewrite] Debconf templates and debian/control review
+    completed. (Closes: #754149)
+
+ -- Neil Williams <codehelp@debian.org>  Sat, 09 Aug 2014 12:15:28 +0100
+
+lava-server (2014.07-1) unstable; urgency=medium
+
+  * New production release
+  * Includes optimised Image Reports 2.0 and bug fixes
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 07 Aug 2014 11:32:36 +0100
+
+lava-server (2014.06.24-1) unstable; urgency=medium
+
+  * New upstream bug fix release.
+  * Documentation update and unit test fixes.
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 24 Jul 2014 21:07:50 +0100
+
+lava-server (2014.06.22-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 22 Jul 2014 16:43:51 +0100
+
+lava-server (2014.06.14.17-1) unstable; urgency=medium
+
+  * New upstream release
+  * Includes fix for dashboard unit tests and error on
+    submitting result data for the first time.
+  * Recommend Android support tools to communicate with devices using
+    adb
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 14 Jul 2014 19:01:00 +0100
+
+lava-server (2014.06.02.17-2) unstable; urgency=medium
+
+  * Drop README.Debian as this information is now in the
+    upstream documentation and has also been updated.
+  * Specify django-testscenarios to fix autopkgtest
+  * Add build-essential to the dependencies of lava-dev
+    to ensure the build scripts can operate.
+  * add directory to support archival of job output files
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 07 Jul 2014 15:35:50 +0100
+
+lava-server (2014.06.02.17-1) unstable; urgency=medium
+
+  * New upstream production release
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 02 Jul 2014 18:49:10 +0100
+
+lava-server (2014.05.30.09-1) unstable; urgency=medium
+
+  * New upstream release
+  * Update debian/copyright for upstream changes.
+
+ -- Neil Williams <codehelp@debian.org>  Sun, 29 Jun 2014 19:29:34 +0100
+
+lava-server (2014.05.11.14-1) unstable; urgency=medium
+
+  * New upstream release
+  * Update for merge into upstream master branch.
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 11 Jun 2014 18:47:23 +0100
+
+lava-server (2014.04.16-1) experimental; urgency=medium
+
+  * Initial release. (Closes: #747356: ITP: lava-server -- Linaro
+    Automated Validation Architecture server)
+  * Target experimental during final changes.
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 16 May 2014 21:11:32 +0100
+
+lava-server (0.22.1-8) unstable; urgency=medium
+
+  * Add python-setuptools to ensure lava-server manage operates
+    properly.
+  * Use common static file locations in Debian and Ubuntu
+  * Create all the SSHFS directories and generate the SSH key for the
+    worker.
+  * Improve the remote worker setup support.
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 07 May 2014 20:05:26 +0100
+
+lava-server (0.22.1-7) unstable; urgency=medium
+
+  * Add sbuild sample script to lava-dev
+  * Move creation of superuser into install_database function and check
+    if the superuser needs to be created.
+  * Update vcs location
+  * Drop linaro-django-pagination from lava-server
+  * Add lava-dev to the metapackage
+  * Add vmdebootstrap to lava metapackage and a README to lava-dev.
+  * Add libjs-jquery-flot and symlink relevant copies.
+  * Add the sshfs mount script for remote workers.
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 14 Apr 2014 10:37:27 +0100
+
+lava-server (0.22.1-6) unstable; urgency=medium
+
+  * Drop libguestfs-tools as it has moved to lava-dispatcher to be
+    architecture-dependent.
+
+ -- Neil Williams <codehelp@debian.org>  Sat, 29 Mar 2014 22:21:41 +0000
+
+lava-server (0.22.1-5) unstable; urgency=medium
+
+  * Add support for lava-dev - future versions will use git tag version
+    strings.
+  * Add support for reconfiguring lava-server as a remote worker - ssh
+    and xmlrpc support needs to be done manually.
+  * Create the superuser after completing migrations
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 28 Mar 2014 10:58:41 +0000
+
+lava-server (0.22.1-4) unstable; urgency=medium
+
+  * Add debconf support for migrating existing LAVA instances.
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 17 Mar 2014 15:26:39 +0000
+
+lava-server (0.22.1-3) unstable; urgency=medium
+
+  * Add libguestfs-tools for improved qemu support
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 10 Mar 2014 10:16:07 +0000
+
+lava-server (0.22.1-2) unstable; urgency=medium
+
+  * Add support for creating the devel database for unit tests
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 26 Feb 2014 11:04:55 +0000
+
+lava-server (0.22.1-1) unstable; urgency=medium
+
+  * Port to django1.6 
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 20 Feb 2014 10:45:58 +0000
+
+lava-server (0.22-1) unstable; urgency=medium
+
+  * Multicolumn search support
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 10 Feb 2014 10:41:46 +0000
+
+lava-server (0.21.2-2) unstable; urgency=medium
+
+  * Package instructions for using the initial data and sample
+    configuration files
+  * kvm.conf is packaged upstream in lava-dispatcher, removed.
+  * Package an example health check for kvm devices
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 10 Dec 2013 11:41:15 +0000
+
+lava-server (0.21.2-1) unstable; urgency=medium
+
+  * New upstream version
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 09 Dec 2013 08:29:10 +0000
+
+lava-server (0.21.1-6) unstable; urgency=medium
+
+  * Remove dbconfig-common and configure localhost postgres manually
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 02 Dec 2013 13:34:50 +0000
+
+lava-server (0.21.1-5) unstable; urgency=medium
+
+  * Updated for dashboard format 1.7
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 27 Nov 2013 15:43:03 +0000
+
+lava-server (0.21.1-4) unstable; urgency=low
+
+  * Add upstream manpages
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 06 Nov 2013 16:48:41 +0000
+
+lava-server (0.21.1-3) unstable; urgency=low
+
+  * Package the etc files provided by upstream after merging from the
+    packaging branch.
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 06 Nov 2013 10:36:34 +0000
+
+lava-server (0.21.1-2) unstable; urgency=low
+
+  * Add PEP386 support for versioned dependencies based on requires.txt
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 22 Oct 2013 15:29:06 +0100
+
+lava-server (0.21.1-1) unstable; urgency=low
+
+  * Update for working support of a native Debian LAVA install.
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 08 Oct 2013 16:00:48 +0100
+
+lava-server (0.21.0-1) unstable; urgency=low
+
+  * Incorporate changes from upstream server consolidation
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 03 Oct 2013 15:58:49 +0100
+
+lava-server (0.20.1-1) unstable; urgency=low
+
+  * Update from tip
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 13 Sep 2013 17:02:57 +0100
+
+lava-server (0.20-5) UNRELEASED; urgency=low
+
+  * Add config changes for apache2.4 support.
+  * Package the scheduler init file
+  * Add hints about symlinks needed later.
+  * Specify pyscopg2 dependency provision.
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 25 Jun 2013 20:38:02 +0100
+
+lava-server (0.20-4) unstable; urgency=low
+
+  * Fix missing dependency on python-psycopg2
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 07 Jun 2013 15:16:58 +0100
+
+lava-server (0.20-3) unstable; urgency=low
+
+  * Add helpers for correct dependency calculations.
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 05 Jun 2013 21:05:18 +0100
+
+lava-server (0.20-2) unstable; urgency=low
+
+  * Package the fixed upstream which serves /static/ files correctly.
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 04 Jun 2013 21:24:50 +0100
+
+lava-server (0.20-1a4) unstable; urgency=low
+
+  * added db setup support
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 04 Jun 2013 17:59:03 +0100
+
+lava-server (0.20-1a3) unstable; urgency=low
+
+  * test views.py for url django issue
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 03 Jun 2013 15:05:49 +0100
+
+lava-server (0.20-1a2) UNRELEASED; urgency=low
+
+  * handle migration of python-django-debian into lava-server
+  * fix package symlinks
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 03 Jun 2013 14:31:50 +0100
+
+lava-server (0.20-1) unstable; urgency=low
+
+  * Move to the combined lava-server upstream package to which the etc/
+    files have been migrated.
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 29 May 2013 16:14:30 +0100
+
+lava-server (0.0.1-1) unstable; urgency=low
+
+  * Migrate LAVA recipes from lava-manifest to provide a baseline for
+    what the build out would do in the manifest.
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 29 May 2013 12:06:46 +0100
+
+lava-server (0.0.0-1) unstable; urgency=low
+
+  * Initial packaging, generated from the lava-deployment-tool
+    installation.
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 23 May 2013 08:52:04 +0100

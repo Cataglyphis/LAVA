@@ -1,0 +1,146 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<!DOCTYPE refentry PUBLIC "-//OASIS//DTD DocBook XML V4.5//EN"
+"http://www.oasis-open.org/docbook/xml/4.5/docbookx.dtd" [
+  <!ENTITY dhfirstname "Neil">
+  <!ENTITY dhsurname   "Williams">
+  <!ENTITY dhusername  "Neil Williams">
+  <!ENTITY dhemail     "codehelp@debian.org">
+  <!ENTITY dhsection   "8">
+  <!ENTITY dhtitle     "lava-coordinator Administrators Guide">
+  <!ENTITY dhucpackage "LAVA-COORDINATOR">
+  <!ENTITY dhpackage   "lava-coordinator">
+]>
+
+<refentry>
+  <refentryinfo>
+    <title>&dhtitle;</title>
+    <productname>&dhpackage;</productname>
+    <authorgroup>
+      <author>
+       <firstname>&dhfirstname;</firstname>
+        <surname>&dhsurname;</surname>
+        <address>
+          <email>&dhemail;</email>
+        </address>
+      </author>
+    </authorgroup>
+    <copyright>
+      <year>2007</year>
+      <holder>&dhusername;</holder>
+    </copyright>
+    <legalnotice>
+      <para>Permission is granted to copy, distribute and/or modify this
+        document under the terms of the GNU General Public License,
+        Version 2 or (at your option) any later version published by
+        the Free Software Foundation.</para>
+    </legalnotice>
+  </refentryinfo>
+  <refmeta>
+    <refentrytitle>&dhucpackage;</refentrytitle>
+    <manvolnum>&dhsection;</manvolnum>
+  </refmeta>
+  <refnamediv>
+    <refname>&dhpackage;</refname>
+    <refpurpose>Coordinator daemon for group messaging in MultiNode LAVA</refpurpose>
+  </refnamediv>
+  <refsynopsisdiv>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <arg choice="plain"><option>--logfile=<replaceable>LOGFILE</replaceable></option></arg>
+      <arg choice="opt"><option>--loglevel=<parameter>INFO</parameter></option></arg>
+    </cmdsynopsis>
+    <cmdsynopsis>
+      <command>&dhpackage;</command>
+      <group choice="opt">
+        <arg choice="plain">
+          <group choice="req">
+            <arg choice="plain"><option>-h</option></arg>
+            <arg choice="plain"><option>--help</option></arg>
+          </group>
+        </arg>
+      </group>
+    </cmdsynopsis>
+  </refsynopsisdiv>
+  <refsect1 id="description">
+    <title>DESCRIPTION</title>
+    <para>This manual page documents briefly the
+      <command>&dhpackage;</command> daemon.</para>
+    <para><command>&dhpackage;</command> is a daemon to manage
+    Multi-Node communications between LAVA devices under test.</para>
+  </refsect1>
+  <refsect1 id="options">
+    <title>OPTIONS</title>
+    <variablelist>
+      <varlistentry>
+        <term><option>--logfile=<replaceable>LOGFILE</replaceable></option></term>
+        <listitem>
+          <para>Overrides the default log file location of 
+          <file>/var/log/lava-coordinator.log</file></para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>--loglevel=<replaceable>LOGLEVEL</replaceable></option></term>
+        <listitem>
+          <para>Overrides the default log level of 
+          INFO. Available options, in increasing order of verbosity, are:
+          ERROR, WARNING, INFO, DEBUG.</para>
+        </listitem>
+      </varlistentry>
+      <varlistentry>
+        <term><option>-h</option></term>
+        <term><option>--help</option></term>
+        <listitem>
+          <para>Show summary of options.</para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1 id="files">
+    <title>FILES</title>
+    <variablelist>
+      <varlistentry>
+        <term><filename>/etc/lava-coordinator/lava-coordinator.conf</filename></term>
+        <listitem>
+          <para>The system-wide configuration file to control the
+            behaviour of <application>&dhpackage;</application>.
+            A LAVA NodeDispatcher installed on the same machine as the
+            coordinator will use the same file. NodeDispatchers on remote
+            machines need their own copy of this file, modified so that
+            the <option>coordinator_hostname</option> field is the
+            hostname or IP address of the machine running the coordinator.
+            </para>
+        </listitem>
+      </varlistentry>
+    </variablelist>
+  </refsect1>
+  <refsect1 id="labsetup">
+    <title>LAVA lab setup</title>
+    <para>The LAVA Coordinator needs to be in lock-step with compatible
+    versions of the LAVA NodeDispatcher (part of lava-dispatcher /
+    lava-server) but the coordinator is a singleton and there can be
+    multiple dispatchers, none of which need to be on the same machine
+    as the coordinator.
+    </para>
+    <para>Additionally, when a dispatcher is installed on a machine
+    other than the machine running the coordinator, a copy of the LAVA
+    Coordinator conffile needs to be copied to that machine and modified
+    to indicate the hostname or IP address of the LAVA Coordinator for
+    that dispatcher. Typically, this can be done with tools like salt,
+    puppet, chef etc.
+    </para>
+    <para>Therefore, lava-coordinator does not depend on the rest of
+    LAVA and the setup of the coordinator is at the discretion of the
+    LAVA lab administrator. As long as there is one Coordinator and all
+    dispatchers have a working address for a coordinator, all should
+    be well.
+    </para>
+    <para>If a lab contains more than one Coordinator, it is recommended
+    that each coordinator uses a different port. This is mandatory if
+    more than one coordinator is installed on a single machine.
+    </para>
+    <para>LAVA Coordinator is lightweight and has minimal dependencies,
+    installing on virtualised hardware is not expected to be a problem.
+    </para>
+  </refsect1>
+</refentry>
+

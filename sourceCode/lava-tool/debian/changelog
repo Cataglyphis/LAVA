@@ -1,0 +1,77 @@
+lava-tool (0.13-1) unstable; urgency=medium
+
+  * New production release
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 06 Jul 2015 09:21:47 +0100
+
+lava-tool (0.12-1~bpo8+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 15 May 2015 11:48:12 +0100
+
+lava-tool (0.12-1) unstable; urgency=medium
+
+  * New upstream release
+  * Update watch file for git tags
+  * Add dh-python to build-depends
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 05 May 2015 11:23:12 +0100
+
+lava-tool (0.11.2-2) unstable; urgency=medium
+
+  * Enable the autopkgtests in debian/control.
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 27 Jun 2014 17:23:43 +0100
+
+lava-tool (0.11.2-1) unstable; urgency=medium
+
+  * New upstream release - completes the removal of
+    versiontools. (Closes: #749871)
+  * Add autopkgtests support.
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 10 Jun 2014 19:50:38 +0100
+
+lava-tool (0.11.1-1) unstable; urgency=medium
+
+  * New upstream release
+  * Drop versiontools dependency.
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 12 May 2014 18:03:37 +0100
+
+lava-tool (0.11-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 09 May 2014 15:38:03 +0100
+
+lava-tool (0.10-1) unstable; urgency=medium
+
+  * Initial release. (Closes: #747350: ITP: lava-tool -- command line
+    utility for LAVA)
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 07 May 2014 20:01:50 +0100
+
+lava-tool (0.8.2-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Neil Williams <codehelp@debian.org>  Sun, 08 Dec 2013 20:49:22 +0000
+
+lava-tool (0.8.1-1) unstable; urgency=low
+
+  * New upstream release
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 19 Nov 2013 09:32:57 +0000
+
+lava-tool (0.7.2-1) unstable; urgency=low
+
+  * Update for working support of a native Debian LAVA install.
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 08 Oct 2013 16:00:04 +0100
+
+lava-tool (0.7.1-1) unstable; urgency=low
+
+  * Initial release 
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 05 Jun 2013 11:55:07 +0100

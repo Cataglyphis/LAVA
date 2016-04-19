@@ -1,0 +1,316 @@
+lava-dispatcher (2015.8.1-1) unstable; urgency=medium
+
+  * Hot fix production release
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 07 Aug 2015 10:29:26 +0100
+
+lava-dispatcher (2015.8-1) unstable; urgency=medium
+
+  [ Senthil Kumaran S (stylesen) ]
+  * Add lxc and bridge-utils to recommended dependency
+
+  [ Neil Williams ]
+  * New production release
+  * Stop including /etc/default/tftpd-hpa (Closes: #791614)
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 03 Aug 2015 08:36:57 +0100
+
+lava-dispatcher (2015.07-1) unstable; urgency=medium
+
+  * New production release
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 06 Jul 2015 09:19:46 +0100
+
+lava-dispatcher (2015.06-1) unstable; urgency=medium
+
+  * New upstream production release
+  * Ensure usable permissions for the vmgroups public key
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 11 Jun 2015 09:24:39 +0100
+
+lava-dispatcher (2015.05-1~bpo8+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 15 May 2015 11:37:43 +0100
+
+lava-dispatcher (2015.05-1) unstable; urgency=medium
+
+  * New production release for unstable.
+  * Add support for using a static timestamp on manpage.
+  * Tidy up dep-5 file listings in copyright
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 22 Apr 2015 14:00:29 +0100
+
+lava-dispatcher (2015.04-1) experimental; urgency=medium
+
+  * New production release
+  * Includes new slave daemon for refactoring support.
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 08 Apr 2015 10:33:46 +0100
+
+lava-dispatcher (2015.03-1) experimental; urgency=medium
+
+  * New production release.
+  * Update adt test run dependencies 
+  * Add nose to pydist-overrides
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 11 Feb 2015 16:40:38 +0800
+
+lava-dispatcher (2015.01-1) experimental; urgency=medium
+
+  * New production release
+  * Add xz-utils for xz and lzma support.
+  * Add lintian override for more test shell support scripts for
+    openembedded.
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 11 Feb 2015 13:39:16 +0800
+
+lava-dispatcher (2014.12-1) experimental; urgency=medium
+
+  * New production release
+  * Add dh-python to Build-Depends
+  * Add telnet to test dependencies
+  * Add support for netifaces dependency.
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 04 Dec 2014 08:59:20 +0000
+
+lava-dispatcher (2014.09.1-1) unstable; urgency=medium
+
+  * New hotfix release cherry-picking upstream fixes,
+    reviews 3326, 3349 and 3328.
+  * Update standards version, no changes
+  * Add file to dependencies for use in preparing test overlays.
+  * Fix watch file to use upstream git tags
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 20 Oct 2014 18:03:23 +0100
+
+lava-dispatcher (2014.09-1) unstable; urgency=low
+
+  * New upstream release
+  * Add git to autopkgtest dependencies
+  * Includes support for download urls containing a username &
+    password. Patch from Sjoerd Simons. (Closes: #762572)
+  * Recreate ext4 filesystems on the DUT in master mode
+    (Closes: #762534)
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 03 Oct 2014 15:31:38 +0100
+
+lava-dispatcher (2014.08.2-1) unstable; urgency=medium
+
+  * New production release, including fixes to enable kernel dhcp for
+    ramdisk booting, SELinux support for test images an tarballs used
+    by master images, add support for dynamic master images, add QEMU
+    device types for arm, mips, ppc and aarch64, add support for slave
+    device and add role parameter to all remaining JSON schema.
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 17 Sep 2014 10:28:21 -0700
+
+lava-dispatcher (2014.07.1-1) unstable; urgency=medium
+
+  * New upstream bug fix release, including support files
+    for lava-dispatcher unit tests(Closes: #758012), support
+    for retaining SELinux support in test images and tarballs
+    and enable ramdisk booting for cubieboard3.
+  * Adapt lintian overrides for new support files
+
+ -- Neil Williams <codehelp@debian.org>  Sun, 17 Aug 2014 11:23:02 +0100
+
+lava-dispatcher (2014.07-1) unstable; urgency=medium
+
+  * New production release
+  * Drop use of sync inside dispatcher code.
+  * Add proxy support for git and bzr clone operations
+  * Raise an error if fetching the test definition fails.
+  * Add bzr and launchpadlib to recommends to support test definitions
+  * Depend on SELinux support from tar
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 07 Aug 2014 11:35:58 +0100
+
+lava-dispatcher (2014.06.2-1) unstable; urgency=medium
+
+  * New upstream bug fix release for proxy support.
+  * Add pep8 to the testsuite dependencies as
+    setup.py lists it upstream. (Closes: #755695)
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 23 Jul 2014 19:27:28 +0100
+
+lava-dispatcher (2014.06.1-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 22 Jul 2014 16:49:42 +0100
+
+lava-dispatcher (2014.06-1) unstable; urgency=medium
+
+  * New upstream production release. 
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 02 Jul 2014 18:48:20 +0100
+
+lava-dispatcher (2014.05.32.13-1) unstable; urgency=medium
+
+  * Use the device and device-types defaults from /usr/lib
+    and leave /etc/ for admin overrides only. 
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 01 Jul 2014 16:51:49 +0100
+
+lava-dispatcher (2014.05.29.18-1) unstable; urgency=medium
+
+  * New upstream release
+  * conflict & provide the binary package of dashboard-bundle, not the
+    source.
+
+ -- Neil Williams <codehelp@debian.org>  Sun, 29 Jun 2014 19:38:43 +0100
+
+lava-dispatcher (2014.05.11.14-1) unstable; urgency=medium
+
+  * New upstream release
+  * Add the new vm_group scripts to lintian overrides.
+  * Update for merge into upstream master branch.
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 21 May 2014 09:54:18 +0100
+
+lava-dispatcher (2014.04.16-1) experimental; urgency=medium
+
+  * Initial release. (Closes: #747355: ITP: lava-dispatcher -- Linaro
+    Automated Validation Architecture dispatcher)
+  * Target experimental during final testing.
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 16 May 2014 21:13:36 +0100
+
+lava-dispatcher (0.33.3-10) unstable; urgency=medium
+
+  * Add setuptools dependency and override dh_fixperms for the vm_groups
+    key file.
+  * Migrate to support LAVANETWORKIFACE and avoid changing existing
+    details in /etc/
+  * Adapt lintian overrides for changes in python 2.7.6 which no longer
+    moves files into /usr/share/pyshared
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 07 May 2014 20:04:45 +0100
+
+lava-dispatcher (0.33.3-9) unstable; urgency=medium
+
+  * Move lava-dispatch to /usr/sbin as it must be run as root.
+  * Add support for vm-group ssh keys
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 30 Apr 2014 10:06:41 +0100
+
+lava-dispatcher (0.33.3-8) unstable; urgency=medium
+
+  * Include updates from tip including lzma support
+  * Add recommendation for qemu-system-arm on armhf in preparation for
+    vm_groups testing.
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 25 Apr 2014 10:34:43 +0100
+
+lava-dispatcher (0.33.3-7) unstable; urgency=medium
+
+  * Add LAVA_NETWORK_IFACE support for dispatchers which change network
+    frequently.
+  * Update home page location
+  * Add sudo as a dependency and nfs support in recommends.
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 14 Apr 2014 10:43:07 +0100
+
+lava-dispatcher (0.33.3-6) unstable; urgency=medium
+
+  * Add arch-dependent libguestfs-tools recommendation.
+
+ -- Neil Williams <codehelp@debian.org>  Sat, 29 Mar 2014 22:21:34 +0000
+
+lava-dispatcher (0.33.3-5) unstable; urgency=medium
+
+  * Add postinst support for retrieving the dispatcher IP addr
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 17 Mar 2014 15:59:15 +0000
+
+lava-dispatcher (0.33.3-4) unstable; urgency=medium
+
+  * Convert to arch:any to support arch-specific recommends like qemu-
+    system-x86
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 10 Mar 2014 15:34:12 +0000
+
+lava-dispatcher (0.33.3-3) unstable; urgency=medium
+
+  * Depend on kpartx and package an almost usable lava-dispatcher.conf
+  * Add parted for calculation of offsets for loop back mount
+    operations.
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 17 Dec 2013 12:22:55 +0000
+
+lava-dispatcher (0.33.3-2) unstable; urgency=medium
+
+  * Recommend qemu-system-x86 to support KVM devices
+  * Update copyright
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 13 Dec 2013 13:15:03 +0000
+
+lava-dispatcher (0.33.3-1) unstable; urgency=medium
+
+  * New upstream version
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 28 Nov 2013 11:20:29 +0000
+
+lava-dispatcher (0.33.2-5) unstable; urgency=medium
+
+  * Update python overrides to pick up versioned
+    dependency information from upstream setup.py. 
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 27 Nov 2013 15:52:18 +0000
+
+lava-dispatcher (0.33.2-4) unstable; urgency=low
+
+  * Drop doc package, rst files moved to lava-server upstream
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 13 Nov 2013 22:28:05 +0000
+
+lava-dispatcher (0.33.2-3) unstable; urgency=low
+
+  * Adapt to new locations for the lava_test_shell support files.
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 11 Nov 2013 11:11:47 +0000
+
+lava-dispatcher (0.33.2-2) unstable; urgency=low
+
+  * Package the LMP support files
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 06 Nov 2013 11:23:12 +0000
+
+lava-dispatcher (0.33.2-1) unstable; urgency=low
+
+  * Update for working support of a native Debian LAVA install.
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 08 Oct 2013 16:25:46 +0100
+
+lava-dispatcher (0.33.1-1) unstable; urgency=low
+
+  * Merge MultiNode into tip
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 30 Aug 2013 12:39:11 +0100
+
+lava-dispatcher (0.32.3-1) unstable; urgency=low
+
+  * Testing MultiNode
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 02 Jul 2013 22:38:39 +0100 
+
+lava-dispatcher (0.32.2-3) unstable; urgency=low
+
+  * Add antonio's kvm branch for testing
+  * Set the default_config_dir for when not inside a virtualenv
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 10 Jun 2013 12:10:36 +0100
+
+lava-dispatcher (0.32.2-2) unstable; urgency=low
+
+  * Add helpers for correct dependency calculations.
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 05 Jun 2013 20:47:59 +0100
+
+lava-dispatcher (0.32.2-1) unstable; urgency=low
+
+  * Initial release
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 24 May 2013 13:11:45 +0100

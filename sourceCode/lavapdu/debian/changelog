@@ -1,0 +1,82 @@
+lavapdu (0.0.5-1) unstable; urgency=medium
+
+  * New upstream release
+  * Support old and new python-lockfile API for
+    trusty and jessie-backports support. (Closes: #789552)
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 01 Jul 2015 20:58:45 +0100
+
+lavapdu (0.0.4-2~bpo8+1) jessie-backports; urgency=medium
+
+  * Rebuild for jessie-backports.
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 15 May 2015 11:54:29 +0100
+
+lavapdu (0.0.4-2) unstable; urgency=medium
+
+  * Migrate into unstable for stretch. Update watch file.
+
+ -- Neil Williams <codehelp@debian.org>  Fri, 01 May 2015 16:28:51 +0100
+
+lavapdu (0.0.4-1) experimental; urgency=medium
+
+  [ Matt Hart ]
+  * new upstream release
+
+  [ Neil Williams ]
+  * Remove old watch.ex file and add dh-python to build-depends.
+  * Expand manpage for lavapdu-runner to cover upstream changes to the
+    configuration file.
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 19 Mar 2015 10:52:46 +0000
+
+lavapdu (0.0.3-3) unstable; urgency=low
+
+  * Add telnet as a dependency of lavapdu-daemon
+  * Update standards version, no changes
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 08 Oct 2014 15:48:12 +0100
+
+lavapdu (0.0.3-2) unstable; urgency=medium
+
+  * Apply upstream fix to init scripts to ensure
+    daemon starts after postgresql. (Closes: #754788)
+
+ -- Neil Williams <codehelp@debian.org>  Tue, 29 Jul 2014 21:02:35 +0100
+
+lavapdu (0.0.3-1) unstable; urgency=medium
+
+  * Initial release. (Closes: #747353: ITP: lavapdu -- LAVA PDU client
+    and daemon)
+
+ -- Neil Williams <codehelp@debian.org>  Wed, 07 May 2014 20:03:41 +0100
+
+lavapdu (0.0.2-2) unstable; urgency=medium
+
+  * Split out the pduclient script to allow a single daemon to be
+    controlled from multiple devices.
+
+ -- Neil Williams <codehelp@debian.org>  Sun, 16 Mar 2014 14:16:33 +0000
+
+lavapdu (0.0.2-1) unstable; urgency=medium
+
+  * New upstream release
+
+ -- Neil Williams <codehelp@debian.org>  Mon, 20 Jan 2014 10:22:20 +0000
+
+lavapdu (0.0.1-2) unstable; urgency=medium
+
+  * Rename lavapdu-listener to lavapdu-listen
+  * Update copyright file
+
+ -- Neil Williams <codehelp@debian.org>  Thu, 12 Dec 2013 11:34:25 +0000
+
+lavapdu (0.0.1-1) unstable; urgency=low
+
+  [ Matthew Hart ]
+  * Initial packaging for Linaro PPA.
+
+  [ Neil Williams ]
+  * Migrate packaging to alioth
+
+ -- Matthew Hart <matthew.hart@linaro.org>  Thu, 22 Aug 2013 10:41:45 +0100
