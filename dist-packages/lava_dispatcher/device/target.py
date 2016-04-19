@@ -26,6 +26,7 @@ import logging
 import time
 import pexpect
 import subprocess
+import json
 import lava_dispatcher.utils as utils
 
 from lava_dispatcher.device import boot_options
@@ -356,10 +357,11 @@ class Target(object):
             logging.debug("Retaining SELinux support in the current image.")
             return True
 
+    # judge current state, and skip guide
     def _skip_guide_whaley(self, connection):
         pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", pexpect.TIMEOUT]
         for i in range(10):
-            logging.info("Try to skip the guide. Attempt: %s" % str(i+1))
+            logging.info("try to skip the guide. Attempt: %s" % str(i+1))
             connection.sendcontrol('c')
             connection.sendline('')
             # connection.expect('shell', timeout=5)
@@ -367,11 +369,11 @@ class Target(object):
             connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
             pos1 = connection.expect(pattern, timeout=10)
             if pos1 == 0:
-                logging.warning("Can't find service: window")
+                logging.warning("can't find service: window")
                 time.sleep(100)
                 continue
             elif pos1 == 1:
-                logging.info("Now in com.helios.guide activity")
+                logging.info("now in com.helios.guide activity")
                 time.sleep(100)
                 connection.sendcontrol('c')
                 connection.sendline('')
@@ -383,44 +385,104 @@ class Target(object):
                 connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
                 pos2 = connection.expect(pattern, timeout=10)
                 if pos2 == 2:
-                    logging.info("Now in com.helios.launcher activity, skip the guide successfully")
+                    logging.info("now in com.helios.launcher activity, skip the guide successfully")
                     break
                 else:
-                    logging.info("Can't skip the guide, try it again")
+                    logging.info("can't skip the guide, try it again")
             elif pos1 == 2:
-                logging.info("Already in com.helios.launch activity")
+                logging.info("already in com.helios.launch activity")
                 break
             else:
                 time.sleep(30)
                 continue
         else:
-            logging.error("Can't skip the guide. Please have a check")
+            logging.error("can't skip the guide, please have a check")
             self.context.test_data.add_result("skip_guide_whaley", "fail")
 
+    # install busybox in /system/xbin
     def _install_busybox_whaley(self, connection):
-        logging.info("Install busybox in /system/xbin")
+        logging.info("install busybox in /system/xbin")
         connection.sendline('su')
-        connection.sendline('mount -o remount /system')
+        connection.sendline('mount -o remount,rw /system')
         connection.sendline('cd /system/xbin')
         connection.sendline('busybox --install .')
         # go back to /, otherwise block the next step in whaley_test_shell
         connection.sendline('cd /')
-        logging.info("End installation of busybox")
+        logging.info("end installation of busybox")
 
+    # remove helios guide, so after reboot no guide appear
     def _remove_helios_guide(self, connection):
-        logging.info("Remove helios guide")
+        logging.info("remove helios guide")
         connection.sendline('su')
         connection.sendline('rm -rf /data/dalvik-cache/arm/system@priv-app@HeliosGuide@HeliosGuide.apk@classes.dex')
-        connection.sendline('mount -o remount /system')
+        connection.sendline('mount -o remount,rw /system')
         connection.sendline('rm -rf /system/priv-app/HeliosGuide')
+        logging.info("end remove helios guide")
+
+    # close shutdown
+    def _close_shutdown_whaley(self, connection):
+        logging.info("modify hardwareprotect.db, set shutdown time to -1")
+        connection.sendline("sqlite3 /data/system/hardwareprotect.db \"update hwprotect set timeout=-1 where name='shutdown'\"")
+        logging.info("end modify hardwareprotect.db")
+
+    # load config.json
+    def _load_config_whaley(self):
+        logging.info("load config.json")
+        job_data = self.context.job_data
+        params = {}
+        for cmd in job_data['actions']:
+            if cmd.get('command') == 'whaley_test_shell':
+                params = cmd.get('parameters', {})
+        script = params.get('script').strip()
+        script_name = script.split(' ')[0]
+        script_path = os.path.split(script_name)[0]
+        config_path = os.path.join(script_path, "plan", "config.json")
+        if os.path.isfile(config_path):
+            with open(config_path, 'r') as fin:
+                config_data = json.load(fin)
+        else:
+            logging.warning("no config.json found in %s", config_path)
+            config_data = {}
+        return config_data
+
+    def _get_macaddr_whaley(self):
+        config_data = self._load_config_whaley()
+        target = self.context.job_data['target']
+        if target in config_data:
+            mac_addr = config_data[target]['mac_addr']
+            logging.info("mac address for %s is %s" % (target, mac_addr))
+        else:
+            mac_addr = ''
+            logging.warning("no target %s found in config.json", target)
+        return mac_addr
+
+    # set mac address in bootloader
+    def _set_macaddr_whaley(self, connection):
+        logging.info("set mac address in bootloader")
+        mac_addr = self._get_macaddr_whaley()
+        device_type = self.context.job_data['device_type']
+        if device_type == 'mstar':
+            connection.sendline("set ethaddr %s" % mac_addr)
+            connection.sendline("set macaddr %s" % mac_addr)
+            connection.sendline("save")
+        elif device_type == 'hisi':
+            connection.sendline("setenv ethaddr %s" % mac_addr)
+        else:
+            logging.warning("no device type mstar or hisi found")
+        logging.info("end set mac address in bootloader")
+
+    # set factory info, e.g. mac address, hdcp key
+    # then reboot the device
+    def _set_factory_whaley(self, connection):
+        logging.info("set factory mode info")
+        mac_addr = self._get_macaddr_whaley()
+        connection.sendline('su')
+        connection.sendline('mount -o remount,rw /factory')
+        connection.sendline('echo ro.hardware.lan_mac=%s > /factory/factory.prop' % mac_addr)
+        connection.sendline('chmod 644 /factory/factory.prop')
         connection.sendline('reboot')
         time.sleep(30)
-        logging.info("End remove helios guide")
-
-    def _close_shutdown_whaley(self, connection):
-        logging.info("Modify hardwareprotect.db, set shutdown time to -1")
-        connection.sendline("sqlite3 /data/system/hardwareprotect.db \"update hwprotect set timeout=-1 where name='shutdown'\"")
-        logging.info("End modify hardwareprotect.db")
+        logging.info("end set factory mode info")
 
     def _auto_login(self, connection, is_master=False):
         if is_master:
@@ -711,8 +773,10 @@ class Target(object):
             self._install_busybox_whaley(connection)
             # set shutdown time to -1, no shutdown
             self._close_shutdown_whaley(connection)
-            # remove helios guide, and reboot
+            # remove helios guide
             self._remove_helios_guide(connection)
+            # set factory info, and reboot
+            self._set_factory_whaley(connection)
             # wait for system reboot
             self._skip_guide_whaley(connection)
 

@@ -339,6 +339,8 @@ class BootloaderTarget(MasterImageTarget):
         self._load_test_firmware()
         # enter bootloader, 2016.01.21
         self._enter_bootloader(self.proc)
+        # add set mac address in bootloader, 2016.04.19
+        self._set_macaddr_whaley(self.proc)
         boot_cmds = self._load_boot_cmds(default=self._default_boot_cmds,
                                          boot_tags=self._boot_tags)
         # Sometimes a command must be run to clear u-boot console buffer
