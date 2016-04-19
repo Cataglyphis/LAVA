@@ -1,0 +1,4 @@
+ADB_DATA %{MONTHNUM}-%{MONTHDAY}%{SPACE}%{HOUR}:%{MINUTE}:%{SECOND}
+ADB_LEVEL (V|D|I|W|E|F|S)
+ADB_SERVICE (?:[a-zA-Z$_](\S*)(\s*):)
+ADB_MSG (.*)

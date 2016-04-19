@@ -1,0 +1,2 @@
+04-06 15:17:07.371  1669  1726 W ActivityManager: java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.String.equals
+04-06 15:17:07.371  1669  1726 W ActivityManager: java.lang.NullPointerException: Attempt to invoke virtual method 'boolean java.lang.String.equals
