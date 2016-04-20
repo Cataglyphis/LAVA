@@ -436,25 +436,44 @@ class Target(object):
         script = params.get('script').strip()
         script_name = script.split(' ')[0]
         script_path = os.path.split(script_name)[0]
-        config_path = os.path.join(script_path, "plan", "config.json")
+        target = self.context.job_data['target']
+        config_name = target + ".json"
+        config_path = os.path.join(script_path, "plan", "config", config_name)  # plan/config/H01P43D_01.json
         if os.path.isfile(config_path):
             with open(config_path, 'r') as fin:
                 config_data = json.load(fin)
         else:
-            logging.warning("no config.json found in %s", config_path)
+            logging.warning("no %s found", config_path)
             config_data = {}
+        if target in config_data:
+            logging.info("load %s successfully", config_path)
+            config_data = config_data[target]
+            logging.info("data in %s: %s" % (config_name, config_data))
+        else:
+            logging.warning("%s not in %s" % (target, config_path))
         return config_data
 
+    # get mac address of current device, defined in configure.json
     def _get_macaddr_whaley(self):
         config_data = self._load_config_whaley()
-        target = self.context.job_data['target']
-        if target in config_data:
-            mac_addr = config_data[target]['mac_addr']
-            logging.info("mac address for %s is %s" % (target, mac_addr))
+        if config_data:
+            mac_addr = config_data['mac_addr']
+            logging.info("mac address: %s", mac_addr)
         else:
             mac_addr = ''
-            logging.warning("no target %s found in config.json", target)
+            logging.warning("mac address: %s", mac_addr)
         return mac_addr
+
+    # get signal of current device, judge whether current device has signal connected
+    def _get_signal_whaley(self):
+        config_data = self._load_config_whaley()
+        if config_data:
+            signal = config_data['signal']
+            logging.info("has signal connected: %s", signal)
+        else:
+            signal = False
+            logging.warning("no signal connected")
+        return signal
 
     # set mac address in bootloader
     def _set_macaddr_whaley(self, connection):

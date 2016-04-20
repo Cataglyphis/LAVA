@@ -486,12 +486,8 @@ class BootloaderTarget(MasterImageTarget):
             ##############################################
             # judge whether current device has signal
             ##############################################
-            signal_device = ["A02F43D_01", "A02F43D_02",
-                             "H01P43D_03", "H01P43D_04",
-                             "H01P55D_01", "H01P55D_02", "H01P55D_03"]
-            target = self.context.job_data.get("target")
-            logging.info("target device: %s", target)
-            if target in signal_device:
+            signal = self._get_signal_whaley()
+            if signal:
                 logging.info("target device has signal connected")
                 LAVA_json = os.path.join(path, "plan", "LAVA_Signal.json")
             else:
