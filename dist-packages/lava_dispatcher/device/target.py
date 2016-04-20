@@ -498,9 +498,30 @@ class Target(object):
         connection.sendline('mount -o remount,rw /factory')
         connection.sendline('echo ro.hardware.lan_mac=%s > /factory/factory.prop' % mac_addr)
         connection.sendline('chmod 644 /factory/factory.prop')
-        connection.sendline('reboot')
-        time.sleep(30)
         logging.info("end set factory mode info")
+
+    # copy hdcp key to factory partition
+    def _copy_hdcp_key(self, connection):
+        logging.info("copy hdcp key to factory partition")
+        job_name = self.context.job_data['job_name']
+        device_type = self.context.job_data['device_type']
+        connection.sendline('su')
+        connection.sendline('mount -o remount,rw /factory')
+        if device_type == 'mstar':
+            logging.info("set hdcp key for mstar platform")
+            if 'D' in job_name:
+                logging.info("debug key, copy debug_key to factory partition")
+                connection.sendline('cp -r /mnt/usb/sda1/hdcp_key/debug_key /factory')
+            elif 'R' in job_name:
+                logging.info("release key, copy release_key to factory partition")
+                connection.sendline('cp -r /mnt/usb/sda1/hdcp_key/release_key /factory')
+            else:
+                logging.warning("can't find D or R in job_name")
+        elif device_type == 'hisi':
+            logging.info("don't need to set hdcp key for hisi platform")
+        else:
+            logging.info("only support mstar and hisi platform now, please add a new platform")
+        logging.info("end copy hdcp key to factory partition")
 
     def _auto_login(self, connection, is_master=False):
         if is_master:
@@ -787,14 +808,19 @@ class Target(object):
             # add below 2 functions to skip guide and install busybox
             # add is_skip in the future
             self._skip_guide_whaley(connection)
-            # install busybox, need add judgement later
+            # install busybox
             self._install_busybox_whaley(connection)
             # set shutdown time to -1, no shutdown
             self._close_shutdown_whaley(connection)
             # remove helios guide
             self._remove_helios_guide(connection)
-            # set factory info, and reboot
+            # set factory info
             self._set_factory_whaley(connection)
+            # copy hdcp key
+            self._copy_hdcp_key(connection)
+            # reboot device
+            connection.sendline('reboot')
+            time.sleep(30)
             # wait for system reboot
             self._skip_guide_whaley(connection)
 
