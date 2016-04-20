@@ -292,6 +292,9 @@ class LavaTestJob(object):
         lava_commands = get_all_cmds()
         lmp_init_data = []
 
+        # add for debug, 2016.04.20
+        logging.info("job data: %s", self.job_data)
+
         if self.job_data['actions'][-1]['command'].startswith(
                 "submit_results"):
             submit_results = self.job_data['actions'].pop(-1)
