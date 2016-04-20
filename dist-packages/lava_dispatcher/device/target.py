@@ -427,7 +427,6 @@ class Target(object):
 
     # load config.json
     def _load_config_whaley(self):
-        logging.info("load config.json")
         job_data = self.context.job_data
         params = {}
         for cmd in job_data['actions']:
