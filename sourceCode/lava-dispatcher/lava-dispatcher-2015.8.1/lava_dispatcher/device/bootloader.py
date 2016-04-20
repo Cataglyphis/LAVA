@@ -339,6 +339,8 @@ class BootloaderTarget(MasterImageTarget):
         self._load_test_firmware()
         # enter bootloader, 2016.01.21
         self._enter_bootloader(self.proc)
+        # add set mac address in bootloader, 2016.04.19
+        self._set_macaddr_whaley(self.proc)
         boot_cmds = self._load_boot_cmds(default=self._default_boot_cmds,
                                          boot_tags=self._boot_tags)
         # Sometimes a command must be run to clear u-boot console buffer
@@ -426,8 +428,10 @@ class BootloaderTarget(MasterImageTarget):
     def whaley_file_system(self, path, debug, case_debug):
         if self.proc:
             logging.info("Get the target device serial number, ip address and pdu port")
-            # get the serial number info
+            ##############################################
+            # get device telnet port & serial number
             # telnet localhost 2000, etc
+            ##############################################
             connection_command = self.config.connection_command
             # port = ['telnet', 'localhost', '2000']
             # port = '2000:', should add ':' here
@@ -444,7 +448,9 @@ class BootloaderTarget(MasterImageTarget):
             logging.info("Serial number is: %s" % tty)
             logging.info("Telnet number is: %s" % port)
 
-            # get the ip address info
+            ##############################################
+            # get device ip address info
+            ##############################################
             pat = self.tester_ps1_pattern
             incrc = self.tester_ps1_includes_rc
             runner = NetworkCommandRunner(self, pat, incrc)
@@ -454,8 +460,9 @@ class BootloaderTarget(MasterImageTarget):
             except NetworkError as e:
                 raise CriticalError("Network error detected..aborting")
 
+            ##############################################
             # get the pdu port info
-            # hard_reset_command = /usr/bin/pduclient --daemon lcoalhost --hostname 172.16.x.x --command reboot --port 05
+            ##############################################
             hard_reset_command = self.config.hard_reset_command
             command = hard_reset_command.strip().split(' ')
             pdu = ''
@@ -464,17 +471,32 @@ class BootloaderTarget(MasterImageTarget):
                 pdu = command[index+1]
             logging.info("PDU port number is: %s" % pdu)
 
+            ##############################################
+            # get current job id
+            ##############################################
             job_id = ''
             output_dir = self.context.output.output_dir
             if output_dir:
-                logging.info("Current job output directory: %s" % output_dir)
+                logging.info("current job output directory: %s" % output_dir)
                 job_id = output_dir.strip().split('/')[-1]
                 job_id = job_id.split('-')[-1]
             else:
                 job_id = ""
 
-            LAVA_json = os.path.join(path, "plan", "LAVA.json")
-            LAVA_data = ""
+            ##############################################
+            # judge whether current device has signal
+            ##############################################
+            signal = self._get_signal_whaley()
+            if signal:
+                logging.info("target device has signal connected")
+                LAVA_json = os.path.join(path, "plan", "LAVA_Signal.json")
+            else:
+                logging.info("target device no signal connected")
+                LAVA_json = os.path.join(path, "plan", "LAVA.json")
+
+            ##############################################
+            # dump info to LAVA.json/LAVA_Signal.json
+            ##############################################
             if os.path.isfile(LAVA_json):
                 with open(LAVA_json, "r") as fin:
                     LAVA_data = json.load(fin)
@@ -507,55 +529,10 @@ class BootloaderTarget(MasterImageTarget):
                 case_json = os.path.join(LAVA_dir, case_json)
 
             with open(case_json, "w") as fout:
+                logging.info("write lava data to json file")
                 json.dump(LAVA_data, fout, indent=4)
 
-            # get the case directory
-            # dirs = ""
-            # tags = self.context.job_data.get('tags', [])
-            # dirs = ""
-            # logging.info("Current tag is: %s" % tags)
-            #
-            # if os.path.isfile("/etc/lava-dispatcher/case.json"):
-            #     with open("/etc/lava-dispatcher/case.json", 'r') as fin:
-            #         case = json.load(fin)
-            #         if len(tags) == 0:
-            #             logging.warning("No tags found in json job, please have a check")
-            #         else:
-            #             if tags[0] in case:
-            #                 for i in range(len(case[tags[0]])):
-            #                     dirs += case[tags[0]][i]
-            #                     if i < len(case[tags[0]]) - 1:
-            #                         dirs += ";"
-            #             else:
-            #                 logging.warning("No tag %s found in /etc/lava-dispatcher/case.json" % tags[0])
-            # else:
-            #     dirs = "debug"
-            #     logging.warning("No case.json found in /etc/lava-dispatcher, use debug instead")
-            # logging.info("Case directory is: %s" % dirs)
-            #
-            # output_dir = self.context.output.output_dir
-            # if output_dir:
-            #     logging.info("Current job output directory: %s" % output_dir)
-            #     job_id = output_dir.strip().split('/')[-1]
-            # else:
-            #     job_id = ""
-
-            # deviceInfo.conf to store the serial & ip info
-            # deviceInfo = os.path.join(path, 'deviceInfo.conf')
-            # with open(deviceInfo, 'w') as fout:
-            #     fout.write('serial=%s\n' % serial)
-            #     fout.write('telnet=%s\n' % port)
-            #     fout.write('ip=%s\n' % ip)
-            #     fout.write('pdu=%s\n' % pdu)
-            #     logging.info("Debug value is: %s" % debug)
-            #     if debug:
-            #         fout.write('case=debug\n')
-            #         logging.info("In debug mode, set case=debug to deviceInfo.conf")
-            #     else:
-            #         fout.write('case=%s\n' % dirs)
-            #     fout.write('job=%s\n' % job_id)
-
-            logging.warning("Disconnect the serial connection, try to run the script")
+            logging.warning("disconnect the serial connection, try to run the script")
             if self.config.connection_command_terminate:
                 self.proc.sendline(self.config.connection_command_terminate)
             finalize_process(self.proc)
@@ -563,7 +540,7 @@ class BootloaderTarget(MasterImageTarget):
             self.context.client.proc = self.proc
             return case_json
         else:
-            logging.warning("Reconnect the serial connection")
+            logging.warning("reconnect the serial connection")
             self.proc = connect_to_serial(self.context)
             self.context.client.proc = self.proc
             # install busybox, close shutdown again
@@ -573,7 +550,7 @@ class BootloaderTarget(MasterImageTarget):
     # add in 2016.02.17
     # override
     def get_device_version(self):
-        logging.info("Get device version, ro.build.version.rom")
+        logging.info("get device version, ro.build.version.rom")
         self.proc.sendcontrol('c')
         self.proc.sendline('')
         # self.proc.expect('shell', timeout=5)
