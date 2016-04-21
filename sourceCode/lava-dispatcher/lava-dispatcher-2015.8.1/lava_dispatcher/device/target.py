@@ -425,6 +425,19 @@ class Target(object):
         connection.sendline("sqlite3 /data/system/hardwareprotect.db \"update hwprotect set timeout=-1 where name='shutdown'\"")
         logging.info("end modify hardwareprotect.db")
 
+    # get ota parameter in job_data
+    def _get_ota_whaley(self):
+        job_data = self.context.job_data
+        params = {}
+        for cmd in job_data['actions']:
+            if cmd.get('command') == 'boot_whaley_image':
+                params = cmd.get('parameters', {})
+        if 'ota' in params:
+            ota = params.get('ota')
+        else:
+            ota = False
+        return ota
+
     # load config.json
     def _load_config_whaley(self):
         job_data = self.context.job_data
