@@ -486,13 +486,18 @@ class BootloaderTarget(MasterImageTarget):
             ##############################################
             # judge whether current device has signal
             ##############################################
-            signal = self._get_signal_whaley()
-            if signal:
-                logging.info("target device has signal connected")
-                LAVA_json = os.path.join(path, "plan", "LAVA_Signal.json")
+            ota = self._get_ota_whaley()
+            if ota:
+                logging.info("load ota test case")
+                LAVA_json = os.path.join(path, "plan", "LAVA_OTA.json")
             else:
-                logging.info("target device no signal connected")
-                LAVA_json = os.path.join(path, "plan", "LAVA.json")
+                signal = self._get_signal_whaley()
+                if signal:
+                    logging.info("target device has signal connected")
+                    LAVA_json = os.path.join(path, "plan", "LAVA_Signal.json")
+                else:
+                    logging.info("target device no signal connected")
+                    LAVA_json = os.path.join(path, "plan", "LAVA.json")
 
             ##############################################
             # dump info to LAVA.json/LAVA_Signal.json

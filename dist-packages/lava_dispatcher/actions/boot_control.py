@@ -178,7 +178,8 @@ class cmd_boot_whaley_image(BaseAction):
     parameters_schema = {
         'type': 'object',
         'properties': {
-            'skip': {'type': 'boolean', 'default': False, 'optional': True}
+            'skip': {'type': 'boolean', 'default': False, 'optional': True},
+            'ota': {'type': 'boolean', 'default': False, 'optional': True}
         },
         'additionalProperties': False,
     }
