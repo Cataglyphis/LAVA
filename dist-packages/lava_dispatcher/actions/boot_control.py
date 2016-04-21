@@ -184,7 +184,7 @@ class cmd_boot_whaley_image(BaseAction):
         'additionalProperties': False,
     }
 
-    def run(self, skip=False):
+    def run(self, skip=False, ota=False):
         client = self.client
         client.boot_whaley_image(skip)
 

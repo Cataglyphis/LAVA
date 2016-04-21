@@ -488,16 +488,16 @@ class BootloaderTarget(MasterImageTarget):
             ##############################################
             ota = self._get_ota_whaley()
             if ota:
-                logging.info("load ota test case")
                 LAVA_json = os.path.join(path, "plan", "LAVA_OTA.json")
+                logging.info("load ota test case: %s", LAVA_json)
             else:
                 signal = self._get_signal_whaley()
                 if signal:
-                    logging.info("target device has signal connected")
                     LAVA_json = os.path.join(path, "plan", "LAVA_Signal.json")
+                    logging.info("target device has signal connected: %s", LAVA_json)
                 else:
-                    logging.info("target device no signal connected")
                     LAVA_json = os.path.join(path, "plan", "LAVA.json")
+                    logging.info("target device no signal connected: %s", LAVA_json)
 
             ##############################################
             # dump info to LAVA.json/LAVA_Signal.json
