@@ -478,7 +478,10 @@ class Target(object):
     def _set_macaddr_whaley(self, connection):
         logging.info("set mac address in bootloader")
         mac_addr = self._get_macaddr_whaley()
-        device_type = self.context.job_data['device_type']
+        # device_type = self.context.job_data['device_type']
+        # if we define target parameter in job json, no job_data['device_type'] found
+        # use self.config.device_type to replace job_data['device_type']
+        device_type = self.config.device_type
         if device_type == 'mstar':
             connection.sendline("set ethaddr %s" % mac_addr)
             connection.sendline("set macaddr %s" % mac_addr)
