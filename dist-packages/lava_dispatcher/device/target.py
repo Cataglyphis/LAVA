@@ -507,7 +507,10 @@ class Target(object):
     def _copy_hdcp_key(self, connection):
         logging.info("copy hdcp key to factory partition")
         job_name = self.context.job_data['job_name']
-        device_type = self.context.job_data['device_type']
+        # device_type = self.context.job_data['device_type']
+        # if we define target parameter in job json, no job_data['device_type'] found
+        # use self.config.device_type to replace job_data['device_type']
+        device_type = self.config.device_type
         connection.sendline('su')
         connection.sendline('mount -o remount,rw /factory')
         if device_type == 'mstar':
