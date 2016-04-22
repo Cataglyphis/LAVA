@@ -514,7 +514,7 @@ class BootloaderTarget(MasterImageTarget):
             LAVA_data["device"]["platform"] = self.context.job_data.get("tags")[0]
             LAVA_data["device"]["job_id"] = int(job_id)
 
-            result_dir = self.context.job_data.get("job_name") + "_" + job_id  # H01P55D-01.13.00-1616508-65_1255
+            result_dir = "LAVA" + "_" + self.context.job_data.get("job_name") + "_" + job_id  # H01P55D-01.13.00-1616508-65_1255
             LAVA_dir = os.path.join(path, "testResult", result_dir)
             os.makedirs(LAVA_dir)
             if os.path.isdir(LAVA_dir):
