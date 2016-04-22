@@ -511,10 +511,13 @@ class BootloaderTarget(MasterImageTarget):
             LAVA_data["device"]["tty"] = str(tty)
             LAVA_data["device"]["pdu"] = str(pdu)
             LAVA_data["device"]["image"] = self.context.job_data.get("job_name")
-            LAVA_data["device"]["platform"] = self.context.job_data.get("tags")[0]
+            if "tags" in self.context.job_data:  # use tags
+                LAVA_data["device"]["platform"] = self.context.job_data.get("tags")[0]
+            else:  # use target to specify one device
+                LAVA_data["device"]["platform"] = self.context.job_data.get("target")
             LAVA_data["device"]["job_id"] = int(job_id)
 
-            result_dir = "LAVA" + "_" + self.context.job_data.get("job_name") + "_" + job_id  # H01P55D-01.13.00-1616508-65_1255
+            result_dir = "LAVA" + "_" + self.context.job_data.get("job_name") + "_" + job_id  # LAVA_H01P55D-01.13.00-1616508-65_1255
             LAVA_dir = os.path.join(path, "testResult", result_dir)
             os.makedirs(LAVA_dir)
             if os.path.isdir(LAVA_dir):
