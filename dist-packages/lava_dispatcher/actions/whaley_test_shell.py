@@ -56,13 +56,13 @@ class cmd_whaley_test_shell(BaseAction):
             os.chdir(current_dir)
             case_json = target.whaley_file_system(script_path, debug, case_debug)
             os.chmod(script_name, XMOD)
-            logging.info("Run command in file: %s", script_name)
-            logging.info("Command parameter: %s", case_json)
+            logging.info("run command in file: %s", script_name)
+            logging.info("command parameter: %s", case_json)
             script_name = script_name + " " + case_json
             self.context.run_command(script_name)
         else:
             # script invalid, use '/tmp/' instead
-            logging.warning("Invalid script parameter, use /tmp/ instead")
+            logging.warning("invalid script parameter, use /tmp/ instead")
             target.whaley_file_system('/tmp/', debug, case_debug)
 
         # reconnect the serial connection
@@ -73,7 +73,7 @@ class cmd_whaley_test_shell(BaseAction):
     # report_path: path of report.html
     def _results(self, path):
         logging.info("log directory: %s" % self.context.output.output_dir)
-        logging.debug("Get the current directory of report.html")
+        logging.debug("get the current directory of report.html")
         deviceinfo_path = os.path.join(path, "deviceInfo.conf")
         report_path = ""
         with open(deviceinfo_path, 'r') as fin:
@@ -85,13 +85,13 @@ class cmd_whaley_test_shell(BaseAction):
             else:
                 logging.warning("No output path found in deviceInfo.conf")
                 return
-        logging.info("Current directory of report.html is: %s" % report_path)
+        logging.info("current directory of report.html is: %s" % report_path)
         target = os.path.join(self.context.output.output_dir, "output")
-        logging.info("Copy report.html from %s to %s" % (report_path, target))
+        logging.info("copy report.html from %s to %s" % (report_path, target))
         if os.path.exists(target):
             shutil.rmtree(target)
         shutil.copytree(report_path, target)
-        logging.info("Extract report.html")
+        logging.info("extract report.html")
         log_file_path = os.path.join(self.context.output.output_dir, "browser.log")
         log_file = open(log_file_path, "w")
         # open one xvfb, set size to (1024, 768)
@@ -131,8 +131,8 @@ class cmd_whaley_test_shell(BaseAction):
                 # tag = element.find_element_by_class_name("details-col-tags").text
                 self.context.test_data.add_result(name, status, execution_time, 'seconds', message=msg)
         except Exception as e:
-            logging.warning("Cant't get test results from report.html")
-            logging.warning("Exception info: %s" % unicode(str(e)))
+            logging.warning("cant't get test results from report.html")
+            logging.warning("exception info: %s" % unicode(str(e)))
         finally:
             # close browser, display and log_file
             browser.quit()

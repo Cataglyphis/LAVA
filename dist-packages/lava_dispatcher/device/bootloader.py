@@ -512,26 +512,22 @@ class BootloaderTarget(MasterImageTarget):
             LAVA_data["device"]["pdu"] = str(pdu)
             LAVA_data["device"]["image"] = self.context.job_data.get("job_name")
             LAVA_data["device"]["platform"] = self.context.job_data.get("tags")[0]
+            LAVA_data["device"]["job_id"] = int(job_id)
 
-            case_json = ''  # json file for whaleyTAP.py
+            result_dir = self.context.job_data.get("job_name") + "_" + job_id  # H01P55D-01.13.00-1616508-65_1255
+            LAVA_dir = os.path.join(path, "testResult", result_dir)
+            os.makedirs(LAVA_dir)
+            if os.path.isdir(LAVA_dir):
+                logging.info("makedirs %s successfully", LAVA_dir)
+            else:
+                logging.warning("can't makedirs %s, try again", LAVA_dir)
+                os.makedirs(LAVA_dir)
+
+            case_json = 'LAVA.json'  # json file for whaleyTAP.py
             if debug is True:
                 LAVA_data["mode"]["debug"] = True
                 LAVA_data["mode"]["case"] = str(case_debug)
-                case_json = "LAVA_debug_" + job_id + ".json"
-                case_json = os.path.join(path, "plan", case_json)
-            else:
-                case_json = "LAVA.json"
-                LAVA_dir = os.path.join(path, "case", "result", self.context.job_data.get("job_name"))
-                if os.path.isdir(LAVA_dir):
-                    logging.info("%s exists", LAVA_dir)
-                else:
-                    os.makedirs(LAVA_dir)
-                    if os.path.isdir(LAVA_dir):
-                        logging.info("makedirs %s successfully", LAVA_dir)
-                    else:
-                        logging.warning("can't makedirs %s, try again", LAVA_dir)
-                        os.makedirs(LAVA_dir)
-                case_json = os.path.join(LAVA_dir, case_json)
+            case_json = os.path.join(LAVA_dir, case_json)  # ../testResult/result_dir/LAVA.json
 
             with open(case_json, "w") as fout:
                 logging.info("write lava data to json file")
