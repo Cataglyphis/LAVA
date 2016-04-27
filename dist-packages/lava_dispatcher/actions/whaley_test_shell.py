@@ -67,9 +67,9 @@ class cmd_whaley_test_shell(BaseAction):
 
         # reconnect the serial connection
         target.whaley_file_system(script_path, debug, case_debug)
-        # script will write report_path to path/deviceInfo.conf
         # self._results(script_path)
 
+    # for robot framework, extract the result of each case
     # report_path: path of report.html
     def _results(self, path):
         logging.info("log directory: %s" % self.context.output.output_dir)

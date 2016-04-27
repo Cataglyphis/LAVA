@@ -476,6 +476,17 @@ class Target(object):
             logging.warning("mac address: %s", mac_addr)
         return mac_addr
 
+    # get sn of current device, defined in configure.json
+    def _get_sn_whaley(self):
+        config_data = self._load_config_whaley()
+        if config_data:
+            sn = config_data['sn']
+            logging.info("sn: %s", sn)
+        else:
+            sn = ''
+            logging.warning("sn: %s", sn)
+        return sn
+
     # get signal of current device, judge whether current device has signal connected
     def _get_signal_whaley(self):
         config_data = self._load_config_whaley()
@@ -505,14 +516,16 @@ class Target(object):
             logging.warning("no device type mstar or hisi found")
         logging.info("end set mac address in bootloader")
 
-    # set factory info, e.g. mac address, hdcp key
+    # set factory info, e.g. mac address, sn, hdcp key
     # then reboot the device
     def _set_factory_whaley(self, connection):
         logging.info("set factory mode info")
         mac_addr = self._get_macaddr_whaley()
+        sn = self._get_sn_whaley()
         connection.sendline('su')
         connection.sendline('mount -o remount,rw /factory')
-        connection.sendline('echo ro.hardware.lan_mac=%s > /factory/factory.prop' % mac_addr)
+        connection.sendline('echo ro.hardware.lan_mac=%s >> /factory/factory.prop' % mac_addr)
+        connection.sendline('echo ro.helios.sn=%s >> /factory/factory.prop' % sn)
         connection.sendline('chmod 644 /factory/factory.prop')
         logging.info("end set factory mode info")
 
@@ -833,7 +846,7 @@ class Target(object):
             self._close_shutdown_whaley(connection)
             # remove helios guide
             self._remove_helios_guide(connection)
-            # set factory info
+            # set factory info, mac addr, sn
             self._set_factory_whaley(connection)
             # copy hdcp key
             self._copy_hdcp_key(connection)
