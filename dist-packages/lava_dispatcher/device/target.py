@@ -801,6 +801,17 @@ class Target(object):
             except pexpect.TIMEOUT:
                 msg = "Kernel Error: did not start booting."
                 logging.error(msg)
+                # add below to reset bootloader, and reboot device, at 2016.04.29
+                logging.info("try to reset the bootloader, and reboot device")
+                for i in range(5):
+                    connection.sendcontrol('c')
+                    time.sleep(2)
+                    try:
+                        connection.expect(self.config.bootloader_prompt, timeout=3)
+                        connection.sendline("reset")  # restart device
+                        break  # stop the tftp successfully
+                    except:
+                        logging.warning("can't stop tftp, try again")
                 self.context.test_data.add_result(wait_for_image_boot, bad, message=msg)
                 raise
 
