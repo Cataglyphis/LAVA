@@ -6,6 +6,7 @@
 import logging
 import stat
 import os
+import re
 
 from lava_dispatcher.actions import BaseAction
 
@@ -35,10 +36,11 @@ class cmd_whaley_test_shell(BaseAction):
         # script_name = "/home/dqa/workspace/LAVA/android-automation/TAP/whaleyTAP.py"
         # script_path = "/home/dqa/workspace/LAVA/android-automation/TAP"
         script = str(script).strip()
-        script_name = script.split(' ')[0]
+        script_name = re.split(r"\s+", script)[0]
+        # script_name = script.split(' ')[0]
         script_path = os.path.split(script_name)[0]
-        logging.info("Script name is: %s", script_name)
-        logging.info("Script path is: %s", script_path)
+        logging.info("script name is: %s", script_name)
+        logging.info("script path is: %s", script_path)
         if os.path.isfile(script_name) and os.path.isdir(script_path):
             current_dir = os.getcwd()
             target_dir = script_path

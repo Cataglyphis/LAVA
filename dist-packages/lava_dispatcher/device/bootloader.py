@@ -505,6 +505,9 @@ class BootloaderTarget(MasterImageTarget):
             if os.path.isfile(LAVA_json):
                 with open(LAVA_json, "r") as fin:
                     LAVA_data = json.load(fin)
+            else:
+                logging.error("no json file found")
+                return
 
             LAVA_data["device"]["target"] = str(ip) + ":5555"
             LAVA_data["device"]["telnet"] = int(port)
