@@ -61,26 +61,6 @@ class cmd_user_defined_shell(BaseAction):
         else:
             logging.error("invalid script parameter")
 
-        if os.path.isfile(script_name) and os.path.isdir(script_path):
-            # change dir to script_path
-            logging.info("change dir to %s", script_path)
-            os.chdir(script_path)
-            current_user = os.listdir("/home")[0]
-            if len(re.split(r"\s+", script)) == 2 and re.split(r"\s+", script)[1].endswith(".json"):
-                parameter_path = re.split(r"\s+", script)[1]
-                case_json = self.modify_json(script_path, parameter_path)
-                os.chmod(script_name, XMOD)
-                logging.info("run command in file: %s", script_name)
-                logging.info("command parameter: %s", case_json)
-                script_name = script_name + " " + case_json
-                self.context.run_command(script_name)
-            else:
-                os.chmod(script_name, XMOD)
-                logging.info("run command in file: %s", script_name)
-                self.context.run_command(script)
-        else:
-            logging.error("invalid script parameter")
-
     def modify_json(self, script_path, script_param):
         ##############################################
         # get current job id
@@ -121,3 +101,13 @@ class cmd_user_defined_shell(BaseAction):
             logging.info("write plan data to json file")
             json.dump(data, fout, indent=4)
         return case_json
+
+    def git_pull(self, script_path):
+        current_dir = os.getcwd()
+        target_dir = script_path
+        logging.info("change workspace to %s", target_dir)
+        os.chdir(target_dir)
+        current_user = os.listdir("/home")[0]
+        logging.info("pull the latest code with cmd: sudo -u %s git pull", current_user)
+        os.system("sudo -u %s git pull" % current_user)
+        os.chdir(current_dir)

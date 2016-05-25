@@ -56,7 +56,7 @@ class cmd_whaley_test_shell(BaseAction):
             # 2. script_name whaleyTAP.py, and has parameter
             elif script_name.endswith("whaleyTAP.py") and script_param:
                 self.git_pull(script_path)
-                case_json = self.modify_json(script_path, script_param)
+                case_json = target.modify_json(script_path, script_param)
                 os.chmod(script_name, XMOD)
                 logging.info("run command in file: %s", script_name)
                 logging.info("command parameter: %s", case_json)
