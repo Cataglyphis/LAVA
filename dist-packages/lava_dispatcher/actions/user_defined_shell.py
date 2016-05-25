@@ -21,6 +21,7 @@ class cmd_user_defined_shell(BaseAction):
         'type': 'object',
         'properties': {
             'script': {'type': 'string', 'optional': False},
+            'parameter': {'type': 'string', 'optional': True, 'default': ''}
         },
         'additionalProperties': False,
     }
@@ -28,15 +29,38 @@ class cmd_user_defined_shell(BaseAction):
     def __init__(self, context):
         super(cmd_user_defined_shell, self).__init__(context)
 
-    def run(self, script=None):
+    def run(self, script=None, parameter=None):
         script = str(script).strip()
         # script = "/home/dqa/workspace/LAVA/android-automation/TAP/whaleyTAP.py /home/.../plan.json"
         # script_name = "/home/dqa/workspace/LAVA/android-automation/TAP/whaleyTAP.py"
         # script_path = "/home/dqa/workspace/LAVA/android-automation/TAP"
-        script_name = re.split(r"\s+", script)[0]
+        script_name = str(script).strip()
         script_path = os.path.split(script_name)[0]
+        script_param = str(parameter).strip()
         logging.info("script name is: %s", script_name)
         logging.info("script path is: %s", script_path)
+
+        if os.path.isfile(script_name):
+
+            # 1. script_name whaleyTAP.py, and has parameter
+            if script_name.endswith("whaleyTAP.py") and script_param:
+                self.git_pull(script_path)
+                case_json = self.modify_json(script_path, script_param)
+                os.chmod(script_name, XMOD)
+                logging.info("run command in file: %s", script_name)
+                logging.info("command parameter: %s", case_json)
+                script = script_name + " " + case_json
+                self.context.run_command(script)
+
+            # 2. script_name other values
+            else:
+                os.chmod(script_name, XMOD)
+                logging.info("run command in file: %s", script_name)
+                script = script_name + " " + script_param
+                self.context.run_command(script)
+        else:
+            logging.error("invalid script parameter")
+
         if os.path.isfile(script_name) and os.path.isdir(script_path):
             # change dir to script_path
             logging.info("change dir to %s", script_path)
@@ -57,7 +81,7 @@ class cmd_user_defined_shell(BaseAction):
         else:
             logging.error("invalid script parameter")
 
-    def modify_json(self, script_path, parameter_path):
+    def modify_json(self, script_path, script_param):
         ##############################################
         # get current job id
         ##############################################
@@ -68,18 +92,20 @@ class cmd_user_defined_shell(BaseAction):
             job_id = output_dir.strip().split('/')[-1]
             job_id = job_id.split('-')[-1]
         else:
-            job_id = ""
+            job_id = "0"
 
-        if os.path.isfile(parameter_path):
-            with open(parameter_path, "r") as fin:
+        if os.path.isfile(script_param):
+            with open(script_param, "r") as fin:
                 data = json.load(fin)
         else:
             logging.error("no json file found")
-            return
+            raise
 
         data["device"]["job_id"] = int(job_id)
+        data["mail"]["subject"] = data["mail"]["subject"] + " " + self.context.job_data.get("job_name")
 
-        result_name = "LAVA" + "_" + self.context.job_data.get("job_name") + "_" + job_id  # LAVA_job_name_1255
+        # LAVA_job_name_1255
+        result_name = "LAVA" + "_" + self.context.job_data.get("job_name") + "_" + job_id
         result_path = os.path.join(script_path, "testResult", result_name)
         os.makedirs(result_path)
         if os.path.isdir(result_path):
@@ -89,7 +115,7 @@ class cmd_user_defined_shell(BaseAction):
             os.makedirs(result_path)
 
         # json file for whaleyTAP.py
-        case_json = os.path.join(result_path, "plan.json")  # ../testResult/result_dir/LAVA.json
+        case_json = os.path.join(result_path, "plan.json")  # ../testResult/result_dir/plan.json
 
         with open(case_json, "w") as fout:
             logging.info("write plan data to json file")

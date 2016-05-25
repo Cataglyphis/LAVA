@@ -425,134 +425,239 @@ class BootloaderTarget(MasterImageTarget):
                 yield path
 
     # modify at 2016.02.17
-    def whaley_file_system(self, path, debug, case_debug):
-        if self.proc:
-            logging.info("Get the target device serial number, ip address and pdu port")
-            ##############################################
-            # get device telnet port & serial number
-            # telnet localhost 2000, etc
-            ##############################################
-            connection_command = self.config.connection_command
-            # port = ['telnet', 'localhost', '2000']
-            # port = '2000:', should add ':' here
-            port = connection_command.strip().split(' ')[-1] + ':'
-            with open('/etc/ser2net.conf', 'r') as fin:
-                for line in fin.readlines():
-                    if port in line and not line.startswith('#'):
-                        # 2000:telnet:600:/dev/ttyUSB0:115200 8DATABITS NONE 1STOPBIT banner
-                        # serial = /dev/ttyUSB0
-                        serial = line.split(':')[3]
-                        tty = serial.split('/')[-1]
-                        break
-            port = connection_command.strip().split(' ')[-1]
-            logging.info("Serial number is: %s" % tty)
-            logging.info("Telnet number is: %s" % port)
+    def whaley_file_system(self, path):
+        logging.info("get the target device serial number, ip address and pdu port")
+        ##############################################
+        # get device telnet port & serial number
+        # telnet localhost 2000, etc
+        ##############################################
+        connection_command = self.config.connection_command
+        # port = ['telnet', 'localhost', '2000']
+        # port = '2000:', should add ':' here
+        port = connection_command.strip().split(" ")[-1] + ":"
+        with open("/etc/ser2net.conf", "r") as fin:
+            for line in fin.readlines():
+                if port in line and not line.startswith("#"):
+                    # 2000:telnet:600:/dev/ttyUSB0:115200 8DATABITS NONE 1STOPBIT banner
+                    # serial = /dev/ttyUSB0
+                    serial = line.split(":")[3]
+                    tty = serial.split("/")[-1]
+                    break
+        port = connection_command.strip().split(" ")[-1]
+        logging.info("serial number is: %s" % tty)
+        logging.info("telnet number is: %s" % port)
 
-            ##############################################
-            # get device ip address info
-            ##############################################
-            pat = self.tester_ps1_pattern
-            incrc = self.tester_ps1_includes_rc
-            runner = NetworkCommandRunner(self, pat, incrc)
-            try:
-                # get the target device ip
-                ip = runner.get_target_ip()
-            except NetworkError as e:
-                raise CriticalError("Network error detected..aborting")
+        ##############################################
+        # get device ip address info
+        ##############################################
+        pat = self.tester_ps1_pattern
+        incrc = self.tester_ps1_includes_rc
+        runner = NetworkCommandRunner(self, pat, incrc)
+        try:
+            # get the target device ip
+            ip = runner.get_target_ip()
+        except NetworkError as e:
+            raise CriticalError("Network error detected..aborting")
 
-            ##############################################
-            # get the pdu port info
-            ##############################################
-            hard_reset_command = self.config.hard_reset_command
-            command = hard_reset_command.strip().split(' ')
-            pdu = ''
-            if '--port' in command:
-                index = command.index('--port')
-                pdu = command[index+1]
-            logging.info("PDU port number is: %s" % pdu)
+        ##############################################
+        # get the pdu port info
+        ##############################################
+        hard_reset_command = self.config.hard_reset_command
+        command = hard_reset_command.strip().split(' ')
+        pdu = ''
+        if '--port' in command:
+            index = command.index('--port')
+            pdu = command[index+1]
+        logging.info("PDU port number is: %s" % pdu)
 
-            ##############################################
-            # get current job id
-            ##############################################
-            job_id = ''
-            output_dir = self.context.output.output_dir
-            if output_dir:
-                logging.info("current job output directory: %s" % output_dir)
-                job_id = output_dir.strip().split('/')[-1]
-                job_id = job_id.split('-')[-1]
-            else:
-                job_id = ""
-
-            ##############################################
-            # judge whether current device has signal
-            ##############################################
-            ota = self._get_ota_whaley()
-            if ota:
-                LAVA_json = os.path.join(path, "plan", "LAVA_OTA.json")
-                logging.info("load ota test case: %s", LAVA_json)
-            else:
-                signal = self._get_signal_whaley()
-                if signal:
-                    LAVA_json = os.path.join(path, "plan", "LAVA_Signal.json")
-                    logging.info("target device has signal connected: %s", LAVA_json)
-                else:
-                    LAVA_json = os.path.join(path, "plan", "LAVA.json")
-                    logging.info("target device no signal connected: %s", LAVA_json)
-
-            ##############################################
-            # dump info to LAVA.json/LAVA_Signal.json
-            ##############################################
-            if os.path.isfile(LAVA_json):
-                with open(LAVA_json, "r") as fin:
-                    LAVA_data = json.load(fin)
-            else:
-                logging.error("no json file found")
-                return
-
-            LAVA_data["device"]["target"] = str(ip) + ":5555"
-            LAVA_data["device"]["telnet"] = int(port)
-            LAVA_data["device"]["tty"] = str(tty)
-            LAVA_data["device"]["pdu"] = str(pdu)
-            LAVA_data["device"]["image"] = self.context.job_data.get("job_name")
-            if "tags" in self.context.job_data:  # use tags
-                LAVA_data["device"]["platform"] = self.context.job_data.get("tags")[0]
-            else:  # use target to specify one device
-                LAVA_data["device"]["platform"] = self.context.job_data.get("target")
-            LAVA_data["device"]["job_id"] = int(job_id)
-
-            result_dir = "LAVA" + "_" + self.context.job_data.get("job_name") + "_" + job_id  # LAVA_H01P55D-01.13.00-1616508-65_1255
-            LAVA_dir = os.path.join(path, "testResult", result_dir)
-            os.makedirs(LAVA_dir)
-            if os.path.isdir(LAVA_dir):
-                logging.info("makedirs %s successfully", LAVA_dir)
-            else:
-                logging.warning("can't makedirs %s, try again", LAVA_dir)
-                os.makedirs(LAVA_dir)
-
-            case_json = 'LAVA.json'  # json file for whaleyTAP.py
-            if debug is True:
-                LAVA_data["mode"]["debug"] = True
-                LAVA_data["mode"]["case"] = str(case_debug)
-            case_json = os.path.join(LAVA_dir, case_json)  # ../testResult/result_dir/LAVA.json
-
-            with open(case_json, "w") as fout:
-                logging.info("write lava data to json file")
-                json.dump(LAVA_data, fout, indent=4)
-
-            logging.warning("disconnect the serial connection, try to run the script")
-            if self.config.connection_command_terminate:
-                self.proc.sendline(self.config.connection_command_terminate)
-            finalize_process(self.proc)
-            self.proc = None
-            self.context.client.proc = self.proc
-            return case_json
+        ##############################################
+        # get current job id
+        ##############################################
+        output_dir = self.context.output.output_dir
+        if output_dir:
+            logging.info("current job output directory: %s" % output_dir)
+            job_id = output_dir.strip().split('/')[-1]
+            job_id = job_id.split('-')[-1]
         else:
-            logging.warning("reconnect the serial connection")
+            job_id = "0"
+
+        ##############################################
+        # judge whether current device has signal
+        ##############################################
+        ota = self._get_ota_whaley()
+        if ota:
+            LAVA_json = os.path.join(path, "plan", "LAVA_OTA.json")
+            logging.info("load ota test case: %s", LAVA_json)
+        else:
+            signal = self._get_signal_whaley()
+            if signal:
+                LAVA_json = os.path.join(path, "plan", "LAVA_Signal.json")
+                logging.info("target device has signal connected: %s", LAVA_json)
+            else:
+                LAVA_json = os.path.join(path, "plan", "LAVA.json")
+                logging.info("target device no signal connected: %s", LAVA_json)
+
+        ##############################################
+        # dump info to LAVA.json/LAVA_Signal.json
+        ##############################################
+        if os.path.isfile(LAVA_json):
+            with open(LAVA_json, "r") as fin:
+                LAVA_data = json.load(fin)
+        else:
+            logging.error("no json file found")
+            raise
+
+        LAVA_data["device"]["target"] = str(ip) + ":5555"
+        LAVA_data["device"]["telnet"] = int(port)
+        LAVA_data["device"]["tty"] = str(tty)
+        LAVA_data["device"]["pdu"] = str(pdu)
+        LAVA_data["device"]["image"] = self.context.job_data.get("job_name")
+        if "tags" in self.context.job_data:  # use tags
+            LAVA_data["device"]["platform"] = self.context.job_data.get("tags")[0]
+        else:  # use target to specify one device
+            LAVA_data["device"]["platform"] = self.context.job_data.get("target")
+        LAVA_data["device"]["job_id"] = int(job_id)
+        LAVA_data["mail"]["subject"] = LAVA_data["mail"]["subject"] + " " + self.context.job_data.get("job_name")
+
+        # LAVA_H01P55D-01.13.00-1616508-65_1255
+        result_dir = "LAVA" + "_" + self.context.job_data.get("job_name") + "_" + job_id
+        LAVA_dir = os.path.join(path, "testResult", result_dir)
+        os.makedirs(LAVA_dir)
+        if os.path.isdir(LAVA_dir):
+            logging.info("makedirs %s successfully", LAVA_dir)
+        else:
+            logging.warning("can't makedirs %s, try again", LAVA_dir)
+            os.makedirs(LAVA_dir)
+
+        # ../testResult/result_dir/LAVA.json
+        case_json = os.path.join(LAVA_dir, "LAVA.json")
+
+        with open(case_json, "w") as fout:
+            logging.info("write lava data to json file")
+            json.dump(LAVA_data, fout, indent=4)
+
+        logging.warning("disconnect the serial connection, try to run the script")
+        if self.config.connection_command_terminate:
+            self.proc.sendline(self.config.connection_command_terminate)
+        finalize_process(self.proc)
+        self.proc = None
+        self.context.client.proc = self.proc
+        return case_json
+
+    def modify_json(self, script_path, script_param):
+        logging.info("get the target device serial number, ip address and pdu port")
+        ##############################################
+        # get device telnet port & serial number
+        # telnet localhost 2000, etc
+        ##############################################
+        connection_command = self.config.connection_command
+        # port = ['telnet', 'localhost', '2000']
+        # port = '2000:', should add ':' here
+        port = connection_command.strip().split(" ")[-1] + ":"
+        with open("/etc/ser2net.conf", "r") as fin:
+            for line in fin.readlines():
+                if port in line and not line.startswith("#"):
+                    # 2000:telnet:600:/dev/ttyUSB0:115200 8DATABITS NONE 1STOPBIT banner
+                    # serial = /dev/ttyUSB0
+                    serial = line.split(":")[3]
+                    tty = serial.split("/")[-1]
+                    break
+        port = connection_command.strip().split(" ")[-1]
+        logging.info("serial number is: %s" % tty)
+        logging.info("telnet number is: %s" % port)
+
+        ##############################################
+        # get device ip address info
+        ##############################################
+        pat = self.tester_ps1_pattern
+        incrc = self.tester_ps1_includes_rc
+        runner = NetworkCommandRunner(self, pat, incrc)
+        try:
+            # get the target device ip
+            ip = runner.get_target_ip()
+        except NetworkError as e:
+            raise CriticalError("Network error detected..aborting")
+
+        ##############################################
+        # get the pdu port info
+        ##############################################
+        hard_reset_command = self.config.hard_reset_command
+        command = hard_reset_command.strip().split(' ')
+        pdu = ''
+        if '--port' in command:
+            index = command.index('--port')
+            pdu = command[index + 1]
+        logging.info("PDU port number is: %s" % pdu)
+
+        ##############################################
+        # get current job id
+        ##############################################
+        output_dir = self.context.output.output_dir
+        if output_dir:
+            logging.info("current job output directory: %s" % output_dir)
+            job_id = output_dir.strip().split('/')[-1]
+            job_id = job_id.split('-')[-1]
+        else:
+            job_id = "0"
+
+        ##############################################
+        # dump info to plan.json
+        ##############################################
+        if os.path.isfile(script_param):
+            with open(script_param, "r") as fin:
+                data = json.load(fin)
+        else:
+            logging.error("no json file found")
+            raise
+
+        data["device"]["target"] = str(ip) + ":5555"
+        data["device"]["telnet"] = int(port)
+        data["device"]["tty"] = str(tty)
+        data["device"]["pdu"] = str(pdu)
+        data["device"]["image"] = self.context.job_data.get("job_name")
+        if "tags" in self.context.job_data:  # use tags
+            data["device"]["platform"] = self.context.job_data.get("tags")[0]
+        else:  # use target to specify one device
+            data["device"]["platform"] = self.context.job_data.get("target")
+        data["device"]["job_id"] = int(job_id)
+        data["mail"]["subject"] = data["mail"]["subject"] + " " + self.context.job_data.get("job_name")
+
+        # LAVA_H01P55D-01.13.00-1616508-65_1255
+        result_dir = "LAVA" + "_" + self.context.job_data.get("job_name") + "_" + job_id
+        LAVA_dir = os.path.join(script_path, "testResult", result_dir)
+        os.makedirs(LAVA_dir)
+        if os.path.isdir(LAVA_dir):
+            logging.info("makedirs %s successfully", LAVA_dir)
+        else:
+            logging.warning("can't makedirs %s, try again", LAVA_dir)
+            os.makedirs(LAVA_dir)
+
+        # ../testResult/result_dir/plan.json
+        case_json = os.path.join(LAVA_dir, "plan.json")
+
+        with open(case_json, "w") as fout:
+            logging.info("write data to json file")
+            json.dump(data, fout, indent=4)
+
+        logging.warning("disconnect the serial connection, try to run the script")
+        if self.config.connection_command_terminate:
+            self.proc.sendline(self.config.connection_command_terminate)
+        finalize_process(self.proc)
+        self.proc = None
+        self.context.client.proc = self.proc
+        return case_json
+
+    # modify at 2016.05.25
+    def reconnect_serial(self):
+        if not self.proc:
+            logging.info("reconnect the serial connection")
             self.proc = connect_to_serial(self.context)
             self.context.client.proc = self.proc
             # install busybox, close shutdown again
             self._install_busybox_whaley(self.proc)
             self._close_shutdown_whaley(self.proc)
+        else:
+            logging.info("no need to reconnect the serial connection")
 
     # add in 2016.02.17
     # override
