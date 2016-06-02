@@ -706,6 +706,9 @@ class Target(object):
             time.sleep(0.05)
 
     def _hard_reboot(self, connection):
+        logging.info("Use soft reset to replace hard reset")
+        self._soft_reboot(connection)
+        return
         logging.info("Perform hard reset on the system")
         if self.config.hard_reset_command != "":
             # use power_off and power_on to instead of hard_reset_command

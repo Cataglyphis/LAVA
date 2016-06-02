@@ -20,7 +20,7 @@ class cmd_whaley_test_shell(BaseAction):
         'type': 'object',
         'properties': {
             'script': {'type': 'string', 'optional': False},
-            'parameter': {'type': 'string', 'optional': True, 'default': ''}
+            'parameter': {'type': 'string', 'optional': False, 'default': ''}
         },
         'additionalProperties': False,
     }
@@ -39,6 +39,7 @@ class cmd_whaley_test_shell(BaseAction):
         script_param = str(parameter).strip()
         logging.info("script name is: %s", script_name)
         logging.info("script path is: %s", script_path)
+        logging.info("script param is: %s", script_param)
 
         if os.path.isfile(script_name):
 

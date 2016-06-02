@@ -21,7 +21,7 @@ class cmd_user_defined_shell(BaseAction):
         'type': 'object',
         'properties': {
             'script': {'type': 'string', 'optional': False},
-            'parameter': {'type': 'string', 'optional': True, 'default': ''}
+            'parameter': {'type': 'string', 'optional': False, 'default': ''}
         },
         'additionalProperties': False,
     }
