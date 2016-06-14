@@ -426,26 +426,9 @@ class BootloaderTarget(MasterImageTarget):
 
     # modify at 2016.02.17
     def whaley_file_system(self, path):
-        logging.info("get the target device serial number, ip address and pdu port")
-        ##############################################
-        # get device telnet port & serial number
-        # telnet localhost 2000, etc
-        ##############################################
+        logging.info("get the target device socat command, ip address and pdu port")
+        # socat command
         connection_command = self.config.connection_command
-        # port = ['telnet', 'localhost', '2000']
-        # port = '2000:', should add ':' here
-        port = connection_command.strip().split(" ")[-1] + ":"
-        with open("/etc/ser2net.conf", "r") as fin:
-            for line in fin.readlines():
-                if port in line and not line.startswith("#"):
-                    # 2000:telnet:600:/dev/ttyUSB0:115200 8DATABITS NONE 1STOPBIT banner
-                    # serial = /dev/ttyUSB0
-                    serial = line.split(":")[3]
-                    tty = serial.split("/")[-1]
-                    break
-        port = connection_command.strip().split(" ")[-1]
-        logging.info("serial number is: %s" % tty)
-        logging.info("telnet number is: %s" % port)
 
         ##############################################
         # get device ip address info
@@ -508,10 +491,8 @@ class BootloaderTarget(MasterImageTarget):
             raise
 
         LAVA_data["device"]["target"] = str(ip) + ":5555"
-        LAVA_data["device"]["telnet"] = int(port)
-        LAVA_data["device"]["tty"] = str(tty)
+        LAVA_data["device"]["socat"] = connection_command
         LAVA_data["device"]["pdu"] = str(pdu)
-        LAVA_data["device"]["image"] = self.context.job_data.get("job_name")
         if "tags" in self.context.job_data:  # use tags
             LAVA_data["device"]["platform"] = self.context.job_data.get("tags")[0]
         else:  # use target to specify one device
@@ -546,25 +527,9 @@ class BootloaderTarget(MasterImageTarget):
 
     def modify_json(self, script_path, script_param):
         logging.info("get the target device serial number, ip address and pdu port")
-        ##############################################
-        # get device telnet port & serial number
-        # telnet localhost 2000, etc
-        ##############################################
+        # socat command
         connection_command = self.config.connection_command
-        # port = ['telnet', 'localhost', '2000']
-        # port = '2000:', should add ':' here
-        port = connection_command.strip().split(" ")[-1] + ":"
-        with open("/etc/ser2net.conf", "r") as fin:
-            for line in fin.readlines():
-                if port in line and not line.startswith("#"):
-                    # 2000:telnet:600:/dev/ttyUSB0:115200 8DATABITS NONE 1STOPBIT banner
-                    # serial = /dev/ttyUSB0
-                    serial = line.split(":")[3]
-                    tty = serial.split("/")[-1]
-                    break
-        port = connection_command.strip().split(" ")[-1]
-        logging.info("serial number is: %s" % tty)
-        logging.info("telnet number is: %s" % port)
+        logging.info("connection command is: %s" % connection_command)
 
         ##############################################
         # get device ip address info
@@ -611,10 +576,8 @@ class BootloaderTarget(MasterImageTarget):
             raise
 
         data["device"]["target"] = str(ip) + ":5555"
-        data["device"]["telnet"] = int(port)
-        data["device"]["tty"] = str(tty)
+        data["device"]["socat"] = connection_command
         data["device"]["pdu"] = str(pdu)
-        data["device"]["image"] = self.context.job_data.get("job_name")
         if "tags" in self.context.job_data:  # use tags
             data["device"]["platform"] = self.context.job_data.get("tags")[0]
         else:  # use target to specify one device

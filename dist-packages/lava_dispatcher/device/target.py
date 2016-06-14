@@ -457,12 +457,6 @@ class Target(object):
         else:
             logging.warning("no %s found", config_path)
             config_data = {}
-        if target in config_data:
-            logging.info("load %s successfully", config_path)
-            config_data = config_data[target]
-            logging.info("data in %s: %s" % (config_name, config_data))
-        else:
-            logging.warning("%s not in %s" % (target, config_path))
         return config_data
 
     # get mac address of current device, defined in configure.json

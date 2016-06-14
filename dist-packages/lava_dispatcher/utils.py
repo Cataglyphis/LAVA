@@ -520,7 +520,7 @@ def connect_to_serial(context):
     port_stuck_message = 'Data Buffering Suspended'
     conn_closed_message = 'Connection closed by foreign host'
     connection_refused_message = 'Connection refused'
-    connection_succeed_message = 'ser2net port'
+    # connection_succeed_message = 'ser2net port'
 
     # expectations = {
     #     port_stuck_message: 'reset-port',
@@ -534,7 +534,7 @@ def connect_to_serial(context):
         port_stuck_message: 'reset-port',
         conn_closed_message: 'retry',
         connection_refused_message: 'retry',
-        connection_succeed_message: 'all-good',
+        # connection_succeed_message: 'all-good',
         pexpect.TIMEOUT: 'timeout'
     }
 
@@ -551,7 +551,7 @@ def connect_to_serial(context):
             match = proc.expect(patterns, timeout=20)
             result = results[match]
             logging.info('Matched %r which means %s', patterns[match], result)
-            if result == 'retry' or result == 'reset-port' or result == 'timeout':
+            if result == 'retry' or result == 'reset-port':
                 reset_cmd = context.device_config.reset_port_command
                 if reset_cmd:
                     logging.warning('attempting to reset serial port')
@@ -565,14 +565,19 @@ def connect_to_serial(context):
                             pid = int(line.split()[0])
                             logging.warning('kill process: %s', context.device_config.connection_command)
                             os.kill(pid, signal.SIGKILL)  # SIGKILL for Linux
+                            break
                 proc.close(True)
                 retry_count += 1
                 time.sleep(5)
                 continue
-            elif result == 'all-good':
+            elif result == 'timeout':
                 context.test_data.add_result('connect_to_console', 'pass')
                 atexit.register(proc.close, True)
                 return proc
+            # elif result == 'all-good':
+            #     context.test_data.add_result('connect_to_console', 'pass')
+            #     atexit.register(proc.close, True)
+            #     return proc
         except CriticalError:
             retry_count += 1
 
