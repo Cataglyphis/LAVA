@@ -508,7 +508,7 @@ class logging_spawn(pexpect.spawn):
                 timeout=0.1, lava_no_logging=1)
 
 ############################################################
-# modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
+# modified by Wang Bo (wang.bo@whaley.cn), 2016.06.15
 ############################################################
 def connect_to_serial(context):
     """
@@ -519,7 +519,7 @@ def connect_to_serial(context):
 
     port_stuck_message = 'Data Buffering Suspended'
     conn_closed_message = 'Connection closed by foreign host'
-    connection_refused_message = 'Connection refused'
+    connection_refused_message = 'Port already in use'
     # connection_succeed_message = 'ser2net port'
 
     # expectations = {
@@ -548,16 +548,16 @@ def connect_to_serial(context):
         try:
             proc = context.spawn(context.device_config.connection_command, timeout=120)
             logging.info('Attempting to connect to device using: %s', context.device_config.connection_command)
-            match = proc.expect(patterns, timeout=20)
+            match = proc.expect(patterns, timeout=8)
             result = results[match]
             logging.info('Matched %r which means %s', patterns[match], result)
             if result == 'retry' or result == 'reset-port':
                 reset_cmd = context.device_config.reset_port_command
                 if reset_cmd:
-                    logging.warning('attempting to reset serial port')
+                    logging.warning('Attempting to reset serial port')
                     context.run_command(reset_cmd)
                 else:
-                    logging.warning('no reset_port command configured, try to kill the process')
+                    logging.warning('No reset_port command configured, try to kill the process')
                     proc_telnet = subprocess.Popen(['ps', 'a'], stdout=subprocess.PIPE)
                     out, err = proc_telnet.communicate()
                     for line in out.splitlines():
@@ -585,7 +585,7 @@ def connect_to_serial(context):
     logging.error(msg)
     context.test_data.add_result('connect_to_console', 'fail',
                                  message=msg)
-    raise CriticalError('could not execute connection_command successfully')
+    raise CriticalError('Could not execute connection_command successfully')
 
 
 def wait_for_prompt(connection, prompt_pattern, timeout):
