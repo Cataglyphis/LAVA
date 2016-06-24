@@ -448,9 +448,13 @@ class BootloaderTarget(MasterImageTarget):
         hard_reset_command = self.config.hard_reset_command
         command = hard_reset_command.strip().split(' ')
         pdu = ''
+        if '--hostname' in command:
+            index = command.index('--hostname')
+            pdu_ip = command[index+1]
         if '--port' in command:
             index = command.index('--port')
-            pdu = command[index+1]
+            pdu_port = command[index+1]
+        pdu = pdu_ip + ":" + pdu_port
         logging.info("PDU port number is: %s" % pdu)
 
         ##############################################
@@ -470,15 +474,15 @@ class BootloaderTarget(MasterImageTarget):
         ota = self._get_ota_whaley()
         if ota:
             LAVA_json = os.path.join(path, "plan", "LAVA_OTA.json")
-            logging.info("load ota test case: %s", LAVA_json)
+            logging.info("load ota test case: %s" % LAVA_json)
         else:
             signal = self._get_signal_whaley()
             if signal:
                 LAVA_json = os.path.join(path, "plan", "LAVA_Signal.json")
-                logging.info("target device has signal connected: %s", LAVA_json)
+                logging.info("target device has signal connected: %s" % LAVA_json)
             else:
                 LAVA_json = os.path.join(path, "plan", "LAVA.json")
-                logging.info("target device no signal connected: %s", LAVA_json)
+                logging.info("target device no signal connected: %s" % LAVA_json)
 
         ##############################################
         # dump info to LAVA.json/LAVA_Signal.json
@@ -493,6 +497,16 @@ class BootloaderTarget(MasterImageTarget):
         LAVA_data["device"]["target"] = str(ip) + ":5555"
         LAVA_data["device"]["socat"] = connection_command
         LAVA_data["device"]["pdu"] = str(pdu)
+
+        job_data = self.context.job_data
+        params = {}
+        for cmd in job_data['actions']:
+            if cmd.get('command') == 'deploy_whaley_image':
+                params = cmd.get('parameters', {})
+        logging.info("deploy_whaley_image parameters: %s" % params)
+        image = params.get("image", "").split("/")
+        LAVA_data["device"]["image"] = image[0] + "/" + image[1]
+
         if "tags" in self.context.job_data:  # use tags
             LAVA_data["device"]["platform"] = self.context.job_data.get("tags")[0]
         else:  # use target to specify one device
@@ -549,9 +563,13 @@ class BootloaderTarget(MasterImageTarget):
         hard_reset_command = self.config.hard_reset_command
         command = hard_reset_command.strip().split(' ')
         pdu = ''
+        if '--hostname' in command:
+            index = command.index('--hostname')
+            pdu_ip = command[index+1]
         if '--port' in command:
             index = command.index('--port')
-            pdu = command[index + 1]
+            pdu_port = command[index+1]
+        pdu = pdu_ip + ":" + pdu_port
         logging.info("PDU port number is: %s" % pdu)
 
         ##############################################
@@ -578,6 +596,16 @@ class BootloaderTarget(MasterImageTarget):
         data["device"]["target"] = str(ip) + ":5555"
         data["device"]["socat"] = connection_command
         data["device"]["pdu"] = str(pdu)
+
+        job_data = self.context.job_data
+        params = {}
+        for cmd in job_data['actions']:
+            if cmd.get('command') == 'deploy_whaley_image':
+                params = cmd.get('parameters', {})
+        logging.info("deploy_whaley_image parameters: %s" % params)
+        image = params.get("image", "").split("/")
+        data["device"]["image"] = image[0] + "/" + image[1]
+
         if "tags" in self.context.job_data:  # use tags
             data["device"]["platform"] = self.context.job_data.get("tags")[0]
         else:  # use target to specify one device

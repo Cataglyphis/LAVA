@@ -133,7 +133,7 @@ def template_device_type():
 
 def main(dt, name, options):
     config = {}
-    # add power_on_cmd at 2016.03.22, Bo
+    # add power_on_cmd at 2016.03.22, wang.bo
     sequence = [
         'device_type',
         'hostname',
@@ -164,33 +164,49 @@ def main(dt, name, options):
     # FIXME: need a config file for daemon, pdu hostname and telnet ser2net host
     if options.pduport:
         try:
-            options.pduport = int(options.pduport)
+            pdu_ip = options.pduport.split(":")[0]
+            pdu_port = int(options.pduport.split(":")[1])
         except ValueError:
             print ("Unable to parse %s as a port number" % options.pduport)
             exit(1)
+        # add power_off_cmd and power_on_cmd,, wang.bo
         config['hard_reset_command'] = "/usr/bin/pduclient " \
                                        "--daemon localhost " \
-                                       "--hostname pdu --command reboot " \
-                                       "--port %02d" % options.pduport
+                                       "--hostname %s --command reboot " \
+                                       "--port %02d" % (pdu_ip, pdu_port)
         config['power_off_cmd'] = "/usr/bin/pduclient " \
                                   "--daemon localhost " \
-                                  "--hostname pdu --command off " \
-                                  "--port %02d" % options.pduport
+                                  "--hostname %s --command off " \
+                                  "--port %02d" % (pdu_ip, pdu_port)
         config['power_on_cmd'] = "/usr/bin/pduclient " \
                                  "--daemon localhost " \
-                                 "--hostname pdu --command on " \
-                                 "--port %02d" % options.pduport
+                                 "--hostname %s --command on " \
+                                 "--port %02d" % (pdu_ip, pdu_port)
     else:
         print("Skipping hard_reset_command for %s" % name)
-    if options.telnetport:
-        try:
-            options.telnetport = int(options.telnetport)
-        except ValueError:
-            print ("Unable to parse %s as a port number" % options.telnetport)
-            exit(1)
-        config['connection_command'] = "telnet localhost %d" % options.telnetport
+
+    if options.socatport:
+        # config['connection_command'] = "telnet localhost %d" % options.telnetport
+        config['connection_command'] = "socat stdin,raw,echo=0 tcp:%s" % options.socatport
     else:
         print("Skipping connection_command for %s" % name)
+
+    if options.macaddr:
+        config['macaddr'] = options.macaddr
+    else:
+        print("Skipping macaddr for %s" % name)
+
+    if options.sn:
+        config['sn'] = options.sn
+    else:
+        print("Skipping sn for %s" % name)
+
+    if options.signal:
+        config['signal'] = options.signal
+    else:
+        print("Skipping signal for %s" % name)
+        config['signal'] = 'false'
+
     template = [template_device_type()]
     template[0]['pk'] = dt
     template.append(template_device())
@@ -229,22 +245,33 @@ def main(dt, name, options):
     return 0
 
 if __name__ == '__main__':
-    usage = "Usage: %prog devicetype hostname [-p pduport] [-t telnetport]"
+    usage = "Usage: %prog devicetype devicename [-p pduport] [-t socatport] [-m macaddr] [-n sn]"
     description = "LAVA device helper. Allows local admins to add devices to a " \
                   "running instance by creating the database entry and creating an initial " \
                   "device configuration. Optionally add the pdu port and ser2net port to use " \
-                  "for serial connections using telnet. Health check instructions, device" \
-                  "tags and device ownership are NOT supported and need to be set using the " \
-                  "Django admin interface. This script is intended for initial setup only." \
+                  "for serial connections using socat. This script is intended for initial setup only." \
                   "pduport settings are intended to support lavapdu only." \
-                  "telnetport settings are intended to support ser2net only."
+                  "socat settings are intended to support socat only." \
+                  "macaddr set device mac address." \
+                  "sn set device sn." \
+                  "signal judge device has signale connected" \
+                  "2016.06.24, wang.bo"
     pduport = None
-    telnetport = None
+    socatport = None
+    macaddr = None
+    sn = None
+    signal = None
     parser = optparse.OptionParser(usage=usage, description=description)
     parser.add_option("-p", "--pduport", dest="pduport", action="store",
-                      type="string", help="PDU Portnumber (ex: 04)")
-    parser.add_option("-t", "--telnetport", dest="telnetport", action="store",
-                      type="string", help="ser2net port (ex: 4003)")
+                      type="string", help="PDU ip and port number (ex: 172.16.117.10:04)")
+    parser.add_option("-t", "--socatport", dest="socatport", action="store",
+                      type="string", help="socat port (ex: 172.16.117.20:4196)")
+    parser.add_option("-m", "--macaddr", dest="macaddr", action="store",
+                      type="string", help="device mac address (ex: 9C:A6:9D:00:01:FF)")
+    parser.add_option("-n", "--sn", dest="sn", action="sn",
+                      type="string", help="device sn")
+    parser.add_option("-g", "--signal", dest="signal", action="store",
+                      type="string", help="device has signal connected (ex: true)")
     parser.add_option("-b", "--bundlestream", dest="bundlestream", action="store_true",
                       help="add a lab health bundle stream if no streams exist.")
     parser.add_option("-s", "--simulate", dest="simulate", action="store_true",

@@ -365,7 +365,7 @@ class Target(object):
             connection.sendcontrol('c')
             connection.sendline('')
             # connection.expect('shell', timeout=5)
-            connection.expect('@', timeout=5)
+            connection.expect('shell@', timeout=5)
             connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
             pos1 = connection.expect(pattern, timeout=10)
             if pos1 == 0:
@@ -378,7 +378,7 @@ class Target(object):
                 connection.sendcontrol('c')
                 connection.sendline('')
                 # connection.expect('shell', timeout=5)
-                connection.expect('@', timeout=5)
+                connection.expect('shell@', timeout=5)
                 connection.sendline('su')
                 connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
                 time.sleep(20)
@@ -459,37 +459,25 @@ class Target(object):
             config_data = {}
         return config_data
 
-    # get mac address of current device, defined in configure.json
+    # get current device mac address
     def _get_macaddr_whaley(self):
-        config_data = self._load_config_whaley()
-        if config_data:
-            mac_addr = config_data['mac_addr']
-            logging.info("mac address: %s", mac_addr)
-        else:
-            mac_addr = ''
-            logging.warning("mac address: %s", mac_addr)
+        mac_addr = self.config.macaddr
+        logging.info("mac addr: %s" % mac_addr)
         return mac_addr
 
-    # get sn of current device, defined in configure.json
+    # get current device sn
     def _get_sn_whaley(self):
-        config_data = self._load_config_whaley()
-        if config_data:
-            sn = config_data['sn']
-            logging.info("sn: %s", sn)
-        else:
-            sn = ''
-            logging.warning("sn: %s", sn)
+        sn = self.config.sn
+        logging.info("sn: %s", )
         return sn
 
-    # get signal of current device, judge whether current device has signal connected
+    # judge whether current device has signal connected
     def _get_signal_whaley(self):
-        config_data = self._load_config_whaley()
-        if config_data:
-            signal = config_data['signal']
-            logging.info("has signal connected: %s", signal)
+        signal = self.config.signal
+        if signal:
+            logging.info("current device has signal connected: %s" % signal)
         else:
-            signal = False
-            logging.warning("no signal connected")
+            logging.info("current device no signal connected")
         return signal
 
     # set mac address in bootloader
@@ -501,9 +489,9 @@ class Target(object):
         # use self.config.device_type to replace job_data['device_type']
         device_type = self.config.device_type
         if device_type == 'mstar':
-            connection.sendline("set ethaddr %s" % mac_addr)
-            connection.sendline("set macaddr %s" % mac_addr)
-            connection.sendline("save")
+            connection.sendline("setenv ethaddr %s" % mac_addr)
+            connection.sendline("setenv macaddr %s" % mac_addr)
+            connection.sendline("saveenv")
         elif device_type == 'hisi':
             connection.sendline("setenv ethaddr %s" % mac_addr)
         else:
@@ -700,15 +688,12 @@ class Target(object):
             time.sleep(0.05)
 
     def _hard_reboot(self, connection):
-        logging.info("Use soft reset to replace hard reset")
-        self._soft_reboot(connection)
-        return
         logging.info("Perform hard reset on the system")
         if self.config.hard_reset_command != "":
             # use power_off and power_on to instead of hard_reset_command
             # self.context.run_command(self.config.hard_reset_command)
             self.context.run_command(self.config.power_off_cmd)
-            time.sleep(10)
+            time.sleep(20)
             self.context.run_command(self.config.power_on_cmd)
             for i in range(100):
                 connection.sendline("")
@@ -857,7 +842,7 @@ class Target(object):
             # set factory info, mac addr, sn
             self._set_factory_whaley(connection)
             # copy hdcp key
-            self._copy_hdcp_key(connection)
+            # self._copy_hdcp_key(connection)
             # reboot device
             connection.sendline('reboot')
             time.sleep(30)

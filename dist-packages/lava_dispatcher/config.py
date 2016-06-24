@@ -328,6 +328,11 @@ class DeviceSchema(schema.Schema):
     # for lxc devices
     lxc_driver = schema.StringOption(default=None)
 
+    # for whaley devices
+    macaddr = schema.StringOption(default=None)
+    sn = schema.StringOption(default=None)
+    signal = schema.BoolOption(default=False)
+
 
 class OptionDescriptor(object):
     def __init__(self, name):
