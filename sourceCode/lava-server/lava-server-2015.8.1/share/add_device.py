@@ -245,7 +245,7 @@ def main(dt, name, options):
     return 0
 
 if __name__ == '__main__':
-    usage = "Usage: %prog devicetype devicename [-p pduport] [-t socatport] [-m macaddr] [-n sn]"
+    usage = "Usage: %prog devicetype devicename [-p pduport] [-t socatport] [-m macaddr] [-n sn] [-g signal]"
     description = "LAVA device helper. Allows local admins to add devices to a " \
                   "running instance by creating the database entry and creating an initial " \
                   "device configuration. Optionally add the pdu port and ser2net port to use " \
@@ -254,7 +254,7 @@ if __name__ == '__main__':
                   "socat settings are intended to support socat only." \
                   "macaddr set device mac address." \
                   "sn set device sn." \
-                  "signal judge device has signale connected" \
+                  "signal judge device has signale connected.\n" \
                   "2016.06.24, wang.bo"
     pduport = None
     socatport = None
@@ -268,7 +268,7 @@ if __name__ == '__main__':
                       type="string", help="socat port (ex: 172.16.117.20:4196)")
     parser.add_option("-m", "--macaddr", dest="macaddr", action="store",
                       type="string", help="device mac address (ex: 9C:A6:9D:00:01:FF)")
-    parser.add_option("-n", "--sn", dest="sn", action="sn",
+    parser.add_option("-n", "--sn", dest="sn", action="store",
                       type="string", help="device sn")
     parser.add_option("-g", "--signal", dest="signal", action="store",
                       type="string", help="device has signal connected (ex: true)")
