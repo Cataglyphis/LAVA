@@ -447,14 +447,16 @@ class BootloaderTarget(MasterImageTarget):
         ##############################################
         hard_reset_command = self.config.hard_reset_command
         command = hard_reset_command.strip().split(' ')
-        pdu = ''
-        if '--hostname' in command:
-            index = command.index('--hostname')
-            pdu_ip = command[index+1]
-        if '--port' in command:
-            index = command.index('--port')
-            pdu_port = command[index+1]
-        pdu = pdu_ip + ":" + pdu_port
+        if command:
+            pdu_ip = ''
+            pdu_port = ''
+            if '--hostname' in command:
+                index = command.index('--hostname')
+                pdu_ip = command[index+1]
+            if '--port' in command:
+                index = command.index('--port')
+                pdu_port = command[index+1]
+            pdu = pdu_ip + ":" + pdu_port
         logging.info("PDU port number is: %s" % pdu)
 
         ##############################################
@@ -562,14 +564,16 @@ class BootloaderTarget(MasterImageTarget):
         ##############################################
         hard_reset_command = self.config.hard_reset_command
         command = hard_reset_command.strip().split(' ')
-        pdu = ''
-        if '--hostname' in command:
-            index = command.index('--hostname')
-            pdu_ip = command[index+1]
-        if '--port' in command:
-            index = command.index('--port')
-            pdu_port = command[index+1]
-        pdu = pdu_ip + ":" + pdu_port
+        if command:
+            pdu_ip = ''
+            pdu_port = ''
+            if '--hostname' in command:
+                index = command.index('--hostname')
+                pdu_ip = command[index+1]
+            if '--port' in command:
+                index = command.index('--port')
+                pdu_port = command[index+1]
+            pdu = pdu_ip + ":" + pdu_port
         logging.info("PDU port number is: %s" % pdu)
 
         ##############################################
@@ -585,7 +589,7 @@ class BootloaderTarget(MasterImageTarget):
 
         ##############################################
         # dump info to plan.json
-        ##############################################
+        ###############################e###############
         if os.path.isfile(script_param):
             with open(script_param, "r") as fin:
                 data = json.load(fin)
