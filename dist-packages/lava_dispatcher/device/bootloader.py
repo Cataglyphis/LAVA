@@ -456,7 +456,10 @@ class BootloaderTarget(MasterImageTarget):
             if '--port' in command:
                 index = command.index('--port')
                 pdu_port = command[index+1]
-            pdu = pdu_ip + ":" + pdu_port
+            if pdu_port and pdu_ip:
+                pdu = pdu_ip + ':' + pdu_port
+            else:
+                pdu = ''
         logging.info("PDU port number is: %s" % pdu)
 
         ##############################################
@@ -573,7 +576,10 @@ class BootloaderTarget(MasterImageTarget):
             if '--port' in command:
                 index = command.index('--port')
                 pdu_port = command[index+1]
-            pdu = pdu_ip + ":" + pdu_port
+            if pdu_port and pdu_ip:
+                pdu = pdu_ip + ':' + pdu_port
+            else:
+                pdu = ''
         logging.info("PDU port number is: %s" % pdu)
 
         ##############################################
