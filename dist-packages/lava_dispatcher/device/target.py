@@ -482,6 +482,7 @@ class Target(object):
         connection.sendline("busybox --install /sbin")
         connection.sendline("busybox mkdir /tmp/disk")
         connection.sendline("busybox mount /dev/block/sda1 /tmp/disk")
+        connection.sendline("busybox ls /tmp/disk")
         if self.config.device_type == "mstar":
             connection.sendline("cd /tmp/disk/su_mstar")
             connection.sendline("busybox chmod 755 su_install.sh")
