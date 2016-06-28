@@ -425,6 +425,76 @@ class Target(object):
         connection.sendline("sqlite3 /data/system/hardwareprotect.db \"update hwprotect set timeout=-1 where name='shutdown'\"")
         logging.info("end modify hardwareprotect.db")
 
+    # enter recovery mode
+    def _enter_recovery_whaley(self, connection):
+        logging.info("enter recovery mode")
+        if self.config.device_type == "mstar":
+            # timeout = 3600s
+            connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
+            for i in range(10):
+                connection.sendline("")
+            connection.sendcontrol('c')
+            # << MStar >>#
+            connection.expect(self.config.bootloader_prompt)
+            connection.sendline("ac androidboot.debuggable 1")
+            time.sleep(2)
+            connection.sendline("recovery")
+            connection.sendline("reset")
+            connection.expect("/ #", timeout=120)
+            time.sleep(10)
+        elif self.config.device_type == "hisi":
+            # timeout = 3600s
+            connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
+            try:
+                if self.config.hard_reset_command != "":
+                    # use power_off and power_on to instead of hard_reset_command
+                    # self.context.run_command(self.config.hard_reset_command)
+                    self.context.run_command(self.config.power_off_cmd)
+                    time.sleep(20)
+                    self.context.run_command(self.config.power_on_cmd)
+                    for i in range(20):
+                        connection.sendline("")
+                        time.sleep(0.06)
+                else:
+                    logging.error("no hard_reset_command, can't enter bootloader")
+                    raise
+            except pexpect.TIMEOUT:
+                msg = 'Infrastructure Error: failed to enter the bootloader.'
+                logging.error(msg)
+                raise
+            connection.sendline("ac androidboot.debuggable 1")
+            time.sleep(2)
+            connection.sendline("ufts set fts.boot.command boot-recovery")
+            connection.sendline("ufts set fts.boot.status")
+            connection.sendline("ufts set fts.boot.recovery")
+            connection.sendline("reset")
+            connection.expect("StartGUI", timeout=120)
+            time.sleep(10)
+        else:
+            logging.warning("no device type mstar or hisi found")
+        logging.info("end of enter recovery mode")
+
+    # su device in recovery mode
+    def _su_device_whaley(self, connection):
+        logging.info("su device in recovery mode")
+        connection.sendcontrol("c")
+        connection.expect("/ #")
+        connection.sendline("busybox --install /sbin")
+        connection.sendline("busybox mkdir /tmp/disk")
+        connection.sendline("busybox mount /dev/block/sda1 /tmp/disk")
+        if self.config.device_type == "mstar":
+            connection.sendline("cd /tmp/disk/su_mstar")
+            connection.sendline("busybox chmod 755 su_install.sh")
+            connection.sendline("busybox sh su_install.sh")
+        elif self.config.device_type == "hisi":
+            connection.sendline("cd /tmp/disk/su_hisi")
+            connection.sendline("busybox chmod 755 su_install.sh")
+            connection.sendline("busybox sh su_install.sh")
+        else:
+            logging.warning("no device type mstar or hisi found")
+        connection.sendline("busybox reboot -f")
+        logging.info("end su device in recovery mode")
+
     # get ota parameter in job_data
     def _get_ota_whaley(self):
         job_data = self.context.job_data
@@ -437,27 +507,6 @@ class Target(object):
         else:
             ota = False
         return ota
-
-    # load config.json
-    def _load_config_whaley(self):
-        job_data = self.context.job_data
-        params = {}
-        for cmd in job_data['actions']:
-            if cmd.get('command') == 'whaley_test_shell':
-                params = cmd.get('parameters', {})
-        script = params.get('script').strip()
-        script_name = script.split(' ')[0]
-        script_path = os.path.split(script_name)[0]
-        target = self.context.job_data['target']
-        config_name = target + ".json"
-        config_path = os.path.join(script_path, "plan", "config", config_name)  # plan/config/H01P43D_01.json
-        if os.path.isfile(config_path):
-            with open(config_path, 'r') as fin:
-                config_data = json.load(fin)
-        else:
-            logging.warning("no %s found", config_path)
-            config_data = {}
-        return config_data
 
     # get current device mac address
     def _get_macaddr_whaley(self):
@@ -482,7 +531,7 @@ class Target(object):
 
     # set mac address in bootloader
     def _set_macaddr_whaley(self, connection):
-        logging.info("set mac address in bootloader")
+        logging.info("set mac address and bootdelay in bootloader")
         mac_addr = self._get_macaddr_whaley()
         # device_type = self.context.job_data['device_type']
         # if we define target parameter in job json, no job_data['device_type'] found
@@ -491,12 +540,13 @@ class Target(object):
         if device_type == 'mstar':
             connection.sendline("setenv ethaddr %s" % mac_addr)
             connection.sendline("setenv macaddr %s" % mac_addr)
+            connection.sendline("setenv bootdelay 10")
             connection.sendline("saveenv")
         elif device_type == 'hisi':
             connection.sendline("setenv ethaddr %s" % mac_addr)
         else:
             logging.warning("no device type mstar or hisi found")
-        logging.info("end set mac address in bootloader")
+        logging.info("end set mac address and bootdelay in bootloader")
 
     # set factory info, e.g. mac address, sn, hdcp key
     # then reboot the device
@@ -510,32 +560,6 @@ class Target(object):
         connection.sendline('echo ro.helios.sn=%s >> /factory/factory.prop' % sn)
         connection.sendline('chmod 644 /factory/factory.prop')
         logging.info("end set factory mode info")
-
-    # copy hdcp key to factory partition
-    def _copy_hdcp_key(self, connection):
-        logging.info("copy hdcp key to factory partition")
-        job_name = self.context.job_data['job_name']
-        # device_type = self.context.job_data['device_type']
-        # if we define target parameter in job json, no job_data['device_type'] found
-        # use self.config.device_type to replace job_data['device_type']
-        device_type = self.config.device_type
-        connection.sendline('su')
-        connection.sendline('mount -o remount,rw /factory')
-        if device_type == 'mstar':
-            logging.info("set hdcp key for mstar platform")
-            if 'D' in job_name:
-                logging.info("debug key, copy debug_key to factory partition")
-                connection.sendline('cp -r /mnt/usb/sda1/hdcp_key/debug_key /factory')
-            elif 'R' in job_name:
-                logging.info("release key, copy release_key to factory partition")
-                connection.sendline('cp -r /mnt/usb/sda1/hdcp_key/release_key /factory')
-            else:
-                logging.warning("can't find D or R in job_name")
-        elif device_type == 'hisi':
-            logging.info("don't need to set hdcp key for hisi platform")
-        else:
-            logging.info("only support mstar and hisi platform now, please add a new platform")
-        logging.info("end copy hdcp key to factory partition")
 
     def _auto_login(self, connection, is_master=False):
         if is_master:
@@ -699,9 +723,6 @@ class Target(object):
                 connection.sendline("")
                 time.sleep(0.06)
         else:
-            # comment below 2 lines, 2016.01.21
-            # connection.send("~$")
-            # connection.sendline("hardreset")
             self._soft_reboot(connection)
 
     def _enter_bootloader(self, connection):
@@ -751,6 +772,24 @@ class Target(object):
         return boot_cmds
 
     def _monitor_boot(self, connection, ps1, ps1_pattern, is_master=False):
+
+        job_data = self.context.job_data
+        image_params = {}
+        boot_params = {}
+        for cmd in job_data['actions']:
+            if cmd.get('command') == 'deploy_whaley_image':
+                image_params = cmd.get('parameters', {})
+            if cmd.get('command') == 'boot_whaley_image':
+                boot_params = cmd.get('parameters', {})
+        logging.info("deploy_whaley_image parameters: %s" % image_params)
+        logging.info("boot_whaley_image parameters: %s" % boot_params)
+        image = boot_params.get("image", "")
+        skip = boot_params.get("skip", False)
+
+        if "R" in image and not skip:
+            logging.info("current deploy image is Release version, should enable console and su")
+            self._enter_recovery_whaley(connection)
+            self._su_device_whaley(connection)
 
         good = 'pass'
         bad = 'fail'
@@ -841,8 +880,6 @@ class Target(object):
             self._remove_helios_guide(connection)
             # set factory info, mac addr, sn
             self._set_factory_whaley(connection)
-            # copy hdcp key
-            # self._copy_hdcp_key(connection)
             # reboot device
             connection.sendline('reboot')
             time.sleep(30)
