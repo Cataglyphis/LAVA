@@ -452,9 +452,9 @@ class Target(object):
                     self.context.run_command(self.config.power_off_cmd)
                     time.sleep(20)
                     self.context.run_command(self.config.power_on_cmd)
-                    for i in range(20):
+                    for i in range(50):
                         connection.sendline("")
-                        time.sleep(0.06)
+                        time.sleep(0.1)
                 else:
                     logging.error("no hard_reset_command, can't enter bootloader")
                     raise
