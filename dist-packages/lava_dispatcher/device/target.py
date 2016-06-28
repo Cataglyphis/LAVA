@@ -462,8 +462,6 @@ class Target(object):
                 msg = 'Infrastructure Error: failed to enter the bootloader.'
                 logging.error(msg)
                 raise
-            connection.sendline("ac androidboot.debuggable 1")
-            time.sleep(2)
             connection.sendline("ufts set fts.boot.command boot-recovery")
             connection.sendline("ufts set fts.boot.status")
             connection.sendline("ufts set fts.boot.recovery")
@@ -493,7 +491,6 @@ class Target(object):
             connection.sendline("busybox sh su_install.sh")
         else:
             logging.warning("no device type mstar or hisi found")
-        connection.sendline("busybox reboot -f")
         logging.info("end su device in recovery mode")
 
     # get ota parameter in job_data
@@ -544,7 +541,8 @@ class Target(object):
             connection.sendline("setenv bootdelay 10")
             connection.sendline("saveenv")
         elif device_type == 'hisi':
-            connection.sendline("setenv ethaddr %s" % mac_addr)
+            # connection.sendline("setenv ethaddr %s" % mac_addr)
+            logging.info("no need to set mac address in hisi platform")
         else:
             logging.warning("no device type mstar or hisi found")
         logging.info("end set mac address and bootdelay in bootloader")
@@ -784,7 +782,7 @@ class Target(object):
                 boot_params = cmd.get('parameters', {})
         logging.info("deploy_whaley_image parameters: %s" % image_params)
         logging.info("boot_whaley_image parameters: %s" % boot_params)
-        image = boot_params.get("image", "")
+        image = image_params.get("image", "")
         skip = boot_params.get("skip", False)
 
         if "R" in image and not skip:
