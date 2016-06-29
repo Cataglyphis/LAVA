@@ -510,8 +510,6 @@ class Target(object):
         connection.sendline('busybox mount /dev/block/sda1 /tmp/disk')
         connection.sendline('busybox ls /tmp/disk')
         if self.config.device_type == 'mstar':
-            connection.sendline('cd /factory')
-            connection.sendline('busybox sh copyDB.sh')
             connection.sendline('cd /tmp/disk/su_mstar')
             connection.sendline('busybox chmod 755 su_install.sh')
             connection.sendline('busybox sh su_install.sh')
@@ -568,7 +566,6 @@ class Target(object):
         if device_type == 'mstar':
             connection.sendline('setenv ethaddr %s' % mac_addr)
             connection.sendline('setenv macaddr %s' % mac_addr)
-            connection.sendline('setenv db_table 0')
             connection.sendline('setenv bootdelay 10')
             connection.sendline('saveenv')
         elif device_type == 'hisi':
@@ -988,6 +985,7 @@ class Target(object):
         connection.sendline('saveenv')
         connection.sendline('estart')
         connection.sendline('dhcp')
+        connection.expect(self.config.bootloader_prompt, timeout=20)
         connection.sendline('mstar %s' % mboot_txt)
         connection.expect(self.config.interrupt_boot_prompt, timeout=180)
         for i in range(10):
@@ -1021,6 +1019,7 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('estart')
         connection.sendline('dhcp')
+        connection.expect(self.config.bootloader_prompt, timeout=20)
         connection.sendline('setenv serverip %s' % image_server_ip)
         connection.sendline('mstar %s' % factory)
         connection.expect(self.config.bootloader_prompt, timeout=180)
