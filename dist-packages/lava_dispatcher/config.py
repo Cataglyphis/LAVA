@@ -329,8 +329,8 @@ class DeviceSchema(schema.Schema):
     lxc_driver = schema.StringOption(default=None)
 
     # for whaley devices
-    macaddr = schema.StringOption(default=None)
-    sn = schema.StringOption(default=None)
+    macaddr = schema.StringOption(default='')
+    sn = schema.StringOption(default='')
     signal = schema.BoolOption(default=False)
 
 

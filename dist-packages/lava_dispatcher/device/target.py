@@ -1011,7 +1011,7 @@ class Target(object):
     def _burn_factory_828(self, connection):
         logging.info('start to burn 828 factory')
         factory = self.image_params.get('factory', '')
-        image_server_ip = self.image_params('image_server_ip', '')
+        image_server_ip = self.image_params.get('image_server_ip', '')
         # timeout = 3600s
         connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
         for i in range(10):

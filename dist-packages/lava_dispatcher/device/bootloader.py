@@ -170,7 +170,7 @@ class BootloaderTarget(MasterImageTarget):
     # add function deploy_whaley_image in class BootloaderTarget
     ############################################################
 
-    def deploy_whaley_image(self, image, image_server_ip, bootloadertype):
+    def deploy_whaley_image(self, image, factory, image_server_ip, bootloadertype):
         if self.__deployment_data__ is None:
             # Get deployment data
             logging.debug("Attempting to set deployment data")
