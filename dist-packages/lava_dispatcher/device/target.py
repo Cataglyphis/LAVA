@@ -183,6 +183,9 @@ class Target(object):
         self.__deployment_data__ = None
         self.mount_info = {'boot': None, 'rootfs': None}
         self._bridge_configured = False
+        # add by Bo, at 2016.06.29
+        self._image_params = None
+        self._boot_params = None
 
     @property
     def deployment_data(self):
@@ -202,6 +205,26 @@ class Target(object):
             self._scratch_dir = utils.mkdtemp(
                 self.context.config.lava_image_tmpdir)
         return self._scratch_dir
+
+    # deploy_whaley_image parameters
+    @property
+    def image_params(self):
+        job_data = self.context.job_data
+        if self._image_params is None:
+            for cmd in job_data['actions']:
+                if cmd.get('command') == 'deploy_whaley_image':
+                    self._image_params = cmd.get('parameters', {})
+        return self._image_params
+
+    # boot_whaley_image parameters
+    @property
+    def boot_params(self):
+        job_data = self.context.job_data
+        if self._boot_params is None:
+            for cmd in job_data['actions']:
+                if cmd.get('command') == 'boot_whaley_image':
+                    self._boot_params = cmd.get('parameters', {})
+        return self._boot_params
 
     def power_on(self):
         """ responsible for powering on the target device and returning an
@@ -401,97 +424,102 @@ class Target(object):
 
     # install busybox in /system/xbin
     def _install_busybox_whaley(self, connection):
-        logging.info("install busybox in /system/xbin")
+        logging.info('install busybox in /system/xbin')
         connection.sendline('su')
         connection.sendline('mount -o remount,rw /system')
         connection.sendline('cd /system/xbin')
         connection.sendline('busybox --install .')
+        logging.info('download sqlite3 to /system/xbin')
+        connection.sendline('busybox wget http://172.16.117.1:8000/resource/sqlite3')
+        connection.sendline('busybox chmod 755 sqlite3')
         # go back to /, otherwise block the next step in whaley_test_shell
         connection.sendline('cd /')
-        logging.info("end installation of busybox")
+        logging.info('end installation of busybox')
 
     # remove helios guide, so after reboot no guide appear
     def _remove_helios_guide(self, connection):
-        logging.info("remove helios guide")
+        logging.info('remove helios guide')
         connection.sendline('su')
         connection.sendline('rm -rf /data/dalvik-cache/arm/system@priv-app@HeliosGuide@HeliosGuide.apk@classes.dex')
         connection.sendline('mount -o remount,rw /system')
         connection.sendline('rm -rf /system/priv-app/HeliosGuide')
-        logging.info("end remove helios guide")
+        logging.info('end remove helios guide')
 
     # close shutdown
     def _close_shutdown_whaley(self, connection):
-        logging.info("modify hardwareprotect.db, set shutdown time to -1")
+        logging.info('modify hardwareprotect.db, set shutdown time to -1')
         connection.sendline("sqlite3 /data/system/hardwareprotect.db \"update hwprotect set timeout=-1 where name='shutdown'\"")
-        logging.info("end modify hardwareprotect.db")
+        logging.info('end modify hardwareprotect.db')
 
     # enter recovery mode
     def _enter_recovery_whaley(self, connection):
-        logging.info("enter recovery mode")
-        if self.config.device_type == "mstar":
+        logging.info('enter recovery mode')
+        if self.config.device_type == 'mstar':
             # timeout = 3600s
             connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
             for i in range(10):
-                connection.sendline("")
+                connection.sendline('')
             connection.sendcontrol('c')
             # << MStar >>#
             connection.expect(self.config.bootloader_prompt)
-            connection.sendline("ac androidboot.debuggable 1")
+            connection.sendline('ac androidboot.debuggable 1')
             time.sleep(2)
-            connection.sendline("recovery")
-            connection.sendline("reset")
-            connection.expect("/ #", timeout=120)
+            connection.sendline('recovery')
+            connection.sendline('reset')
+            connection.expect('/ #', timeout=120)
             time.sleep(10)
-        elif self.config.device_type == "hisi":
+        elif self.config.device_type == 'hisi':
             # timeout = 3600s
             connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
             try:
-                if self.config.hard_reset_command != "":
-                    # use power_off and power_on to instead of hard_reset_command
-                    # self.context.run_command(self.config.hard_reset_command)
+                if self.config.hard_reset_command != '':
                     self.context.run_command(self.config.power_off_cmd)
                     time.sleep(20)
                     self.context.run_command(self.config.power_on_cmd)
                     for i in range(50):
-                        connection.sendline("")
+                        connection.sendline('')
                         time.sleep(0.1)
+                    connection.expect(self.config.bootloader_prompt)
                 else:
-                    logging.error("no hard_reset_command, can't enter bootloader")
-                    raise
+                    for i in range(50):
+                        connection.sendline('')
+                        time.sleep(0.1)
+                    connection.expect(self.config.bootloader_prompt)
             except pexpect.TIMEOUT:
                 msg = 'Infrastructure Error: failed to enter the bootloader.'
                 logging.error(msg)
                 raise
-            connection.sendline("ufts set fts.boot.command boot-recovery")
-            connection.sendline("ufts set fts.boot.status")
-            connection.sendline("ufts set fts.boot.recovery")
-            connection.sendline("reset")
-            connection.expect("StartGUI", timeout=120)
+            connection.sendcontrol('c')
+            connection.sendline('ufts set fts.boot.command boot-recovery')
+            connection.sendline('ufts set fts.boot.status')
+            connection.sendline('ufts set fts.boot.recovery')
+            connection.sendline('reset')
+            connection.expect('StartGUI', timeout=120)
             time.sleep(10)
         else:
-            logging.warning("no device type mstar or hisi found")
-        logging.info("end of enter recovery mode")
+            logging.warning('no device type mstar or hisi found')
+        logging.info('end of enter recovery mode')
 
     # su device in recovery mode
     def _su_device_whaley(self, connection):
-        logging.info("su device in recovery mode")
-        connection.sendcontrol("c")
-        connection.expect("/ #")
-        connection.sendline("busybox --install /sbin")
-        connection.sendline("busybox mkdir /tmp/disk")
-        connection.sendline("busybox mount /dev/block/sda1 /tmp/disk")
-        connection.sendline("busybox ls /tmp/disk")
-        if self.config.device_type == "mstar":
-            connection.sendline("cd /tmp/disk/su_mstar")
-            connection.sendline("busybox chmod 755 su_install.sh")
-            connection.sendline("busybox sh su_install.sh")
-        elif self.config.device_type == "hisi":
-            connection.sendline("cd /tmp/disk/su_hisi")
-            connection.sendline("busybox chmod 755 su_install.sh")
-            connection.sendline("busybox sh su_install.sh")
+        logging.info('su device in recovery mode')
+        connection.sendcontrol('c')
+        connection.expect('/ #')
+        connection.sendline('busybox --install /sbin')
+        connection.sendline('busybox mkdir /tmp/disk')
+        connection.sendline('busybox mount /dev/block/sda1 /tmp/disk')
+        connection.sendline('busybox ls /tmp/disk')
+        if self.config.device_type == 'mstar':
+            connection.sendline('cd /tmp/disk/su_mstar')
+            connection.sendline('busybox chmod 755 su_install.sh')
+            connection.sendline('busybox sh su_install.sh')
+        elif self.config.device_type == 'hisi':
+            connection.sendline('cd /tmp/disk/su_hisi')
+            connection.sendline('busybox chmod 755 su_install.sh')
+            connection.sendline('busybox sh su_install.sh')
         else:
-            logging.warning("no device type mstar or hisi found")
-        logging.info("end su device in recovery mode")
+            logging.warning('no device type mstar or hisi found')
+        logging.info('end su device in recovery mode')
 
     # get ota parameter in job_data
     def _get_ota_whaley(self):
@@ -515,7 +543,7 @@ class Target(object):
     # get current device sn
     def _get_sn_whaley(self):
         sn = self.config.sn
-        logging.info("sn: %s", )
+        logging.info("sn: %s" % sn)
         return sn
 
     # judge whether current device has signal connected
@@ -536,21 +564,22 @@ class Target(object):
         # use self.config.device_type to replace job_data['device_type']
         device_type = self.config.device_type
         if device_type == 'mstar':
-            connection.sendline("setenv ethaddr %s" % mac_addr)
-            connection.sendline("setenv macaddr %s" % mac_addr)
-            connection.sendline("setenv bootdelay 10")
-            connection.sendline("saveenv")
+            connection.sendline('setenv ethaddr %s' % mac_addr)
+            connection.sendline('setenv macaddr %s' % mac_addr)
+            connection.sendline('setenv db_table 0')
+            connection.sendline('setenv bootdelay 10')
+            connection.sendline('saveenv')
         elif device_type == 'hisi':
             # connection.sendline("setenv ethaddr %s" % mac_addr)
-            logging.info("no need to set mac address in hisi platform")
+            logging.info('no need to set mac address in hisi platform')
         else:
-            logging.warning("no device type mstar or hisi found")
-        logging.info("end set mac address and bootdelay in bootloader")
+            logging.warning('no device type mstar or hisi found')
+        logging.info('end set mac address and bootdelay in bootloader')
 
-    # set factory info, e.g. mac address, sn, hdcp key
+    # set factory info, e.g. mac address, sn
     # then reboot the device
     def _set_factory_whaley(self, connection):
-        logging.info("set factory mode info")
+        logging.info('set factory mode info')
         mac_addr = self._get_macaddr_whaley()
         sn = self._get_sn_whaley()
         connection.sendline('su')
@@ -558,7 +587,7 @@ class Target(object):
         connection.sendline('echo ro.hardware.lan_mac=%s >> /factory/factory.prop' % mac_addr)
         connection.sendline('echo ro.helios.sn=%s >> /factory/factory.prop' % sn)
         connection.sendline('chmod 644 /factory/factory.prop')
-        logging.info("end set factory mode info")
+        logging.info('end set factory mode info')
 
     def _auto_login(self, connection, is_master=False):
         if is_master:
@@ -690,11 +719,10 @@ class Target(object):
     # to match the whaley platform
     ############################################################
     def _soft_reboot(self, connection):
-        logging.info("Perform soft reboot the system")
+        logging.info('Perform soft reboot the system')
         # Try to C-c the running process, if any.
         connection.sendcontrol('c')
-        # connection.expect('shell')
-        connection.expect('@')
+        connection.expect('shell@')
         connection.sendline(self.config.soft_boot_cmd)
         # Looking for reboot messages or if they are missing, the U-Boot
         # message will also indicate the reboot is done.
@@ -707,19 +735,19 @@ class Target(object):
         # if match_id == 0:
         #     raise OperationFailed("Soft reboot failed")
         for i in range(100):
-            connection.sendline("")
+            connection.sendline('')
             time.sleep(0.05)
 
     def _hard_reboot(self, connection):
-        logging.info("Perform hard reset on the system")
-        if self.config.hard_reset_command != "":
+        logging.info('Perform hard reset on the system')
+        if self.config.hard_reset_command != '':
             # use power_off and power_on to instead of hard_reset_command
             # self.context.run_command(self.config.hard_reset_command)
             self.context.run_command(self.config.power_off_cmd)
             time.sleep(20)
             self.context.run_command(self.config.power_on_cmd)
             for i in range(100):
-                connection.sendline("")
+                connection.sendline('')
                 time.sleep(0.06)
         else:
             self._soft_reboot(connection)
@@ -738,7 +766,7 @@ class Target(object):
             # add below line, 2016.01.21
             connection.expect(self.config.bootloader_prompt, timeout=self.config.bootloader_timeout)
             # Record the time it takes to enter the bootloader.
-            enter_bootloader_time = "{0:.2f}".format(time.time() - start)
+            enter_bootloader_time = '{0:.2f}'.format(time.time() - start)
             self.context.test_data.add_result('enter_bootloader', 'pass',
                                               enter_bootloader_time, 'seconds')
         except pexpect.TIMEOUT:
@@ -771,24 +799,37 @@ class Target(object):
         return boot_cmds
 
     def _monitor_boot(self, connection, ps1, ps1_pattern, is_master=False):
+        # get deploy_whaley_image parameters
+        image = self.image_params.get('image', '')
 
-        job_data = self.context.job_data
-        image_params = {}
-        boot_params = {}
-        for cmd in job_data['actions']:
-            if cmd.get('command') == 'deploy_whaley_image':
-                image_params = cmd.get('parameters', {})
-            if cmd.get('command') == 'boot_whaley_image':
-                boot_params = cmd.get('parameters', {})
-        logging.info("deploy_whaley_image parameters: %s" % image_params)
-        logging.info("boot_whaley_image parameters: %s" % boot_params)
-        image = image_params.get("image", "")
-        skip = boot_params.get("skip", False)
+        # get boot_whaley_image parameters
+        skip = self.boot_params.get('skip', False)
+        emmc = self.boot_params.get('emmc', False)
 
-        if "R" in image and not skip:
-            logging.info("current deploy image is Release version, should enable console and su")
-            self._enter_recovery_whaley(connection)
-            self._su_device_whaley(connection)
+        if not skip and emmc:  # skip=False, emmc=True
+            if self.config.device_type == 'mstar':
+                logging.info("[EMMC MSTAR 828] wait for end of auto_update_factory.txt")
+                # timeout = 3600s
+                connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
+                for i in range(10):
+                    connection.sendline('')
+                connection.sendcontrol('c')
+                # << MStar >>#
+                connection.expect(self.config.bootloader_prompt)
+                self._burn_factory_828_emmc(connection)
+                self._wipe_data_828_emmc(connection)
+                self._burn_mboot_script_828_emmc(connection)
+                self._dump_emmc_828_emmc(connection)
+                return
+        else:  # skip=False, emmc=False
+            # burn factory image
+            if self.config.device_type == 'mstar':
+                self._burn_factory_828(connection)
+
+            if 'R' in image and not skip:
+                logging.info('current deploy image is Release version, should enable console and su')
+                self._enter_recovery_whaley(connection)
+                self._su_device_whaley(connection)
 
         good = 'pass'
         bad = 'fail'
@@ -932,7 +973,110 @@ class Target(object):
             logging.info("Kernel boot time: %s seconds" % kernel_boot_time)
             logging.info("Userspace boot time: %s seconds" % userspace_boot_time)
 
+    def _burn_mboot_828_emmc(self, connection):
+        image = self.image_params.get('image', '')
+        image_server_ip = self.image_params.get('image_server_ip', '')
+        logging.info("[EMMC MSTAR 828] burn mboot through tftp with auto_update_mboot.txt")
+        mboot_txt = os.path.join(os.path.split(image)[0], 'auto_update_mboot.txt')
+        logging.info("[EMMC MSTAR 828] path of auto_update_mboot.txt: %s" % mboot_txt)
+        connection.sendline('setenv bootdelay 10')
+        connection.sendline('setenv macaddr')
+        connection.sendline('setenv ethaddr')
+        connection.sendline('setenv serverip %s' % image_server_ip)
+        connection.sendline('saveenv')
+        connection.sendline('estart')
+        connection.sendline('dhcp')
+        connection.sendline('mstar %s' % mboot_txt)
+        connection.expect(self.config.interrupt_boot_prompt, timeout=180)
+        for i in range(10):
+            connection.sendline('')
+        connection.sendcontrol('c')
+        # << MStar >>#
+        connection.expect(self.config.bootloader_prompt)
+        logging.info("[EMMC MSTAR 828] end of burn mboot")
+
+    def _burn_factory_828_emmc(self, connection):
+        factory = self.image_params.get('factory', '')
+        image_server_ip = self.image_params.get('image_server_ip', '')
+        logging.info("[EMMC MSTAR 828] burn factory through tftp")
+        logging.info("[EMMC MSTAR 828] path of factory image: %s" % factory)
+        connection.sendline('setenv serverip %s' % image_server_ip)
+        connection.sendline('mstar %s' % factory)
+        # << MStar >>#
+        connection.expect(self.config.bootloader_prompt, timeout=180)
+        logging.info("[EMMC MSTAR 828] end of burn factory")
+
+    def _burn_factory_828(self, connection):
+        logging.info('start to burn 828 factory')
+        factory = self.image_params.get('factory', '')
+        image_server_ip = self.image_params('image_server_ip', '')
+        # timeout = 3600s
+        connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
+        for i in range(10):
+            connection.sendline('')
+        connection.sendcontrol('c')
+        # << MStar >>#
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('estart')
+        connection.sendline('dhcp')
+        connection.sendline('setenv serverip %s' % image_server_ip)
+        connection.sendline('mstar %s' % factory)
+        connection.expect(self.config.bootloader_prompt, timeout=180)
+        connection.sendline('reset')
+        logging.info('end of burn 828 factory')
+
+    def _wipe_data_828_emmc(self, connection):
+        logging.info("[EMMC MSTAR 828] wipe data partition")
+        connection.sendline('recovery_wipe_partition data')
+        connection.sendline('reset')
+        connection.expect('/ #', timeout=180)
+        logging.info("[EMMC MSTAR 828] end of wipe data partition")
+
+    def _burn_mboot_script_828_emmc(self, connection):
+        logging.info("[EMMC MSTAR 828] wait for android booted")
+        connection.expect('start test', timeout=self.config.image_boot_msg_timeout)
+        self._hard_reboot(connection)
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendcontrol('c')
+        logging.info("[EMMC MSTAR 828] start to burn [[mboot")
+        image = self.image_params.get('image', '')
+        image_server_ip = self.image_params.get('image_server_ip', '')
+        mboot_script = os.path.join(os.path.split(image)[0], 'scripts', '[[mboot')
+        logging.info("[EMMC MSTAR 828] path of [[mboot: %s" % mboot_script)
+        connection.sendline('setenv serverip %s' % image_server_ip)
+        connection.sendline('mstar %s' % mboot_script)
+        connection.expect(self.config.bootloader_prompt, timeout=180)
+        logging.info("[EMMC MSTAR 828] end of burn [[mboot")
+
+    def _dump_emmc_828_emmc(self, connection):
+        logging.info("[EMMC MSTAR 828] begin to dump emmc to usb disk")
+        connection.sendline('setenv bootdelay')
+        connection.sendline('setenv macaddr 00:30:1B:BA:02:DB')
+        connection.sendline('saveenv')
+        connection.sendline('usb start 3')
+        connection.expect(self.config.bootloader_prompt, timeout=60)
+        connection.sendline('mmc dd mmc2usb 3')
+        connection.expect('Dump Block', timeout=self.config.image_boot_msg_timeout)
+        logging.info("[EMMC MSTAR 828] end of dump emmc to usb disk")
+
     def _customize_bootloader(self, connection, boot_cmds):
+        # get deploy_whaley_image parameters
+        image = self.image_params.get('image', '')
+        # get boot_whaley_image parameters
+        skip = self.boot_params.get('skip', False)
+        emmc = self.boot_params.get('emmc', False)
+
+        if not skip and emmc:  # skip=False, emmc=True
+            if self.config.device_type == 'mstar':
+                logging.info("[EMMC MSTAR 828] make factory emmc image for mstar 828 platform")
+                self._burn_mboot_828_emmc(connection)
+                logging.info("[EMMC MSTAR 828] burn factory image through tftp with auto_update_factory.txt")
+                logging.info("[EMMC MSTAR 828] path of auto_update_factory.txt: %s" % image)
+        else:  # skip=False, emmc=False
+            # add set mac address in bootloader, 2016.04.19
+            logging.info('burn normal image, not factory emmc image')
+            self._set_macaddr_whaley(self.proc)
+
         delay = self.config.bootloader_serial_delay_ms
         _boot_cmds = self._boot_cmds_preprocessing(boot_cmds)
         start = time.time()

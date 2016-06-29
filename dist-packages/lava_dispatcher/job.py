@@ -501,10 +501,10 @@ class LavaTestJob(object):
                 return
             # self.context.finish()
             # move self.context.finish() to line 499, since get_device_version need connection to device
-            device_version = self.context.get_device_version() or 'error'
-            self.context.test_data.add_metadata({
-                'target.device_version': device_version
-            })
+            # device_version = self.context.get_device_version() or 'error'
+            # self.context.test_data.add_metadata({
+            #     'target.device_version': device_version
+            # })
             ######################
             self.context.finish()
             ######################

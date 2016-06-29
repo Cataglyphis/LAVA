@@ -178,13 +178,13 @@ class cmd_boot_whaley_image(BaseAction):
     parameters_schema = {
         'type': 'object',
         'properties': {
-            'skip': {'type': 'boolean', 'default': False, 'optional': True},
-            'ota': {'type': 'boolean', 'default': False, 'optional': True}
+            'skip': {'type': 'boolean', 'default': False, 'optional': False},
+            'emmc': {'type': 'boolean', 'default': False, 'optional': True},
         },
         'additionalProperties': False,
     }
 
-    def run(self, skip=False, ota=False):
+    def run(self, skip=False, emmc=False):
         client = self.client
-        client.boot_whaley_image(skip)
+        client.boot_whaley_image(skip, emmc)
 

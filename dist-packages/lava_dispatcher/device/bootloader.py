@@ -170,7 +170,7 @@ class BootloaderTarget(MasterImageTarget):
     # add function deploy_whaley_image in class BootloaderTarget
     ############################################################
 
-    def deploy_whaley_image(self, image, image_server_ip, rootfstype, bootloadertype):
+    def deploy_whaley_image(self, image, image_server_ip, bootloadertype):
         if self.__deployment_data__ is None:
             # Get deployment data
             logging.debug("Attempting to set deployment data")
@@ -183,6 +183,7 @@ class BootloaderTarget(MasterImageTarget):
             else:
                 logging.warning("No deployment data, please have a check")
         logging.debug("Set bootloader type to u_boot in whaley platform")
+
         self._set_boot_type(bootloadertype)
         self._default_boot_cmds = 'boot_cmds'
         if self._is_uboot():
@@ -339,8 +340,6 @@ class BootloaderTarget(MasterImageTarget):
         self._load_test_firmware()
         # enter bootloader, 2016.01.21
         self._enter_bootloader(self.proc)
-        # add set mac address in bootloader, 2016.04.19
-        self._set_macaddr_whaley(self.proc)
         boot_cmds = self._load_boot_cmds(default=self._default_boot_cmds,
                                          boot_tags=self._boot_tags)
         # Sometimes a command must be run to clear u-boot console buffer
@@ -351,7 +350,7 @@ class BootloaderTarget(MasterImageTarget):
         self._customize_bootloader(self.proc, boot_cmds)
         self._monitor_boot(self.proc, self.tester_ps1, self.tester_ps1_pattern)
 
-    def _boot_linaro_image(self, skip):
+    def _boot_linaro_image(self, skip, emmc):
         if self.proc:
             if self.config.connection_command_terminate:
                 self.proc.sendline(self.config.connection_command_terminate)
@@ -361,6 +360,7 @@ class BootloaderTarget(MasterImageTarget):
         # add below part
         # skip=True, only connect to the device, don't reboot & deploy the image
         # skip=False, connect to the device, then reboot to bootloader & deploy the image
+        # emmc=True, make factory emmc
         if skip is True:
             self._booted = True
         # bootloader and not booted, 2016.01.21
@@ -663,16 +663,15 @@ class BootloaderTarget(MasterImageTarget):
     # add in 2016.02.17
     # override
     def get_device_version(self):
-        logging.info("get device version, ro.build.version.rom")
+        logging.info('get device version, ro.build.version.rom')
         self.proc.sendcontrol('c')
         self.proc.sendline('')
-        # self.proc.expect('shell', timeout=5)
-        self.proc.expect('@', timeout=5)
+        self.proc.expect('shell@', timeout=5)
         # empty the buffer
         self.proc.empty_buffer()
         # self.proc.sendline('getprop ro.helios.version')
         self.proc.sendline('getprop ro.build.version.rom')
-        self.proc.expect('@', timeout=2)
+        self.proc.expect('shell@', timeout=2)
         # 'getprop ro.helios.version\r\r\n01.07.01\r\n'
         # 01.07.01
         try:

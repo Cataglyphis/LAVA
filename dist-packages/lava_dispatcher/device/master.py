@@ -108,9 +108,9 @@ class MasterImageTarget(Target):
     def get_device_version(self):
         return self.device_version
 
-    def power_on(self, skip):
+    def power_on(self, skip, emmc):
         # call bootloader._boot_linaro_image(), 2016.01.21
-        self._boot_linaro_image(skip)
+        self._boot_linaro_image(skip, emmc)
         return self.proc
 
     def power_off(self, proc):

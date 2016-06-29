@@ -415,8 +415,8 @@ class LavaClient(object):
     # created by Wang Bo (wang.bo@whaley.cn), 2016.01.21
     # call lava_dispatcher.device.bootloader: deploy_whaley_image
     ############################################################
-    def deploy_whaley_image(self, image, image_server_ip, rootfstype, bootloadertype):
-        self.target_device.deploy_whaley_image(image, image_server_ip, rootfstype, bootloadertype)
+    def deploy_whaley_image(self, image, factory, image_server_ip, bootloadertype):
+        self.target_device.deploy_whaley_image(image, factory, image_server_ip, bootloadertype)
 
     def deploy_linaro_android(self, images, rootfstype,
                               bootloadertype, target_type):
@@ -547,11 +547,12 @@ class LavaClient(object):
     def boot_master_image(self):
         raise NotImplementedError(self.boot_master_image)
 
-    def _boot_linaro_image(self, skip):
+    def _boot_linaro_image(self, skip, emmc):
         # add parameter skip
         # skip=True, only connect to the device, don't reboot & deploy the image
         # skip=False, connect to the device, then reboot to bootloader & deploy the image
-        self.proc = self.target_device.power_on(skip)
+        # emmc=True, make factory emmc
+        self.proc = self.target_device.power_on(skip, emmc)
 
     def _boot_linaro_android_image(self):
         """Booting android or ubuntu style images don't differ much"""
@@ -564,7 +565,9 @@ class LavaClient(object):
 
         self._boot_linaro_image()
 
-    def boot_whaley_image(self, skip):
+    # skip: True/False, whether to burn the image
+    # emmc: True/False, whether to make emmc
+    def boot_whaley_image(self, skip, emmc):
         """
         Reboot the system to the test image
         """
@@ -578,7 +581,7 @@ class LavaClient(object):
             self.vm_group.wait_for_vms()
 
             try:
-                self._boot_linaro_image(skip)
+                self._boot_linaro_image(skip, emmc)
             except (OperationFailed, pexpect.TIMEOUT):
                 self.context.test_data.add_metadata({'boot_retries': str(attempts)})
                 attempts += 1
