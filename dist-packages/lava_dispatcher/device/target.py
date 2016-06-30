@@ -1043,10 +1043,9 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
-        logging.info('debug: %s' % connection.buffer)
+        connection.buffer = ''
         connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=600)
-        logging.info('debug: %s' % connection.buffer)
         connection.sendcontrol('c')
         connection.sendline('reset', send_char=self.config.send_char)
         logging.info('end of burn 828 factory')
