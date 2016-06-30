@@ -755,13 +755,13 @@ class Target(object):
         try:
             start = time.time()
             # expect Hit any key to stop autoboot
-            connection.expect(self.config.interrupt_boot_prompt,
-                              timeout=self.config.bootloader_timeout)
-            if self.config.interrupt_boot_control_character:
-                connection.sendcontrol(self.config.interrupt_boot_control_character)
-            else:
-                connection.send(self.config.interrupt_boot_command, delay=50)
-                connection.sendcontrol('c')
+            # connection.expect(self.config.interrupt_boot_prompt,
+            #                   timeout=self.config.bootloader_timeout)
+            # if self.config.interrupt_boot_control_character:
+            #     connection.sendcontrol(self.config.interrupt_boot_control_character)
+            # else:
+            #     connection.send(self.config.interrupt_boot_command, delay=50)
+            #     connection.sendcontrol('c')
             # add below line, 2016.01.21
             connection.expect(self.config.bootloader_prompt, timeout=self.config.bootloader_timeout)
             # Record the time it takes to enter the bootloader.
