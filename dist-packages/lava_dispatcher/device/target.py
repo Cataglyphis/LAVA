@@ -453,10 +453,11 @@ class Target(object):
 
     # enter recovery mode
     def _enter_recovery_whaley(self, connection):
-        logging.info('enter recovery mode')
         if self.config.device_type == 'mstar':
             # timeout = 3600s
             connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
+            logging.info('current deploy image is Release version, should enable console and su')
+            logging.info('enter recovery mode')
             for i in range(10):
                 connection.sendline('')
             # << MStar >>#
@@ -471,6 +472,8 @@ class Target(object):
         elif self.config.device_type == 'hisi':
             # timeout = 3600s
             connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
+            logging.info('current deploy image is Release version, should enable console and su')
+            logging.info('enter recovery mode')
             try:
                 if self.config.hard_reset_command != '':
                     self.context.run_command(self.config.power_off_cmd)
@@ -521,23 +524,10 @@ class Target(object):
             logging.warning('no device type mstar or hisi found')
         logging.info('end su device in recovery mode')
 
-    # get ota parameter in job_data
-    def _get_ota_whaley(self):
-        job_data = self.context.job_data
-        params = {}
-        for cmd in job_data['actions']:
-            if cmd.get('command') == 'boot_whaley_image':
-                params = cmd.get('parameters', {})
-        if 'ota' in params:
-            ota = params.get('ota')
-        else:
-            ota = False
-        return ota
-
     # get current device mac address
     def _get_macaddr_whaley(self):
         mac_addr = self.config.macaddr
-        logging.info("mac addr: %s" % mac_addr)
+        logging.info("mac address: %s" % mac_addr)
         return mac_addr
 
     # get current device sn
@@ -832,7 +822,6 @@ class Target(object):
                 self._burn_factory_828(connection)
 
             if 'R' in image and not skip:
-                logging.info('current deploy image is Release version, should enable console and su')
                 self._enter_recovery_whaley(connection)
                 self._su_device_whaley(connection)
 
