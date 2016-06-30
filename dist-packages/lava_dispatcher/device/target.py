@@ -568,6 +568,7 @@ class Target(object):
             connection.sendline('setenv macaddr %s' % mac_addr, send_char=self.config.send_char)
             connection.sendline('setenv bootdelay 10', send_char=self.config.send_char)
             connection.sendline('saveenv', send_char=self.config.send_char)
+            connection.expect('done')
         elif device_type == 'hisi':
             # connection.sendline("setenv ethaddr %s" % mac_addr)
             logging.info('no need to set mac address in hisi platform')
@@ -802,6 +803,7 @@ class Target(object):
     def _monitor_boot(self, connection, ps1, ps1_pattern, is_master=False):
         # get deploy_whaley_image parameters
         image = self.image_params.get('image', '')
+        factory = self.image_params.get('factory', '')
 
         # get boot_whaley_image parameters
         skip = self.boot_params.get('skip', False)
@@ -826,7 +828,7 @@ class Target(object):
                 logging.warning("[EMMC MSTAR 828] only support mstar 828 platform now")
         else:  # skip=False, emmc=False
             # burn factory image
-            if self.config.device_type == 'mstar':
+            if self.config.device_type == 'mstar' and factory:
                 self._burn_factory_828(connection)
 
             if 'R' in image and not skip:
@@ -987,14 +989,15 @@ class Target(object):
         connection.sendline('setenv ethaddr', send_char=self.config.send_char)
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.sendline('saveenv', send_char=self.config.send_char)
-        connection.expect(self.config.bootloader_prompt, timeout=10)
+        connection.expect('done')
         connection.sendcontrol('c')
         connection.sendline('estart', send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt, timeout=20)
         connection.sendline('dhcp', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=20)
         connection.sendcontrol('c')
         connection.sendline('mstar %s' % mboot_txt, send_char=self.config.send_char)
-        connection.expect(self.config.interrupt_boot_prompt, timeout=180)
+        connection.expect(self.config.interrupt_boot_prompt, timeout=300)
         for i in range(10):
             connection.sendline('')
         # << MStar >>#
@@ -1008,6 +1011,7 @@ class Target(object):
         logging.info("[EMMC MSTAR 828] burn factory through tftp")
         logging.info("[EMMC MSTAR 828] path of factory image: %s" % factory)
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt)
         connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
         # << MStar >>#
         connection.expect(self.config.bootloader_prompt, timeout=180)
@@ -1026,8 +1030,9 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendcontrol('c')
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
-        connection.sendline('mstar %s' % factory, send_char=False)
-        connection.expect(self.config.bootloader_prompt, timeout=180)
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt, timeout=300)
         connection.sendcontrol('c')
         connection.sendline('reset', send_char=self.config.send_char)
         logging.info('end of burn 828 factory')
@@ -1038,7 +1043,7 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=20)
         connection.sendcontrol('c')
         connection.sendline('reset', send_char=self.config.send_char)
-        connection.expect('/ #', timeout=180)
+        connection.expect('/ #', timeout=300)
         logging.info("[EMMC MSTAR 828] end of wipe data partition")
 
     def _burn_mboot_script_828_emmc(self, connection):
@@ -1053,8 +1058,9 @@ class Target(object):
         mboot_script = os.path.join(os.path.split(image)[0], 'scripts', '[[mboot')
         logging.info("[EMMC MSTAR 828] path of [[mboot: %s" % mboot_script)
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt)
         connection.sendline('mstar %s' % mboot_script, send_char=self.config.send_char)
-        connection.expect(self.config.bootloader_prompt, timeout=180)
+        connection.expect(self.config.bootloader_prompt, timeout=300)
         connection.sendcontrol('c')
         logging.info("[EMMC MSTAR 828] end of burn [[mboot")
 
@@ -1063,6 +1069,7 @@ class Target(object):
         connection.sendline('setenv bootdelay', send_char=self.config.send_char)
         connection.sendline('setenv macaddr 00:30:1B:BA:02:DB', send_char=self.config.send_char)
         connection.sendline('saveenv', send_char=self.config.send_char)
+        connection.expect('done')
         connection.sendline('usb start 3', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=60)
         connection.sendline('mmc dd mmc2usb 3', send_char=self.config.send_char)
