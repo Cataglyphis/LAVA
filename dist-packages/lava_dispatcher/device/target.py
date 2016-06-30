@@ -387,9 +387,8 @@ class Target(object):
             logging.info("try to skip the guide. Attempt: %s" % str(i+1))
             connection.sendcontrol('c')
             connection.sendline('')
-            # connection.expect('shell', timeout=5)
             connection.expect('shell@', timeout=5)
-            connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
+            connection.sendline('dumpsys window | grep mFocusedApp', send_char=self.config.send_char)
             pos1 = connection.expect(pattern, timeout=10)
             if pos1 == 0:
                 logging.warning("can't find service: window")
@@ -400,12 +399,11 @@ class Target(object):
                 time.sleep(100)
                 connection.sendcontrol('c')
                 connection.sendline('')
-                # connection.expect('shell', timeout=5)
                 connection.expect('shell@', timeout=5)
-                connection.sendline('su')
-                connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=False)
+                connection.sendline('su', send_char=self.config.send_char)
+                connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=self.config.send_char)
                 time.sleep(20)
-                connection.sendline('dumpsys window | grep mFocusedApp', send_char=False)
+                connection.sendline('dumpsys window | grep mFocusedApp', send_char=self.config.send_char)
                 pos2 = connection.expect(pattern, timeout=10)
                 if pos2 == 2:
                     logging.info("now in com.helios.launcher activity, skip the guide successfully")
@@ -459,9 +457,9 @@ class Target(object):
             connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
             for i in range(10):
                 connection.sendline('')
-            connection.sendcontrol('c')
             # << MStar >>#
             connection.expect(self.config.bootloader_prompt)
+            connection.sendcontrol('c')
             connection.sendline('ac androidboot.debuggable 1', send_char=self.config.send_char)
             time.sleep(2)
             connection.sendline('recovery', send_char=self.config.send_char)
@@ -983,6 +981,8 @@ class Target(object):
         connection.sendline('setenv ethaddr', send_char=self.config.send_char)
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.sendline('saveenv', send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt, timeout=10)
+        connection.sendcontrol('c')
         connection.sendline('estart', send_char=self.config.send_char)
         connection.sendline('dhcp', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=20)
@@ -991,9 +991,9 @@ class Target(object):
         connection.expect(self.config.interrupt_boot_prompt, timeout=180)
         for i in range(10):
             connection.sendline('')
-        connection.sendcontrol('c')
         # << MStar >>#
         connection.expect(self.config.bootloader_prompt)
+        connection.sendcontrol('c')
         logging.info("[EMMC MSTAR 828] end of burn mboot")
 
     def _burn_factory_828_emmc(self, connection):
@@ -1005,6 +1005,7 @@ class Target(object):
         connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
         # << MStar >>#
         connection.expect(self.config.bootloader_prompt, timeout=180)
+        connection.sendcontrol('c')
         logging.info("[EMMC MSTAR 828] end of burn factory")
 
     def _burn_factory_828(self, connection):
@@ -1015,18 +1016,21 @@ class Target(object):
         # timeout = 3600s
         for i in range(10):
             connection.sendline('')
-        connection.sendcontrol('c')
         # << MStar >>#
         connection.expect(self.config.bootloader_prompt)
+        connection.sendcontrol('c')
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.sendline('mstar %s' % factory, send_char=False)
         connection.expect(self.config.bootloader_prompt, timeout=180)
-        connection.sendline('reset', send_char=False)
+        connection.sendcontrol('c')
+        connection.sendline('reset', send_char=self.config.send_char)
         logging.info('end of burn 828 factory')
 
     def _wipe_data_828_emmc(self, connection):
         logging.info("[EMMC MSTAR 828] wipe data partition")
         connection.sendline('recovery_wipe_partition data', send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt, timeout=20)
+        connection.sendcontrol('c')
         connection.sendline('reset', send_char=self.config.send_char)
         connection.expect('/ #', timeout=180)
         logging.info("[EMMC MSTAR 828] end of wipe data partition")
@@ -1045,6 +1049,7 @@ class Target(object):
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.sendline('mstar %s' % mboot_script, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=180)
+        connection.sendcontrol('c')
         logging.info("[EMMC MSTAR 828] end of burn [[mboot")
 
     def _dump_emmc_828_emmc(self, connection):
