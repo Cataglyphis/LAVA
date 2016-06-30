@@ -444,7 +444,8 @@ class logging_spawn(pexpect.spawn):
             self, command, cwd=cwd, timeout=timeout)
 
         # serial can be slow, races do funny things, so increase delay
-        self.delaybeforesend = 0.05
+        # self.delaybeforesend = 0.05
+        self.delaybeforesend = 0.1
 
     def sendline(self, s='', delay=0, send_char=True):
         """
