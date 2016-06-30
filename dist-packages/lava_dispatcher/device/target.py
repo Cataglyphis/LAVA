@@ -993,7 +993,7 @@ class Target(object):
         connection.sendline('saveenv', send_char=self.config.send_char)
         connection.expect('done')
         connection.sendcontrol('c')
-
+        connection.expect(self.config.bootloader_prompt)
         connection.sendline('estart', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=20)
         connection.sendline('dhcp', send_char=self.config.send_char)
@@ -1005,7 +1005,8 @@ class Target(object):
             connection.sendline('')
         # << MStar >>#
         connection.expect(self.config.bootloader_prompt)
-        connection.sendcontrol('c')
+        logging.info("[EMMC MSTAR 828] clear connection buffer")
+        connection.buffer = ''
         logging.info("[EMMC MSTAR 828] end of burn mboot")
 
     def _burn_factory_828_emmc(self, connection):
@@ -1042,8 +1043,11 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
+        logging.info('debug: %s' % connection.buffer)
         connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
-        connection.expect(self.config.bootloader_prompt, timeout=300)
+        connection.expect(self.config.bootloader_prompt, timeout=600)
+        logging.info('debug: %s' % connection.buffer)
+        connection.sendcontrol('c')
         connection.sendline('reset', send_char=self.config.send_char)
         logging.info('end of burn 828 factory')
 
