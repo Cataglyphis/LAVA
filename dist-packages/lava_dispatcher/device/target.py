@@ -920,7 +920,7 @@ class Target(object):
             # set factory info, mac addr, sn
             self._set_factory_whaley(connection)
             # reboot device
-            connection.sendline('reboot')
+            connection.sendline('reboot', send_char=self.config.send_char)
             time.sleep(30)
             # wait for system reboot
             self._skip_guide_whaley(connection)
