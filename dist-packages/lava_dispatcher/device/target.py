@@ -763,6 +763,9 @@ class Target(object):
             #     connection.sendcontrol('c')
             # add below line, 2016.01.21
             connection.expect(self.config.bootloader_prompt, timeout=self.config.bootloader_timeout)
+            # clear connection buffer
+            logging.info("clear connection buffer")
+            connection.buffer = ''
             # Record the time it takes to enter the bootloader.
             enter_bootloader_time = '{0:.2f}'.format(time.time() - start)
             self.context.test_data.add_result('enter_bootloader', 'pass',
