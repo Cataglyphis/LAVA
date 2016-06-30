@@ -1008,11 +1008,11 @@ class Target(object):
         logging.info("[EMMC MSTAR 828] end of burn factory")
 
     def _burn_factory_828(self, connection):
+        connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
         logging.info('start to burn 828 factory')
         factory = self.image_params.get('factory', '')
         image_server_ip = self.image_params.get('image_server_ip', '')
         # timeout = 3600s
-        connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
         for i in range(10):
             connection.sendline('')
         connection.sendcontrol('c')
