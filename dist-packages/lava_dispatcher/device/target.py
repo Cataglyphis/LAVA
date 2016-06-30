@@ -427,9 +427,11 @@ class Target(object):
         connection.sendline('mount -o remount,rw /system', send_char=self.config.send_char)
         connection.sendline('cd /system/xbin', send_char=self.config.send_char)
         connection.sendline('busybox --install .', send_char=self.config.send_char)
-        logging.info('download sqlite3 to /system/xbin')
-        connection.sendline('busybox wget http://172.16.117.1:8000/resource/sqlite3', send_char=self.config.send_char)
-        connection.sendline('busybox chmod 755 sqlite3', send_char=self.config.send_char)
+        image = self.image_params.get('image', '')
+        if 'R' in image:
+            logging.info('download sqlite3 to /system/xbin')
+            connection.sendline('busybox wget http://172.16.117.1:8000/resource/sqlite3', send_char=self.config.send_char)
+            connection.sendline('busybox chmod 755 sqlite3', send_char=self.config.send_char)
         # go back to /, otherwise block the next step in whaley_test_shell
         connection.sendline('cd /', send_char=self.config.send_char)
         logging.info('end installation of busybox')
@@ -581,8 +583,10 @@ class Target(object):
         sn = self._get_sn_whaley()
         connection.sendline('su', send_char=self.config.send_char)
         connection.sendline('mount -o remount,rw /factory', send_char=self.config.send_char)
-        connection.sendline('echo ro.hardware.lan_mac=%s >> /factory/factory.prop' % mac_addr, send_char=self.config.send_char)
-        connection.sendline('echo ro.helios.sn=%s >> /factory/factory.prop' % sn, send_char=self.config.send_char)
+        if mac_addr:
+            connection.sendline('echo ro.hardware.lan_mac=%s >> /factory/factory.prop' % mac_addr, send_char=self.config.send_char)
+        if sn:
+            connection.sendline('echo ro.helios.sn=%s >> /factory/factory.prop' % sn, send_char=self.config.send_char)
         connection.sendline('chmod 644 /factory/factory.prop', send_char=self.config.send_char)
         logging.info('end set factory mode info')
 
@@ -818,6 +822,8 @@ class Target(object):
                 self._burn_mboot_script_828_emmc(connection)
                 self._dump_emmc_828_emmc(connection)
                 return
+            else:
+                logging.warning("[EMMC MSTAR 828] only support mstar 828 platform now")
         else:  # skip=False, emmc=False
             # burn factory image
             if self.config.device_type == 'mstar':
