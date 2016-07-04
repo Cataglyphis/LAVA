@@ -572,9 +572,13 @@ class Target(object):
             connection.sendline('setenv bootdelay 10', send_char=self.config.send_char)
             connection.sendline('saveenv', send_char=self.config.send_char)
             connection.expect('done')
+            logging.info('clear connection buffer')
+            connection.empty_buffer()
         elif device_type == 'hisi':
             connection.sendline("setenv ethaddr")
             connection.expect(self.config.bootloader_prompt)
+            logging.info('clear connection buffer')
+            connection.empty_buffer()
         else:
             logging.warning('no device type mstar or hisi found')
         logging.info('end set mac address and bootdelay in bootloader')
@@ -1099,6 +1103,8 @@ class Target(object):
         connection.sendline('setenv macaddr 00:30:1B:BA:02:DB', send_char=self.config.send_char)
         connection.sendline('saveenv', send_char=self.config.send_char)
         connection.expect('done')
+        logging.info('clear connection buffer')
+        connection.empty_buffer()
         connection.sendline('usb start 3', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=60)
         connection.sendline('mmc dd mmc2usb 3', send_char=self.config.send_char)
