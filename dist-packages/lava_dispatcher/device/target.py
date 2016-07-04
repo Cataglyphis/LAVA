@@ -468,7 +468,9 @@ class Target(object):
             connection.sendcontrol('c')
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('ac androidboot.debuggable 1', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt)
             connection.sendline('recovery', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt)
             connection.sendline('reset', send_char=self.config.send_char)
             connection.expect('/ #', timeout=120)
             time.sleep(10)
@@ -500,8 +502,11 @@ class Target(object):
             connection.sendcontrol('c')
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('ufts set fts.boot.command boot-recovery', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt)
             connection.sendline('ufts set fts.boot.status', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt)
             connection.sendline('ufts set fts.boot.recovery', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt)
             connection.sendline('reset', send_char=self.config.send_char)
             connection.expect('StartGUI', timeout=120)
             time.sleep(10)
@@ -992,6 +997,7 @@ class Target(object):
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.sendline('saveenv', send_char=self.config.send_char)
         connection.expect('done')
+        connection.empty_buffer()
         connection.sendcontrol('c')
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('estart', send_char=self.config.send_char)
@@ -999,6 +1005,7 @@ class Target(object):
         connection.sendline('dhcp', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=20)
         connection.sendcontrol('c')
+        connection.expect(self.config.bootloader_prompt)
         connection.sendline('mstar %s' % mboot_txt, send_char=self.config.send_char)
         connection.expect(self.config.interrupt_boot_prompt, timeout=300)
         for i in range(10):
@@ -1006,7 +1013,7 @@ class Target(object):
         # << MStar >>#
         connection.expect(self.config.bootloader_prompt)
         logging.info("[EMMC MSTAR 828] clear connection buffer")
-        connection.buffer = ''
+        connection.empty_buffer()
         logging.info("[EMMC MSTAR 828] end of burn mboot")
 
     def _burn_factory_828_emmc(self, connection):
@@ -1020,8 +1027,8 @@ class Target(object):
         # << MStar >>#
         connection.expect(self.config.bootloader_prompt, timeout=180)
         # clear connection buffer
-        connection.buffer = ''
         logging.info("[EMMC MSTAR 828] clear connection buffer")
+        connection.empty_buffer()
         connection.sendcontrol('c')
         connection.expect(self.config.bootloader_prompt)
         logging.info("[EMMC MSTAR 828] end of burn factory")
@@ -1038,15 +1045,15 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         # clear the buffer
         logging.info('clear connection buffer')
-        connection.buffer = ''
+        connection.empty_buffer()
         connection.sendcontrol('c')
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
-        connection.buffer = ''
         connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=600)
         connection.sendcontrol('c')
+        connection.expect(self.config.bootloader_prompt)
         connection.sendline('reset', send_char=self.config.send_char)
         logging.info('end of burn 828 factory')
 
@@ -1067,7 +1074,7 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=5)
         # clear the buffer
         logging.info('[EMMC MSTAR 828] clear connection buffer')
-        connection.buffer = ''
+        connection.empty_buffer()
         connection.sendcontrol('c')
         connection.expect(self.config.bootloader_prompt)
         logging.info("[EMMC MSTAR 828] start to burn [[mboot")
