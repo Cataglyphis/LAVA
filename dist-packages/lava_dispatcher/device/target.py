@@ -464,7 +464,8 @@ class Target(object):
             # << MStar >>#
             connection.expect(self.config.bootloader_prompt)
             # clear connection buffer
-            connection.buffer = ''
+            logging.info('clear connection buffer')
+            connection.empty_buffer()
             connection.sendcontrol('c')
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('ac androidboot.debuggable 1', send_char=self.config.send_char)
@@ -498,7 +499,8 @@ class Target(object):
                 logging.error(msg)
                 raise
             # clear connection buffer
-            connection.buffer = ''
+            logging.info('clear connection buffer')
+            connection.empty_buffer()
             connection.sendcontrol('c')
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('ufts set fts.boot.command boot-recovery', send_char=self.config.send_char)
@@ -770,7 +772,7 @@ class Target(object):
             connection.expect(self.config.bootloader_prompt, timeout=self.config.bootloader_timeout)
             # clear connection buffer
             logging.info("clear connection buffer")
-            connection.buffer = ''
+            connection.empty_buffer()
             # Record the time it takes to enter the bootloader.
             enter_bootloader_time = '{0:.2f}'.format(time.time() - start)
             self.context.test_data.add_result('enter_bootloader', 'pass',
@@ -822,8 +824,8 @@ class Target(object):
                     connection.sendline('')
                 connection.expect(self.config.bootloader_prompt)
                 # clear connection buffer
-                connection.buffer = ''
                 logging.info('clear connection buffer')
+                connection.empty_buffer()
                 connection.sendcontrol('c')
                 # << MStar >>#
                 connection.expect(self.config.bootloader_prompt)
@@ -997,6 +999,7 @@ class Target(object):
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.sendline('saveenv', send_char=self.config.send_char)
         connection.expect('done')
+        logging.info('clear connection buffer')
         connection.empty_buffer()
         connection.sendcontrol('c')
         connection.expect(self.config.bootloader_prompt)
