@@ -1093,6 +1093,8 @@ class Target(object):
 
     def _dump_emmc_828_emmc(self, connection):
         logging.info("[EMMC MSTAR 828] begin to dump emmc to usb disk")
+        logging.info('[EMMC MSTAR 828] clear connection buffer')
+        connection.empty_buffer()
         connection.sendline('setenv bootdelay', send_char=self.config.send_char)
         connection.sendline('setenv macaddr 00:30:1B:BA:02:DB', send_char=self.config.send_char)
         connection.sendline('saveenv', send_char=self.config.send_char)
