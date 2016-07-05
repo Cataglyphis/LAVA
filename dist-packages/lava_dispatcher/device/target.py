@@ -1059,17 +1059,13 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=600)
-        connection.sendcontrol('c')
-        connection.expect(self.config.bootloader_prompt)
         connection.sendline('reset', send_char=self.config.send_char)
         logging.info('end of burn 828 factory')
 
     def _wipe_data_828_emmc(self, connection):
         logging.info("[EMMC MSTAR 828] wipe data partition")
         connection.sendline('recovery_wipe_partition data', send_char=self.config.send_char)
-        connection.expect(self.config.bootloader_prompt, timeout=20)
-        connection.sendcontrol('c')
-        connection.expect(self.config.bootloader_prompt)
+        connection.expect(self.config.bootloader_prompt, timeout=30)
         connection.sendline('reset', send_char=self.config.send_char)
         connection.expect('/ #', timeout=300)
         logging.info("[EMMC MSTAR 828] end of wipe data partition")
@@ -1078,7 +1074,7 @@ class Target(object):
         logging.info("[EMMC MSTAR 828] wait for android booted")
         connection.expect('start test', timeout=self.config.image_boot_msg_timeout)
         self._hard_reboot(connection)
-        connection.expect(self.config.bootloader_prompt, timeout=5)
+        connection.expect(self.config.bootloader_prompt, timeout=30)
         # clear the buffer
         logging.info('[EMMC MSTAR 828] clear connection buffer')
         connection.empty_buffer()
@@ -1109,6 +1105,8 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=60)
         connection.sendline('mmc dd mmc2usb 3', send_char=self.config.send_char)
         connection.expect('Dump Block', timeout=self.config.image_boot_msg_timeout)
+        time.sleep(10)
+        connection.sendline('reset')
         logging.info("[EMMC MSTAR 828] end of dump emmc to usb disk")
 
     def _customize_bootloader(self, connection, boot_cmds):
