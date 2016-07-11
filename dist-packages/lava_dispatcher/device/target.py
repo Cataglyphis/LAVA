@@ -575,8 +575,9 @@ class Target(object):
             logging.info('clear connection buffer')
             connection.empty_buffer()
         elif device_type == 'hisi':
-            connection.sendline("setenv ethaddr")
+            connection.sendline('setenv ethaddr', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt)
+            connection.sendline('ufts set fts.fac.factory_mode 0', send_char=self.config.send_char)
             logging.info('clear connection buffer')
             connection.empty_buffer()
         else:
