@@ -431,7 +431,10 @@ class Target(object):
         image = self.image_params.get('image', '')
         if 'R' in image:
             logging.info('download sqlite3 to /system/xbin')
-            connection.sendline('busybox wget http://172.16.117.1:8000/resource/sqlite3', send_char=self.config.send_char)
+            if self.config.device_type == 'mstar':
+                connection.sendline('busybox wget -O sqlite3 http://172.16.117.1:8000/resource/sqlite3', send_char=self.config.send_char)
+            elif self.config.device_type == 'hisi':
+                connection.sendline('busybox wget -O sqlite3 http://172.16.117.1:8000/resource/sqlite3_hisi', send_char=self.config.send_char)
             connection.sendline('busybox chmod 755 sqlite3', send_char=self.config.send_char)
         # go back to /, otherwise block the next step in whaley_test_shell
         connection.sendline('cd /', send_char=self.config.send_char)
@@ -524,6 +527,7 @@ class Target(object):
             connection.expect('/ #', timeout=150)
             time.sleep(15)
         elif self.config.device_type == 'hisi':
+            connection.sendline('ufts set fts.fac.factory_mode 0', send_char=self.config.send_char)
             connection.sendline('ufts set fts.boot.command boot-recovery', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('ufts set fts.boot.status', send_char=self.config.send_char)
@@ -546,13 +550,15 @@ class Target(object):
         connection.sendline('busybox mkdir /tmp/disk', send_char=self.config.send_char)
         if self.config.device_type == 'mstar':
             tvinfo = '/dev/block/platform/mstar_mci.0/by-name/tvinfo'
-            connection.sendline('mount %s /tmp/disk' % tvinfo, send_char=self.config.send_char)
+            connection.sendline('busybox mount %s /tmp/disk' % tvinfo, send_char=self.config.send_char)
         elif self.config.device_type == 'hisi':
             tvinfo = '/dev/block/platform/hi_mci.1/by-name/tvinfo'
-            connection.sendline('mount %s /tmp/disk' % tvinfo, send_char=self.config.send_char)
+            connection.sendline('busybox mount %s /tmp/disk' % tvinfo, send_char=self.config.send_char)
         else:
             logging.warning('no device type mstar or hisi found')
         connection.sendline('busybox ls /tmp/disk', send_char=self.config.send_char)
+        connection.sendline('cd /tmp/disk/su', send_char=self.config.send_char)
+        connection.sendline('busybox ls /tmp/disk/su', send_char=self.config.send_char)
         connection.sendline('busybox chmod 755 su_install.sh', send_char=self.config.send_char)
         connection.sendline('busybox sh su_install.sh', send_char=self.config.send_char)
         time.sleep(5)
@@ -964,7 +970,7 @@ class Target(object):
             self._set_factory_whaley(connection)
             # reboot device
             connection.sendline('reboot', send_char=self.config.send_char)
-            time.sleep(30)
+            time.sleep(50)
             # wait for system reboot
             self._skip_guide_whaley(connection)
 
