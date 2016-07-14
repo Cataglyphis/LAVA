@@ -474,7 +474,7 @@ class Target(object):
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('dhcp')
             connection.expect(self.config.bootloader_prompt, timeout=100)
-            connection.sendline('mstar scripts/mstar', send_char=self.config.send_char)
+            connection.sendline('mstar su/mstar', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt, timeout=600)
         elif self.config.device_type == 'hisi':
             try:
@@ -502,7 +502,7 @@ class Target(object):
             logging.info("use 172.16.10.41 for su image, and burun su.ext4.gz to tvinfo")
             connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt)
-            connection.sendline('exec scripts/hisi', send_char=self.config.send_char)
+            connection.sendline('exec su/hisi', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt, timeout=600)
         else:
             logging.warning('no device type mstar or hisi found')
