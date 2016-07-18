@@ -91,7 +91,8 @@ class cmd_whaley_test_shell(BaseAction):
         if branch:
             cmd.append('-b')
             cmd.append(branch)
-        logging.info('git clone %s with branch %s' % (current_user, branch))
+        cmd.append(git_repo)
+        logging.info('cmd is: %s' % cmd)
         subprocess.check_output(cmd, stderr=subprocess.STDOUT)
         name = os.path.splitext(os.path.basename(git_repo))[0]
         logging.info('git_repo name is: %s' % name)
