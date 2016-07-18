@@ -424,8 +424,8 @@ class BootloaderTarget(MasterImageTarget):
                     partition, directory) as path:
                 yield path
 
-    # modify at 2016.02.17
-    def whaley_file_system(self, path):
+    # modify at 2016.07.18
+    def whaley_file_system(self, path, git_info):
         logging.info("get the target device socat command, ip address and pdu port")
         # socat command
         connection_command = self.config.connection_command
@@ -474,125 +474,10 @@ class BootloaderTarget(MasterImageTarget):
             job_id = "0"
 
         ##############################################
-        # judge whether current device has signal
-        ##############################################
-        signal = self._get_signal_whaley()
-        if signal:
-            LAVA_json = os.path.join(path, "plan", "LAVA_Signal.json")
-            logging.info("target device has signal connected: %s" % LAVA_json)
-        else:
-            LAVA_json = os.path.join(path, "plan", "LAVA.json")
-            logging.info("target device no signal connected: %s" % LAVA_json)
-
-        ##############################################
-        # dump info to LAVA.json/LAVA_Signal.json
-        ##############################################
-        if os.path.isfile(LAVA_json):
-            with open(LAVA_json, "r") as fin:
-                LAVA_data = json.load(fin)
-        else:
-            logging.error("no json file found")
-            raise
-
-        LAVA_data["device"]["target"] = str(ip) + ":5555"
-        LAVA_data["device"]["socat"] = connection_command
-        LAVA_data["device"]["pdu"] = str(pdu)
-
-        job_data = self.context.job_data
-        params = {}
-        for cmd in job_data['actions']:
-            if cmd.get('command') == 'deploy_whaley_image':
-                params = cmd.get('parameters', {})
-        logging.info("deploy_whaley_image parameters: %s" % params)
-        image = params.get("image", "").split("/")
-        LAVA_data["device"]["image"] = image[0] + "/" + image[1]
-
-        if "tags" in self.context.job_data:  # use tags
-            LAVA_data["device"]["platform"] = self.context.job_data.get("tags")[0]
-        else:  # use target to specify one device
-            LAVA_data["device"]["platform"] = self.context.job_data.get("target")
-        LAVA_data["device"]["job_id"] = int(job_id)
-        LAVA_data["mail"]["subject"] = LAVA_data["mail"]["subject"] + " " + self.context.job_data.get("job_name")
-
-        # LAVA_H01P55D-01.13.00-1616508-65_1255
-        result_dir = "LAVA" + "_" + self.context.job_data.get("job_name") + "_" + job_id
-        LAVA_dir = os.path.join(path, "testResult", result_dir)
-        os.makedirs(LAVA_dir)
-        if os.path.isdir(LAVA_dir):
-            logging.info("makedirs %s successfully", LAVA_dir)
-        else:
-            logging.warning("can't makedirs %s, try again", LAVA_dir)
-            os.makedirs(LAVA_dir)
-
-        # ../testResult/result_dir/LAVA.json
-        case_json = os.path.join(LAVA_dir, "LAVA.json")
-
-        with open(case_json, "w") as fout:
-            logging.info("write lava data to json file")
-            json.dump(LAVA_data, fout, indent=4)
-
-        logging.warning("disconnect the serial connection, try to run the script")
-        if self.config.connection_command_terminate:
-            self.proc.sendline(self.config.connection_command_terminate)
-        finalize_process(self.proc)
-        self.proc = None
-        self.context.client.proc = self.proc
-        return case_json
-
-    def modify_json(self, script_path, script_param):
-        logging.info("get the target device serial number, ip address and pdu port")
-        # socat command
-        connection_command = self.config.connection_command
-        logging.info("connection command is: %s" % connection_command)
-
-        ##############################################
-        # get device ip address info
-        ##############################################
-        pat = self.tester_ps1_pattern
-        incrc = self.tester_ps1_includes_rc
-        runner = NetworkCommandRunner(self, pat, incrc)
-        try:
-            # get the target device ip
-            ip = runner.get_target_ip()
-        except NetworkError as e:
-            raise CriticalError("Network error detected..aborting")
-
-        ##############################################
-        # get the pdu port info
-        ##############################################
-        hard_reset_command = self.config.hard_reset_command
-        command = hard_reset_command.strip().split(' ')
-        if command:
-            pdu_ip = ''
-            pdu_port = ''
-            if '--hostname' in command:
-                index = command.index('--hostname')
-                pdu_ip = command[index+1]
-            if '--port' in command:
-                index = command.index('--port')
-                pdu_port = command[index+1]
-            if pdu_port and pdu_ip:
-                pdu = pdu_ip + ':' + pdu_port
-            else:
-                pdu = ''
-        logging.info("PDU port number is: %s" % pdu)
-
-        ##############################################
-        # get current job id
-        ##############################################
-        output_dir = self.context.output.output_dir
-        if output_dir:
-            logging.info("current job output directory: %s" % output_dir)
-            job_id = output_dir.strip().split('/')[-1]
-            job_id = job_id.split('-')[-1]
-        else:
-            job_id = "0"
-
-        ##############################################
         # dump info to plan.json
         ###############################e###############
-        if os.path.isfile(script_param):
-            with open(script_param, "r") as fin:
+        if os.path.isfile(path):
+            with open(path, "r") as fin:
                 data = json.load(fin)
         else:
             logging.error("no json file found")
@@ -617,22 +502,22 @@ class BootloaderTarget(MasterImageTarget):
             data["device"]["platform"] = self.context.job_data.get("target")
         data["device"]["job_id"] = int(job_id)
         data["mail"]["subject"] = data["mail"]["subject"] + " " + self.context.job_data.get("job_name")
+        data['git'] = git_info
 
-        # LAVA_H01P55D-01.13.00-1616508-65_1255
-        result_dir = "LAVA" + "_" + self.context.job_data.get("job_name") + "_" + job_id
-        LAVA_dir = os.path.join(script_path, "testResult", result_dir)
-        os.makedirs(LAVA_dir)
-        if os.path.isdir(LAVA_dir):
-            logging.info("makedirs %s successfully", LAVA_dir)
+        # H01P55D-01.13.00-1616508-65_1255
+        result = self.context.job_data.get("job_name") + "_" + job_id
+        result_dir = os.path.join("/result", result)
+        os.makedirs(result_dir)
+        if os.path.isdir(result_dir):
+            logging.info("makedirs %s successfully" % result_dir)
         else:
-            logging.warning("can't makedirs %s, try again", LAVA_dir)
-            os.makedirs(LAVA_dir)
+            logging.warning("can't makedirs %s, try again" % result_dir)
+            os.makedirs(result_dir)
 
-        # ../testResult/result_dir/plan.json
-        case_json = os.path.join(LAVA_dir, "plan.json")
+        case_json = os.path.join(result_dir, "plan.json")
 
         with open(case_json, "w") as fout:
-            logging.info("write data to json file")
+            logging.info("write lava data to json file")
             json.dump(data, fout, indent=4)
 
         logging.warning("disconnect the serial connection, try to run the script")
@@ -652,6 +537,7 @@ class BootloaderTarget(MasterImageTarget):
             # install busybox, close shutdown again
             self._install_busybox_whaley(self.proc)
             self._close_shutdown_whaley(self.proc)
+            self.proc.empty_buffer()
         else:
             logging.info("no need to reconnect the serial connection")
 

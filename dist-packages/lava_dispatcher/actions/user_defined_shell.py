@@ -4,6 +4,7 @@
 # Date: 2016.01.29
 
 import logging
+import subprocess
 import json
 import stat
 import os
@@ -30,84 +31,74 @@ class cmd_user_defined_shell(BaseAction):
         super(cmd_user_defined_shell, self).__init__(context)
 
     def run(self, script=None, parameter=None):
-        script = str(script).strip()
-        # script = "/home/dqa/workspace/LAVA/android-automation/TAP/whaleyTAP.py /home/.../plan.json"
-        # script_name = "/home/dqa/workspace/LAVA/android-automation/TAP/whaleyTAP.py"
-        # script_path = "/home/dqa/workspace/LAVA/android-automation/TAP"
+        cwd = os.getcwd()
+        # script = "/home/dqa/workspace/android-automation/TAP/whaleyTAP.py"
+        # script_path = "/home/dqa/workspace/android-automation/TAP"
         script_name = str(script).strip()
         script_path = os.path.split(script_name)[0]
         script_param = str(parameter).strip()
-        logging.info("script name is: %s", script_name)
-        logging.info("script path is: %s", script_path)
+        logging.info("script name is: %s" % script_name)
+        logging.info("script path is: %s" % script_path)
+        logging.info("script param is: %s" % script_param)
+
+        # bootloader
+        target = self.client.target_device
 
         if os.path.isfile(script_name):
+            os.chdir(script_path)
+            self._git_pull()
+            git_info = self._git_info(script_path, os.path.basename(script_name))
+            logging.info('git info: %s' % git_info)
 
-            # 1. script_name whaleyTAP.py, and has parameter
-            if script_name.endswith("whaleyTAP.py") and script_param:
-                self.git_pull(script_path)
-                case_json = self.modify_json(script_path, script_param)
+            if os.path.isfile(script_param):
+                case_json = target.whaley_file_system(script_param, git_info)
                 os.chmod(script_name, XMOD)
-                logging.info("run command in file: %s", script_name)
-                logging.info("command parameter: %s", case_json)
-                script = script_name + " " + case_json
+                logging.info('run command in file: %s' % script_name)
+                logging.info('command parameter: %s' % case_json)
+                script = script_name + ' ' + case_json
                 self.context.run_command(script)
-
-            # 2. script_name other values
             else:
                 os.chmod(script_name, XMOD)
-                logging.info("run command in file: %s", script_name)
-                script = script_name + " " + script_param
+                logging.info('run command in file: %s' % script_name)
+                logging.info('script parameter: %s' % script_param)
+                script = script_name + ' ' + script_param
                 self.context.run_command(script)
         else:
-            logging.error("invalid script parameter")
-
-    def modify_json(self, script_path, script_param):
-        ##############################################
-        # get current job id
-        ##############################################
-        job_id = ""
-        output_dir = self.context.output.output_dir
-        if output_dir:
-            logging.info("current job output directory: %s" % output_dir)
-            job_id = output_dir.strip().split('/')[-1]
-            job_id = job_id.split('-')[-1]
-        else:
-            job_id = "0"
-
-        if os.path.isfile(script_param):
-            with open(script_param, "r") as fin:
-                data = json.load(fin)
-        else:
-            logging.error("no json file found")
+            os.chdir(cwd)
+            logging.error('invalid script %s' % script)
             raise
 
-        data["device"]["job_id"] = int(job_id)
-        data["mail"]["subject"] = data["mail"]["subject"] + " " + self.context.job_data.get("job_name")
+        # reconnect the serial connection
+        os.chdir(cwd)
+        target.reconnect_serial()
 
-        # LAVA_job_name_1255
-        result_name = "LAVA" + "_" + self.context.job_data.get("job_name") + "_" + job_id
-        result_path = os.path.join(script_path, "testResult", result_name)
-        os.makedirs(result_path)
-        if os.path.isdir(result_path):
-            logging.info("makedirs %s successfully", result_path)
-        else:
-            logging.warning("can't makedirs %s, try again", result_path)
-            os.makedirs(result_path)
+    def _git_pull(self):
+        current_user = os.environ.get('SUDO_USER', '')
+        if not current_user:
+            current_user = os.environ.get('HOME').split(os.sep)[-1]
+        logging.info('current user is: %s' % current_user)
+        cmd = ['sudo', '-u', current_user, 'git', 'pull']
+        logging.info('get the latest code with command %s' % cmd)
+        subprocess.check_output(cmd, stderr=subprocess.STDOUT)
 
-        # json file for whaleyTAP.py
-        case_json = os.path.join(result_path, "plan.json")  # ../testResult/result_dir/plan.json
-
-        with open(case_json, "w") as fout:
-            logging.info("write plan data to json file")
-            json.dump(data, fout, indent=4)
-        return case_json
-
-    def git_pull(self, script_path):
-        current_dir = os.getcwd()
-        target_dir = script_path
-        logging.info("change workspace to %s", target_dir)
-        os.chdir(target_dir)
-        current_user = os.listdir("/home")[0]
-        logging.info("pull the latest code with cmd: sudo -u %s git pull", current_user)
-        os.system("sudo -u %s git pull" % current_user)
-        os.chdir(current_dir)
+    def _git_info(self, gitdir, name):
+        cwd = os.getcwd()
+        try:
+            current_user = os.environ.get('SUDO_USER', '')
+            if not current_user:
+                current_user = os.environ.get('HOME').split(os.sep)[-1]
+            logging.info('current user is: %s' % current_user)
+            os.chdir(gitdir)
+            commit_id = subprocess.check_output(['sudo', '-u', current_user, 'git', 'log', '-1', '--pretty=%H']).strip()
+            commit_subject = subprocess.check_output(
+                ['sudo', '-u', current_user, 'git', 'log', '-1', '--pretty=%s']).strip()
+            commit_author = subprocess.check_output(
+                ['sudo', '-u', current_user, 'git', 'log', '-1', '--pretty=%ae']).strip()
+            return {
+                'project_name': name,
+                'branch_revision': commit_id,
+                'branch_subject': commit_subject,
+                'branch_author': commit_author
+            }
+        finally:
+            os.chdir(cwd)
