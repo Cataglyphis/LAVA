@@ -40,10 +40,7 @@ class cmd_whaley_test_shell(BaseAction):
         cwd = os.getcwd()
         if git_repo:
             try:
-                gitdir = self._get_git_repo(git_repo, branch, revision)
-                with open(os.path.join(gitdir, 'git_info.json'), 'r') as fin:
-                    git_info = json.load(fin)
-                logging.info('git info: %s' % git_info)
+                gitdir, git_info = self._get_git_repo(git_repo, branch, revision)
             except Exception:
                 os.chdir(cwd)
                 logging.error('unable to get test definition from %s' % git_repo)
@@ -104,10 +101,9 @@ class cmd_whaley_test_shell(BaseAction):
             os.chdir(gitdir)
             subprocess.check_output(['sudo', '-u', current_user, 'git', 'checkout', revision],
                                     stderr=subprocess.STDOUT)
-        branch_info = self._git_info(gitdir, name, current_user)
-        with open(os.path.join(gitdir, 'git_info.json'), 'w') as fout:
-            json.dump(branch_info, fout)
-        return gitdir
+        git_info = self._git_info(gitdir, name, current_user)
+        logging.info('git info: %s' % git_info)
+        return gitdir, git_info
 
     def _git_info(self, gitdir, name, current_user):
         cwd = os.getcwd()
