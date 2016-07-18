@@ -4,11 +4,13 @@
 # Date: 2016.01.29
 
 import logging
+import subprocess
 import json
 import stat
 import os
 
 from lava_dispatcher.actions import BaseAction
+from lava_dispatcher import utils
 
 # 755 file permissions
 XMOD = stat.S_IRWXU | stat.S_IXGRP | stat.S_IRGRP | stat.S_IXOTH | stat.S_IROTH
@@ -19,7 +21,10 @@ class cmd_whaley_test_shell(BaseAction):
     parameters_schema = {
         'type': 'object',
         'properties': {
-            'script': {'type': 'string', 'optional': False},
+            'git_repo': {'type': 'string', 'optional': False},
+            'branch': {'type': 'string', 'optional': True, 'default': 'master'},
+            'revision': {'type': 'string', 'optional': True, 'default': ''},
+            'testdef': {'type': 'string', 'optional': False},
             'parameter': {'type': 'string', 'optional': False, 'default': ''}
         },
         'additionalProperties': False,
@@ -28,7 +33,27 @@ class cmd_whaley_test_shell(BaseAction):
     def __init__(self, context):
         super(cmd_whaley_test_shell, self).__init__(context)
 
-    def run(self, script=None, parameter=None):
+    def run(self, git_repo=None, branch=None, revision=None, testdef=None, parameter=None):
+        # clone git with branch, revision
+        if git_repo:
+            tmpdir = utils.mkdtemp()
+            logging.info('clone git-repo and change workspace to %s' % tmpdir)
+            os.chdir(tmpdir)
+            if isinstance(git_repo, str):
+                current_user = os.environ.get('SUDO_USER', '')
+                if not current_user:
+                    current_user = 'dqa'
+                logging.info("sudo -u %s git clone %s" % (current_user, git_repo))
+                subprocess.check_output(['sudo', '-u', current_user, 'git', 'clone', git_repo], stderr=subprocess.STDOUT)
+                name = gitdir = os.path.splitext(os.path.basename(git_repo))[0]
+                self._git_info(gitdir, name)
+        else:
+            logging.error("must specify git_repo")
+
+
+
+
+
         # bootloader
         target = self.client.target_device
         # script = "/home/dqa/workspace/LAVA/android-automation/TAP/whaleyTAP.py"
@@ -85,3 +110,18 @@ class cmd_whaley_test_shell(BaseAction):
         logging.info("pull the latest code with cmd: sudo -u %s git pull", current_user)
         os.system("sudo -u %s git pull" % current_user)
         os.chdir(current_dir)
+
+    def _git_info(self, gitdir, name):
+        cwd = os.getcwd()
+        try:
+            os.chdir('%s' % gitdir)
+            commit_id = subprocess.check_output(['git', 'log', '-1', '--pretty=%H']).strip()
+            commit_subject = subprocess.check_output(['git', 'log', '-1', '--pretty=%s']).strip()
+            return {
+                'project_name': name,
+                'branch_vcs': 'git',
+                'branch_revision': commit_id,
+                'branch_subject': commit_subject,
+            }
+        finally:
+            os.chdir(cwd)
