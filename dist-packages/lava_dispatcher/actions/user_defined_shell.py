@@ -85,7 +85,7 @@ class cmd_user_defined_shell(BaseAction):
             current_user = os.listdir('/home')[0]
             logging.info('current user is: %s' % current_user)
             os.chdir(gitdir)
-            commit_id = subprocess.check_output(['sudo', '-u', current_user, 'git', 'log', '-1', '--pretty=%H']).strip()
+            commit_id = subprocess.check_output(['sudo', '-u', current_user, 'git', 'log', '-1', '--pretty=%h']).strip()
             commit_subject = subprocess.check_output(
                 ['sudo', '-u', current_user, 'git', 'log', '-1', '--pretty=%s']).strip()
             commit_author = subprocess.check_output(

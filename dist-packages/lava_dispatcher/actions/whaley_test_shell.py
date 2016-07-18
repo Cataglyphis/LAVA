@@ -109,7 +109,7 @@ class cmd_whaley_test_shell(BaseAction):
         cwd = os.getcwd()
         try:
             os.chdir('%s' % gitdir)
-            commit_id = subprocess.check_output(['sudo', '-u', current_user, 'git', 'log', '-1', '--pretty=%H']).strip()
+            commit_id = subprocess.check_output(['sudo', '-u', current_user, 'git', 'log', '-1', '--pretty=%h']).strip()
             commit_subject = subprocess.check_output(['sudo', '-u', current_user, 'git', 'log', '-1', '--pretty=%s']).strip()
             commit_author = subprocess.check_output(['sudo', '-u', current_user, 'git', 'log', '-1', '--pretty=%ae']).strip()
             return {
