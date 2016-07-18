@@ -88,9 +88,7 @@ class cmd_whaley_test_shell(BaseAction):
         tmpdir = utils.mkdtemp()
         logging.info('clone git-repo and change workspace to %s' % tmpdir)
         os.chdir(tmpdir)
-        current_user = os.environ.get('SUDO_USER', '')
-        if not current_user:
-            current_user = os.environ.get('HOME').split(os.sep)[-1]
+        current_user = os.path.expanduser('~').split(os.sep)[-1]
         logging.info('current user is: %s' % current_user)
         cmd = ['sudo', '-u', current_user, 'git', 'clone']
         if branch:
