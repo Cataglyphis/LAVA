@@ -91,10 +91,10 @@ class cmd_user_defined_shell(BaseAction):
             commit_author = subprocess.check_output(
                 ['sudo', '-u', current_user, 'git', 'log', '-1', '--pretty=%ae']).strip()
             return {
-                'project_name': name,
-                'branch_revision': commit_id,
-                'branch_subject': commit_subject,
-                'branch_author': commit_author
+                'git_name': name,
+                'git_revision': commit_id,
+                'git_subject': commit_subject,
+                'git_author': commit_author
             }
         finally:
             os.chdir(cwd)
