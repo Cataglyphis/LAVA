@@ -521,7 +521,7 @@ class BootloaderTarget(MasterImageTarget):
         case_json = os.path.join(result_dir, "plan.json")
 
         with open(case_json, "w") as fout:
-            logging.info("write lava data to json file")
+            logging.info("write lava to json file %s" % case_json)
             json.dump(data, fout, indent=4)
 
         logging.warning("disconnect the serial connection, try to run the script")

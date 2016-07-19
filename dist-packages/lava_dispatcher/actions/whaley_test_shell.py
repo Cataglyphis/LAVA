@@ -41,8 +41,9 @@ class cmd_whaley_test_shell(BaseAction):
         if git_repo:
             try:
                 gitdir, git_info = self._get_git_repo(git_repo, branch, revision)
-            except Exception:
+            except Exception as e:
                 os.chdir(cwd)
+                logging.info(e)
                 logging.error('unable to get test definition from %s' % git_repo)
                 raise RuntimeError('unable to get test definition from %s' % git_repo)
         else:

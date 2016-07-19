@@ -91,7 +91,8 @@ def mkdtemp(basedir='/tmp'):
 
     d = tempfile.mkdtemp(dir=basedir)
     atexit.register(rmtree, d)
-    os.chmod(d, 0755)
+    # os.chmod(d, 0755)
+    os.chmod(d, 0777)
     return d
 
 
