@@ -1020,15 +1020,15 @@ class Target(object):
             self._set_factory_whaley(connection)
             # set logctl
             self._set_logctl_whlay(connection)
-            # set vip account
-            self._set_vip_whaley(connection)
+            # display usb info
+            self._display_usb_whaley(connection)
             # reboot device
             connection.sendline('reboot', send_char=self.config.send_char)
             time.sleep(50)
             # wait for system reboot
             self._skip_guide_whaley(connection)
-            # display usb info
-            self._display_usb_whaley(connection)
+            # set vip account
+            self._set_vip_whaley(connection)
 
         try:
             self._auto_login(connection, is_master)
