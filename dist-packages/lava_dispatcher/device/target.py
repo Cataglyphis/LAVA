@@ -397,7 +397,7 @@ class Target(object):
                 continue
             elif pos1 == 1:
                 logging.info("now in com.helios.guide activity")
-                time.sleep(100)
+                time.sleep(80)
                 connection.sendcontrol('c')
                 connection.sendline('')
                 connection.sendline('')
@@ -1022,13 +1022,13 @@ class Target(object):
             self._set_logctl_whlay(connection)
             # set vip account
             self._set_vip_whaley(connection)
-            # display usb info
-            self._display_usb_whaley(connection)
             # reboot device
             connection.sendline('reboot', send_char=self.config.send_char)
             time.sleep(50)
             # wait for system reboot
             self._skip_guide_whaley(connection)
+            # display usb info
+            self._display_usb_whaley(connection)
 
         try:
             self._auto_login(connection, is_master)
