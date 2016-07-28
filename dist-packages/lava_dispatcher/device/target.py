@@ -435,10 +435,56 @@ class Target(object):
                 connection.sendline('busybox wget -O sqlite3 http://172.16.117.1:8000/resource/sqlite3', send_char=self.config.send_char)
             elif self.config.device_type == 'hisi':
                 connection.sendline('busybox wget -O sqlite3 http://172.16.117.1:8000/resource/sqlite3_hisi', send_char=self.config.send_char)
+            time.sleep(5)
             connection.sendline('busybox chmod 755 sqlite3', send_char=self.config.send_char)
         # go back to /, otherwise block the next step in whaley_test_shell
         connection.sendline('cd /', send_char=self.config.send_char)
+        connection.empty_buffer()
         logging.info('end installation of busybox')
+
+    # set vip account
+    def _set_vip_whaley(self, connection):
+        logging.info('set vip info')
+        connection.sendline('cd /data/local/tmp', send_char=self.config.send_char)
+        connection.sendline('su', send_char=self.config.send_char)
+        connection.sendline('busybox wget -O TvUiTools.jar http://172.16.117.1:8000/resource/media/TvUiTools.jar', send_char=self.config.send_char)
+        time.sleep(5)
+        connection.empty_buffer()
+        connection.sendline('uiautomator runtest TvUiTools.jar -c com.whaley.cases.h0xp55.viplogin.testcases.AutoLoginTestCase#testAutoLogin')
+        connection.expect('shell@')
+        logging.info('back to home page')
+        connection.sendline('input keyevent 3')
+        connection.sendline('cd /', send_char=self.config.send_char)
+        connection.empty_buffer()
+        logging.info('end setting vip info')
+
+    # set logctl
+    def _set_logctl_whlay(self, connection):
+        logging.info('set logctl file to /data/local/tmp/log')
+        connection.sendline('cd /data/local/tmp', send_char=self.config.send_char)
+        connection.sendline('su')
+        connection.sendline('mkdir log')
+        connection.sendline('chmod 777 -R log')
+        connection.sendline('setprop persist.svc.logctl.file /data/local/tmp/log/logcat.log')
+        connection.sendline('setprop ppersist.svc.logctl.size 10000')
+        connection.sendline('stop logctl')
+        connection.sendline('getprop | grep logctl')
+        connection.sendline('start logctl')
+        connection.sendline('cd /', send_char=self.config.send_char)
+        connection.empty_buffer()
+        logging.info('end set logctl file')
+
+    # display /mnt/usb/sda1/多媒体
+    def _display_usb_whaley(self, connection):
+        logging.info('display /mnt/usb/sda1/多媒体 info')
+        connection.sendline('su')
+        connection.expect('shell@')
+        connection.sendline('busybox du -sh /mnt/usb/sda1/多媒体')
+        connection.expect('shell@')
+        connection.sendline('busybox ls -lh /mnt/usb/sda1/多媒体')
+        connection.expect('shell@')
+        connection.empty_buffer()
+        logging.info('end display /mnt/usb/sda1/多媒体 info')
 
     # remove helios guide, so after reboot no guide appear
     def _remove_helios_guide(self, connection):
@@ -447,6 +493,7 @@ class Target(object):
         connection.sendline('rm -rf /data/dalvik-cache/arm/system@priv-app@HeliosGuide@HeliosGuide.apk@classes.dex', send_char=self.config.send_char)
         connection.sendline('mount -o remount,rw /system', send_char=self.config.send_char)
         connection.sendline('rm -rf /system/priv-app/HeliosGuide', send_char=self.config.send_char)
+        connection.empty_buffer()
         logging.info('end remove helios guide')
 
     # close shutdown
@@ -576,15 +623,6 @@ class Target(object):
         sn = self.config.sn
         logging.info("sn: %s" % sn)
         return sn
-
-    # judge whether current device has signal connected
-    def _get_signal_whaley(self):
-        signal = self.config.signal
-        if signal:
-            logging.info("current device has signal connected: %s" % signal)
-        else:
-            logging.info("current device no signal connected")
-        return signal
 
     # set mac address in bootloader
     def _set_macaddr_whaley(self, connection):
@@ -781,6 +819,14 @@ class Target(object):
         if self.config.hard_reset_command != '':
             # use power_off and power_on to instead of hard_reset_command
             # self.context.run_command(self.config.hard_reset_command)
+            connection.empty_buffer()
+            connection.sendline('')
+            index = connection.expect(['shell@', pexpect.TIMEOUT], timeout=5)
+            if index == 0:
+                logging.info('in normal shell console')
+                self._display_usb_whaley(connection)
+            else:
+                logging.info('not in normal shell console, skip display usb info')
             self.context.run_command(self.config.power_off_cmd)
             time.sleep(20)
             self.context.run_command(self.config.power_on_cmd)
@@ -960,6 +1006,8 @@ class Target(object):
             # add below 2 functions to skip guide and install busybox
             # add is_skip in the future
             self._skip_guide_whaley(connection)
+            # display usb info
+            self._display_usb_whaley(connection)
             # install busybox
             self._install_busybox_whaley(connection)
             # set shutdown time to -1, no shutdown
@@ -968,6 +1016,12 @@ class Target(object):
             self._remove_helios_guide(connection)
             # set factory info, mac addr, sn
             self._set_factory_whaley(connection)
+            # set logctl
+            self._set_logctl_whlay(connection)
+            # set vip account
+            self._set_vip_whaley(connection)
+            # display usb info
+            self._display_usb_whaley(connection)
             # reboot device
             connection.sendline('reboot', send_char=self.config.send_char)
             time.sleep(50)
