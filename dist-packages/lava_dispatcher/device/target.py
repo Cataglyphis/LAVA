@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 # Copyright (C) 2012 Linaro Limited
 #
 # Author: Andy Doan <andy.doan@linaro.org>
@@ -415,7 +416,7 @@ class Target(object):
                 logging.info("already in com.helios.launch activity")
                 break
             else:
-                time.sleep(30)
+                time.sleep(100)
                 continue
         else:
             logging.error("can't skip the guide, please have a check")
@@ -816,17 +817,18 @@ class Target(object):
 
     def _hard_reboot(self, connection):
         logging.info('Perform hard reset on the system')
+        connection.empty_buffer()
+        connection.sendline('')
+        index = connection.expect(['shell@', pexpect.TIMEOUT], timeout=5)
+        if index == 0:
+            logging.info('in normal shell console')
+            self._display_usb_whaley(connection)
+        else:
+            logging.info('not in normal shell console, skip display usb info')
+
         if self.config.hard_reset_command != '':
             # use power_off and power_on to instead of hard_reset_command
             # self.context.run_command(self.config.hard_reset_command)
-            connection.empty_buffer()
-            connection.sendline('')
-            index = connection.expect(['shell@', pexpect.TIMEOUT], timeout=5)
-            if index == 0:
-                logging.info('in normal shell console')
-                self._display_usb_whaley(connection)
-            else:
-                logging.info('not in normal shell console, skip display usb info')
             self.context.run_command(self.config.power_off_cmd)
             time.sleep(20)
             self.context.run_command(self.config.power_on_cmd)
