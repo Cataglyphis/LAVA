@@ -1216,6 +1216,7 @@ class Target(object):
     def _customize_bootloader(self, connection, boot_cmds):
         # get deploy_whaley_image parameters
         image = self.image_params.get('image', '')
+        image_server_ip = self.image_params.get('image_server_ip', '')
         # get boot_whaley_image parameters
         skip = self.boot_params.get('skip', False)
         emmc = self.boot_params.get('emmc', False)
@@ -1235,6 +1236,8 @@ class Target(object):
                 mboot_path = os.path.join(os.path.dirname(image), 'auto_update_mboot.txt')
                 logging.info('mboot path is: %s' % mboot_path)
                 connection.empty_buffer()
+                connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
+                connection.expect(self.config.bootloader_prompt)
                 connection.sendline('mstar %s' % mboot_path, send_char=self.config.send_char)
                 connection.expect(self.config.interrupt_boot_prompt, timeout=600)
                 for i in range(10):
