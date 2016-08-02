@@ -386,9 +386,10 @@ class Target(object):
         pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", pexpect.TIMEOUT]
         for i in range(10):
             logging.info("try to skip the guide. Attempt: %s" % str(i+1))
+            connection.empty_buffer()
             connection.sendcontrol('c')
             connection.sendline('')
-            connection.expect('shell@', timeout=5)
+            connection.expect('shell@', timeout=20)
             connection.sendline('dumpsys window | grep mFocusedApp', send_char=self.config.send_char)
             pos1 = connection.expect(pattern, timeout=10)
             if pos1 == 0:
@@ -399,7 +400,6 @@ class Target(object):
                 logging.info("now in com.helios.guide activity")
                 time.sleep(80)
                 connection.sendcontrol('c')
-                connection.sendline('')
                 connection.sendline('')
                 connection.expect('shell@', timeout=5)
                 connection.sendline('su', send_char=self.config.send_char)
@@ -450,11 +450,13 @@ class Target(object):
         connection.sendline('su', send_char=self.config.send_char)
         connection.sendline('busybox wget -O TvUiTools.jar http://172.16.117.1:8000/resource/media/TvUiTools.jar', send_char=self.config.send_char)
         time.sleep(5)
+        connection.sendline('input keyevent 21', send_char=self.config.send_char)
+        time.sleep(5)
         connection.empty_buffer()
-        connection.sendline('uiautomator runtest TvUiTools.jar -c com.whaley.cases.h0xp55.viplogin.testcases.AutoLoginTestCase#testAutoLogin')
+        connection.sendline('uiautomator runtest TvUiTools.jar -c com.whaley.cases.h0xp55.viplogin.testcases.AutoLoginTestCase#testAutoLogin', send_char=self.config.send_char)
         connection.expect('shell@')
         logging.info('back to home page')
-        connection.sendline('input keyevent 3')
+        connection.sendline('input keyevent 3', send_char=self.config.send_char)
         connection.sendline('cd /', send_char=self.config.send_char)
         connection.empty_buffer()
         logging.info('end setting vip info')
@@ -465,7 +467,7 @@ class Target(object):
         connection.sendline('cd /data/local/tmp', send_char=self.config.send_char)
         connection.sendline('su')
         connection.sendline('mkdir log')
-        connection.sendline('chmod 777 -R log')
+        connection.sendline('chmod 777 log')
         connection.sendline('setprop persist.svc.logctl.file /data/local/tmp/log/logcat.log')
         connection.sendline('setprop ppersist.svc.logctl.size 10000')
         connection.sendline('stop logctl')
@@ -1228,6 +1230,22 @@ class Target(object):
             # add set mac address in bootloader, 2016.04.19
             logging.info('burn normal image, not factory emmc image')
             self._set_macaddr_whaley(connection)
+            if self.config.device_type == 'mstar':
+                logging.info("burn mboot firstly for mstar 828 platform")
+                mboot_path = os.path.join(os.path.dirname(image), 'auto_update_mboot.txt')
+                logging.info('mboot path is: %s' % mboot_path)
+                connection.empty_buffer()
+                connection.sendline('mstar %s' % mboot_path, send_char=self.config.send_char)
+                connection.expect(self.config.interrupt_boot_prompt, timeout=600)
+                for i in range(10):
+                    connection.sendline('')
+                # << MStar >>#
+                connection.expect(self.config.bootloader_prompt)
+                # clear the buffer
+                logging.info('clear connection buffer')
+                connection.empty_buffer()
+                connection.sendcontrol('c')
+                connection.expect(self.config.bootloader_prompt)
 
         delay = self.config.bootloader_serial_delay_ms
         _boot_cmds = self._boot_cmds_preprocessing(boot_cmds)
