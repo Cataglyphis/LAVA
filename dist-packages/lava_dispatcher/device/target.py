@@ -453,7 +453,7 @@ class Target(object):
         connection.sendline('input keyevent 21', send_char=self.config.send_char)
         time.sleep(5)
         connection.empty_buffer()
-        connection.sendline('uiautomator runtest TvUiTools.jar -c com.whaley.cases.h0xp55.viplogin.testcases.AutoLoginTestCase#testAutoLogin', send_char=self.config.send_char)
+        connection.sendline('uiautomator runtest TvUiTools.jar -c com.whaley.cases.helios.viplogin.testcases.AutoLoginTestCase#testAutoLogin', send_char=self.config.send_char)
         connection.expect('shell@')
         logging.info('back to home page')
         connection.sendline('input keyevent 3', send_char=self.config.send_char)
@@ -664,7 +664,8 @@ class Target(object):
         if mac_addr:
             connection.sendline('echo ro.hardware.lan_mac=%s >> /factory/factory.prop' % mac_addr, send_char=self.config.send_char)
         if sn:
-            connection.sendline('echo ro.helios.sn=%s >> /factory/factory.prop' % sn, send_char=self.config.send_char)
+            # connection.sendline('echo ro.helios.sn=%s >> /factory/factory.prop' % sn, send_char=self.config.send_char)
+            connection.sendline('echo ro.device.serialno=%s >> /factory/factory.prop' % sn, send_char=self.config.send_char)
         connection.sendline('chmod 644 /factory/factory.prop', send_char=self.config.send_char)
         logging.info('end set factory mode info')
 
@@ -1111,6 +1112,38 @@ class Target(object):
         connection.empty_buffer()
         logging.info("[EMMC MSTAR 828] end of burn mboot")
 
+    def _burn_fastboot_hisi_emmc(self, connection):
+        image = self.image_params.get('image', '')
+        image_server_ip = self.image_params.get('image_server_ip', '')
+        logging.info("[EMMC HISI] burn fastboot through tftp with factory.txt")
+        mboot_txt = os.path.join(os.path.split(image)[0], 'auto_update_mboot.txt')
+        logging.info("[EMMC MSTAR 828] path of auto_update_mboot.txt: %s" % mboot_txt)
+        connection.sendline('setenv bootdelay 10', send_char=self.config.send_char)
+        connection.sendline('setenv macaddr', send_char=self.config.send_char)
+        connection.sendline('setenv ethaddr', send_char=self.config.send_char)
+        connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
+        connection.sendline('saveenv', send_char=self.config.send_char)
+        connection.expect('done')
+        logging.info('clear connection buffer')
+        connection.empty_buffer()
+        connection.sendcontrol('c')
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('estart', send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt, timeout=20)
+        connection.sendline('dhcp', send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt, timeout=20)
+        connection.sendcontrol('c')
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('mstar %s' % mboot_txt, send_char=self.config.send_char)
+        connection.expect(self.config.interrupt_boot_prompt, timeout=300)
+        for i in range(10):
+            connection.sendline('')
+        # << MStar >>#
+        connection.expect(self.config.bootloader_prompt)
+        logging.info("[EMMC MSTAR 828] clear connection buffer")
+        connection.empty_buffer()
+        logging.info("[EMMC MSTAR 828] end of burn mboot")
+
     def _burn_factory_828_emmc(self, connection):
         factory = self.image_params.get('factory', '')
         # image_server_ip = self.image_params.get('image_server_ip', '')
@@ -1227,6 +1260,13 @@ class Target(object):
                 self._burn_mboot_828_emmc(connection)
                 logging.info("[EMMC MSTAR 828] burn factory image through tftp with auto_update_factory.txt")
                 logging.info("[EMMC MSTAR 828] path of auto_update_factory.txt: %s" % image)
+            elif self.config.device_type == 'hisi':
+                logging.info("[EMMC HISI] make factory emmc image for hisi platform")
+                self._burn_fastboot_hisi_emmc(connection)
+                logging.info("[EMMC HISI] burn factory image through tftp with auto_factory.txt")
+                logging.info("[EMMC HISI] path of auto_factory.txt: %s" % image)
+            else:
+                logging.warning('no device type mstar or hisi found')
         else:  # skip=False, emmc=False
             # add set mac address in bootloader, 2016.04.19
             logging.info('burn normal image, not factory emmc image')

@@ -496,9 +496,6 @@ class LavaTestJob(object):
             self.context.test_data.job_status = 'fail'
             raise
         finally:
-            # add below 2 lines
-            if cmd['command'] == "user_defined_shell":
-                return
             # self.context.finish()
             # move self.context.finish() to line 499, since get_device_version need connection to device
             # device_version = self.context.get_device_version() or 'error'
