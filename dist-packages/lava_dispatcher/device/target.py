@@ -1258,6 +1258,21 @@ class Target(object):
                 connection.empty_buffer()
                 connection.sendcontrol('c')
                 connection.expect(self.config.bootloader_prompt)
+            elif self.config.device_type == 'hisi':
+                logging.info("burn fastboot firstly for hisi platform")
+                fastboot_path = os.path.join(os.path.dirname(image), 'fastboot.txt')
+                logging.info('fastboot path is: %s' % fastboot_path)
+                connection.empty_buffer()
+                connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
+                connection.expect(self.config.bootloader_prompt)
+                connection.sendline('exec %s' % fastboot_path, send_char=self.config.send_char)
+                connection.expect(self.config.bootloader_prompt, timeout=600)
+                logging.info('clear connection buffer')
+                connection.empty_buffer()
+                connection.sendcontrol('c')
+                connection.expect(self.config.bootloader_prompt)
+            else:
+                logging.warning('no device type mstar or hisi found')
 
         delay = self.config.bootloader_serial_delay_ms
         _boot_cmds = self._boot_cmds_preprocessing(boot_cmds)
