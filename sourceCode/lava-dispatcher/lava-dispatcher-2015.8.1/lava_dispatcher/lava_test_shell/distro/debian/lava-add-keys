@@ -1,9 +1,0 @@
-#!/bin/sh
-
-if gpg --keyserver pgp.mit.edu --recv-keys "$@" >/dev/null; then
-    gpg --armor --export "$@" | sudo apt-key add -
-    exit 0
-else
-    DEBIAN_FRONTEND=noninteractive apt-get install -y -q "$@"
-    exit 0
-fi

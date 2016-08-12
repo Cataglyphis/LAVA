@@ -1,3 +1,0 @@
-Tests: testsuite
-Depends: lava-server, django-testscenarios
-Restrictions: allow-stderr

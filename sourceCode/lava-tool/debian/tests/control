@@ -1,3 +1,0 @@
-Tests: testsuite
-Depends: @, python-mock, python-mocker, wdiff
-Restrictions: allow-stderr
