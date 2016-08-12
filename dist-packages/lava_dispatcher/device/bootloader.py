@@ -29,6 +29,7 @@ import contextlib
 import subprocess
 import os
 import json
+import time
 
 from lava_dispatcher.device.master import (
     MasterImageTarget
@@ -436,10 +437,20 @@ class BootloaderTarget(MasterImageTarget):
         pat = self.tester_ps1_pattern
         incrc = self.tester_ps1_includes_rc
         runner = NetworkCommandRunner(self, pat, incrc)
-        try:
-            # get the target device ip
-            ip = runner.get_target_ip()
-        except NetworkError as e:
+        ip = ''
+        for i in range(3):
+            try:
+                # get the target device ip
+                ip = runner.get_target_ip()
+            except NetworkError as e:
+                self.proc.sendline('reboot')
+                self._burn_su_image(self.proc)
+                self._enter_recovery_whaley(self.proc)
+                self._su_device_whaley(self.proc)
+                time.sleep(30)
+                self._skip_guide_whaley(self.proc)
+
+        if not ip:
             raise CriticalError("Network error detected..aborting")
 
         ##############################################

@@ -454,7 +454,7 @@ class Target(object):
         time.sleep(5)
         connection.empty_buffer()
         connection.sendline('uiautomator runtest TvUiTools.jar -c com.whaley.cases.helios.viplogin.testcases.AutoLoginTestCase#testAutoLogin', send_char=self.config.send_char)
-        connection.expect('shell@')
+        connection.expect(['shell@', pexpect.TIMEOUT])
         logging.info('back to home page')
         connection.sendline('input keyevent 3', send_char=self.config.send_char)
         connection.sendline('cd /', send_char=self.config.send_char)
@@ -481,11 +481,11 @@ class Target(object):
     def _display_usb_whaley(self, connection):
         logging.info('display /mnt/usb/sda1/多媒体 info')
         connection.sendline('su')
-        connection.expect('shell@')
+        connection.expect(['shell@', pexpect.TIMEOUT])
         connection.sendline('busybox du -sh /mnt/usb/sda1/多媒体')
-        connection.expect('shell@')
+        connection.expect(['shell@', pexpect.TIMEOUT])
         connection.sendline('busybox ls -lh /mnt/usb/sda1/多媒体')
-        connection.expect('shell@')
+        connection.expect(['shell@', pexpect.TIMEOUT])
         connection.empty_buffer()
         logging.info('end display /mnt/usb/sda1/多媒体 info')
 
