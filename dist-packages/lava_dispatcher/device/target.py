@@ -494,7 +494,7 @@ class Target(object):
         connection.sendline('for usb in `ls /mnt/usb`; do busybox du -sh /mnt/usb/$usb/多媒体; busybox ls -lh /mnt/usb/$usb/多媒体; done')
         connection.expect(['shell@', pexpect.TIMEOUT])
         connection.empty_buffer()
-        logging.info('end display /mnt/usb/sdax/多媒体 info')
+        logging.info('end display /mnt/usb/sdx/多媒体 info')
 
     # remove helios guide, so after reboot no guide appear
     def _remove_helios_guide(self, connection):
