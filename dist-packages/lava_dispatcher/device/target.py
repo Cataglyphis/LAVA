@@ -479,15 +479,22 @@ class Target(object):
 
     # display /mnt/usb/sda1/多媒体
     def _display_usb_whaley(self, connection):
-        logging.info('display /mnt/usb/sda1/多媒体 info')
+        # logging.info('display /mnt/usb/sda1/多媒体 info')
+        # connection.sendline('su')
+        # connection.expect(['shell@', pexpect.TIMEOUT])
+        # # connection.sendline('busybox du -sh /mnt/usb/sda1/多媒体')
+        # connection.expect(['shell@', pexpect.TIMEOUT])
+        # connection.sendline('busybox ls -lh /mnt/usb/sda1/多媒体')
+        # connection.expect(['shell@', pexpect.TIMEOUT])
+        # connection.empty_buffer()
+        # logging.info('end display /mnt/usb/sda1/多媒体 info')
+        logging.info('display /mnt/usb/sdx/多媒体 info')
         connection.sendline('su')
         connection.expect(['shell@', pexpect.TIMEOUT])
-        connection.sendline('busybox du -sh /mnt/usb/sda1/多媒体')
-        connection.expect(['shell@', pexpect.TIMEOUT])
-        connection.sendline('busybox ls -lh /mnt/usb/sda1/多媒体')
+        connection.sendline('for usb in `ls /mnt/usb`; do busybox du -sh /mnt/usb/$usb/多媒体; busybox ls -lh /mnt/usb/$usb/多媒体; done')
         connection.expect(['shell@', pexpect.TIMEOUT])
         connection.empty_buffer()
-        logging.info('end display /mnt/usb/sda1/多媒体 info')
+        logging.info('end display /mnt/usb/sdax/多媒体 info')
 
     # remove helios guide, so after reboot no guide appear
     def _remove_helios_guide(self, connection):
