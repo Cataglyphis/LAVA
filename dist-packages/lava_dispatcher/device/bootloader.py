@@ -442,7 +442,9 @@ class BootloaderTarget(MasterImageTarget):
             try:
                 # get the target device ip
                 ip = runner.get_target_ip()
-            except NetworkError as e:
+                break
+            except Exception as e:
+                logging.warning("can't get target ip, try reboot")
                 self.proc.sendline('reboot')
                 self._burn_su_image(self.proc)
                 self._enter_recovery_whaley(self.proc)

@@ -808,6 +808,7 @@ class Target(object):
     def _soft_reboot(self, connection):
         logging.info('Perform soft reboot the system')
         # Try to C-c the running process, if any.
+        connection.empty_buffer()
         connection.sendcontrol('c')
         connection.expect('shell@')
         connection.sendline(self.config.soft_boot_cmd)
@@ -821,9 +822,10 @@ class Target(object):
         # logging.info('Matched %s', patterns[match_id])
         # if match_id == 0:
         #     raise OperationFailed("Soft reboot failed")
+        connection.expect(self.config.interrupt_boot_prompt, timeout=20)
         for i in range(100):
             connection.sendline('')
-            time.sleep(0.05)
+            time.sleep(0.06)
 
     def _hard_reboot(self, connection):
         logging.info('Perform hard reset on the system')
@@ -842,6 +844,7 @@ class Target(object):
             self.context.run_command(self.config.power_off_cmd)
             time.sleep(20)
             self.context.run_command(self.config.power_on_cmd)
+            connection.expect(self.config.interrupt_boot_prompt, timeout=20)
             for i in range(100):
                 connection.sendline('')
                 time.sleep(0.06)
@@ -931,6 +934,9 @@ class Target(object):
             # burn factory image
             if self.config.device_type == 'mstar' and factory:
                 self._burn_factory_828(connection)
+            
+            if self.config.device_type == 'hisi' and factory:
+                self._burn_factory_hisi(connection)
 
             if 'R' in image and not skip:
                 self._burn_su_image(connection)
@@ -1172,6 +1178,32 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=600)
         connection.sendline('reset', send_char=self.config.send_char)
         logging.info('end of burn 828 factory')
+    
+    def _burn_factory_hisi(self, connection):
+        connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
+        logging.info('start to burn hisi factory')
+        factory = self.image_params.get('factory', '')
+        image_server_ip = self.image_params.get('image_server_ip', '')
+        # timeout = 3600s
+        for i in range(30):
+            connection.sendline('')
+            time.sleep(0.06)
+        # apollo#
+        connection.expect(self.config.bootloader_prompt)
+        # clear the buffer
+        logging.info('clear connection buffer')
+        connection.empty_buffer()
+        connection.sendcontrol('c')
+        connection.expect(self.config.bootloader_prompt)
+        # connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
+        connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('dhcp')
+        connection.expect(self.config.bootloader_prompt, timeout=100)
+        connection.sendline('exec %s' % factory, send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt, timeout=600)
+        connection.sendline('reset', send_char=self.config.send_char)
+        logging.info('end of burn hisi factory')
 
     def _wipe_data_828_emmc(self, connection):
         logging.info("[EMMC MSTAR 828] wipe data partition")
@@ -1260,6 +1292,7 @@ class Target(object):
                 connection.expect(self.config.interrupt_boot_prompt, timeout=600)
                 for i in range(10):
                     connection.sendline('')
+                    time.sleep(0.06)
                 # << MStar >>#
                 connection.expect(self.config.bootloader_prompt)
                 # clear the buffer
@@ -1276,6 +1309,12 @@ class Target(object):
                 connection.expect(self.config.bootloader_prompt)
                 connection.sendline('exec %s' % fastboot_path, send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt, timeout=600)
+                connection.sendline('reset')
+                connection.expect(self.config.interrupt_boot_prompt, timeout=600)
+                for i in range(50):
+                    connection.sendline('')
+                    time.sleep(0.06)
+                connection.expect(self.config.bootloader_prompt)
                 logging.info('clear connection buffer')
                 connection.empty_buffer()
                 connection.sendcontrol('c')
