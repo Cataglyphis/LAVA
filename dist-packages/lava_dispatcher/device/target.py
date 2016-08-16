@@ -383,11 +383,10 @@ class Target(object):
 
     # judge current state, and skip guide
     def _skip_guide_whaley(self, connection):
-        pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", pexpect.TIMEOUT]
+        pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", "com.whaley.tv.tvplayer.ui", pexpect.TIMEOUT]
         for i in range(10):
             logging.info("try to skip the guide. Attempt: %s" % str(i+1))
             connection.empty_buffer()
-            connection.sendcontrol('c')
             connection.sendline('')
             connection.expect('shell@', timeout=20)
             connection.sendline('dumpsys window | grep mFocusedApp', send_char=self.config.send_char)
@@ -414,6 +413,9 @@ class Target(object):
                     logging.info("can't skip the guide, try it again")
             elif pos1 == 2:
                 logging.info("already in com.helios.launch activity")
+                break
+            elif pos1 == 3:
+                logging.info("already in com.whaley.tv.tvplayer.ui activity")
                 break
             else:
                 time.sleep(100)
@@ -1372,6 +1374,8 @@ class Target(object):
         connection.expect('/ #', timeout=3600)
         connection.sendline('busybox md5sum /tmp/disk/android.bin')
         connection.expect('/ #', timeout=600)
+        connection.sendline('busybox umount /tmp/disk')
+        connection.expect('/ #')
         connection.sendline('busybox reboot -f')
         logging.info("[EMMC HISI] end of dump emmc to usb disk")
 
