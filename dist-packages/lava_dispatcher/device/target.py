@@ -1304,6 +1304,10 @@ class Target(object):
         connection.expect('shell@')
         connection.sendline('cat /proc/msp/pq')
         connection.expect('shell@')
+        connection.sendline('ls -l /factory')
+        connection.sendline('cat /factory/factory.prop')
+        connection.sendline('cat /factory/model_index.ini')
+        connection.empty_buffer()
         logging.info("[EMMC HISI] end of set panel index with spi")
 
     def _wipe_data_828_emmc(self, connection):
