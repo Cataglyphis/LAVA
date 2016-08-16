@@ -1170,6 +1170,7 @@ class Target(object):
         connection.empty_buffer()
         mac_addr = self._get_macaddr_whaley()
         connection.sendline('setenv ethaddr %s' % mac_addr, send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt)
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('exec %s' % fastboot_path, send_char=self.config.send_char)
