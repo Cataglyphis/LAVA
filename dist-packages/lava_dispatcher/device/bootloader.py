@@ -27,6 +27,7 @@
 import logging
 import contextlib
 import subprocess
+import pexpect
 import os
 import json
 import time
@@ -181,6 +182,9 @@ class BootloaderTarget(MasterImageTarget):
             elif self.config.device_type == 'hisi':
                 logging.info("Set deployment data to whaley hisi platform")
                 self.deployment_data = deployment_data.whaley_hisi
+            elif self.config.device_type == 'mstar-938':
+                logging.info("Set deployment data to whaley mstar 938 platform")
+                self.deployment_data = deployment_data.whaley_mstar_938
             else:
                 logging.warning("No deployment data, please have a check")
         logging.debug("Set bootloader type to u_boot in whaley platform")
@@ -563,13 +567,12 @@ class BootloaderTarget(MasterImageTarget):
     def get_device_version(self):
         logging.info('get device version, ro.build.version.rom')
         self.proc.sendcontrol('c')
-        self.proc.sendline('')
-        self.proc.expect('shell@', timeout=5)
+        self.proc.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
         # empty the buffer
         self.proc.empty_buffer()
         # self.proc.sendline('getprop ro.helios.version')
         self.proc.sendline('getprop ro.build.version.rom')
-        self.proc.expect('shell@', timeout=2)
+        self.proc.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=2)
         # 'getprop ro.helios.version\r\r\n01.07.01\r\n'
         # 01.07.01
         try:

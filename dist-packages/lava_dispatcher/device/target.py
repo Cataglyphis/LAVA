@@ -387,8 +387,8 @@ class Target(object):
         for i in range(10):
             logging.info("try to skip the guide. Attempt: %s" % str(i+1))
             connection.empty_buffer()
-            connection.sendline('')
-            connection.expect('shell@', timeout=20)
+            connection.sendcontrol('c')
+            connection.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=20)
             connection.sendline('dumpsys window | grep mFocusedApp', send_char=self.config.send_char)
             pos1 = connection.expect(pattern, timeout=10)
             if pos1 == 0:
@@ -399,8 +399,7 @@ class Target(object):
                 logging.info("now in com.helios.guide activity")
                 time.sleep(80)
                 connection.sendcontrol('c')
-                connection.sendline('')
-                connection.expect('shell@', timeout=5)
+                connection.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
                 connection.sendline('su', send_char=self.config.send_char)
                 connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=self.config.send_char)
                 time.sleep(20)
@@ -456,7 +455,7 @@ class Target(object):
         time.sleep(5)
         connection.empty_buffer()
         connection.sendline('uiautomator runtest TvUiTools.jar -c com.whaley.cases.helios.viplogin.testcases.AutoLoginTestCase#testAutoLogin', send_char=self.config.send_char)
-        connection.expect(['shell@', pexpect.TIMEOUT])
+        connection.expect(['shell@', 'root@', pexpect.TIMEOUT])
         logging.info('back to home page')
         connection.sendline('input keyevent 3', send_char=self.config.send_char)
         connection.sendline('cd /', send_char=self.config.send_char)
@@ -492,9 +491,9 @@ class Target(object):
         # logging.info('end display /mnt/usb/sda1/多媒体 info')
         logging.info('display /mnt/usb/sdx/多媒体 info')
         connection.sendline('su')
-        connection.expect(['shell@', pexpect.TIMEOUT])
+        connection.expect(['shell@', 'root@', pexpect.TIMEOUT])
         connection.sendline('for usb in `ls /mnt/usb`; do busybox du -sh /mnt/usb/$usb/多媒体; busybox ls -lh /mnt/usb/$usb/多媒体; done')
-        connection.expect(['shell@', pexpect.TIMEOUT])
+        connection.expect(['shell@', 'root@', pexpect.TIMEOUT])
         connection.empty_buffer()
         logging.info('end display /mnt/usb/sdx/多媒体 info')
 
@@ -538,6 +537,26 @@ class Target(object):
             connection.expect(self.config.bootloader_prompt, timeout=100)
             connection.sendline('mstar su/mstar', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt, timeout=600)
+        elif self.config.device_type == 'mstar-938':
+            for i in range(10):
+                connection.sendline('')
+            # << MStar >>#
+            connection.expect(self.config.bootloader_prompt)
+            # clear connection buffer
+            logging.info('clear connection buffer')
+            connection.empty_buffer()
+            connection.sendcontrol('c')
+            connection.expect(self.config.bootloader_prompt)
+            # burn su image
+            logging.info("use 172.16.10.41 for su image, and burun su.img to tvinfo")
+            connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt)
+            connection.sendline('estart')
+            connection.expect(self.config.bootloader_prompt)
+            connection.sendline('dhcp')
+            connection.expect(self.config.bootloader_prompt, timeout=100)
+            connection.sendline('mstar su/mstar_938', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt, timeout=600)
         elif self.config.device_type == 'hisi':
             try:
                 if self.config.hard_reset_command != '':
@@ -577,7 +596,7 @@ class Target(object):
         connection.empty_buffer()
         connection.sendcontrol('c')
         connection.expect(self.config.bootloader_prompt)
-        if self.config.device_type == 'mstar':
+        if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-938':
             connection.sendline('ac androidboot.debuggable 1', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('recovery', send_char=self.config.send_char)
@@ -607,7 +626,7 @@ class Target(object):
         connection.expect('/ #')
         connection.sendline('busybox --install /sbin', send_char=self.config.send_char)
         connection.sendline('busybox mkdir /tmp/disk', send_char=self.config.send_char)
-        if self.config.device_type == 'mstar':
+        if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-938':
             tvinfo = '/dev/block/platform/mstar_mci.0/by-name/tvinfo'
             connection.sendline('busybox mount %s /tmp/disk' % tvinfo, send_char=self.config.send_char)
         elif self.config.device_type == 'hisi':
@@ -646,6 +665,13 @@ class Target(object):
         device_type = self.config.device_type
         if device_type == 'mstar':
             connection.sendline('setenv ethaddr %s' % mac_addr, send_char=self.config.send_char)
+            connection.sendline('setenv macaddr %s' % mac_addr, send_char=self.config.send_char)
+            connection.sendline('setenv bootdelay 10', send_char=self.config.send_char)
+            connection.sendline('saveenv', send_char=self.config.send_char)
+            connection.expect('done')
+            logging.info('clear connection buffer')
+            connection.empty_buffer()
+        elif device_type == 'mstar-938':
             connection.sendline('setenv macaddr %s' % mac_addr, send_char=self.config.send_char)
             connection.sendline('setenv bootdelay 10', send_char=self.config.send_char)
             connection.sendline('saveenv', send_char=self.config.send_char)
@@ -812,7 +838,7 @@ class Target(object):
         # Try to C-c the running process, if any.
         connection.empty_buffer()
         connection.sendcontrol('c')
-        connection.expect('shell@')
+        connection.expect(['shell@', 'root@'])
         connection.sendline(self.config.soft_boot_cmd)
         # Looking for reboot messages or if they are missing, the U-Boot
         # message will also indicate the reboot is done.
@@ -833,7 +859,7 @@ class Target(object):
         logging.info('Perform hard reset on the system')
         connection.empty_buffer()
         connection.sendline('')
-        index = connection.expect(['shell@', pexpect.TIMEOUT], timeout=5)
+        index = connection.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
         if index == 0:
             logging.info('in normal shell console')
             self._display_usb_whaley(connection)
@@ -1411,6 +1437,25 @@ class Target(object):
             if self.config.device_type == 'mstar':
                 logging.info("burn mboot firstly for mstar 828 platform")
                 mboot_path = os.path.join(os.path.dirname(image), 'auto_update_mboot.txt')
+                logging.info('mboot path is: %s' % mboot_path)
+                connection.empty_buffer()
+                connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
+                connection.expect(self.config.bootloader_prompt)
+                connection.sendline('mstar %s' % mboot_path, send_char=self.config.send_char)
+                connection.expect(self.config.interrupt_boot_prompt, timeout=600)
+                for i in range(10):
+                    connection.sendline('')
+                    time.sleep(0.06)
+                # << MStar >>#
+                connection.expect(self.config.bootloader_prompt)
+                # clear the buffer
+                logging.info('clear connection buffer')
+                connection.empty_buffer()
+                connection.sendcontrol('c')
+                connection.expect(self.config.bootloader_prompt)
+            elif self.config.device_type == 'mstar-938':
+                logging.info("burn mboot firstly for mstar 938 platform")
+                mboot_path = os.path.join(os.path.dirname(image), 'scripts', '[[mboot')
                 logging.info('mboot path is: %s' % mboot_path)
                 connection.empty_buffer()
                 connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
