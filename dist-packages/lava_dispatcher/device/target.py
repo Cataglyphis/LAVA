@@ -973,7 +973,7 @@ class Target(object):
                 self._burn_factory_hisi_emmc(connection)
                 connection.empty_buffer()
                 # 1/2/3, ...
-                model_index = re.search(r'factory_(\d)\.txt', factory).group(1)
+                model_index = re.search(r'factory_(\d+)\.txt', factory).group(1)
                 # write panel index to deviceinfo
                 # connection.sendline('panel_index write %s' % model_index, send_char=self.config.send_char)
                 # connection.expect(self.config.bootloader_prompt)
@@ -1346,7 +1346,9 @@ class Target(object):
 
     def _burn_mboot_script_828_emmc(self, connection):
         logging.info("[EMMC MSTAR 828] wait for android booted")
-        connection.expect('start test', timeout=self.config.image_boot_msg_timeout)
+        index = connection.expect(['start test', 'TVOS'], timeout=self.config.image_boot_msg_timeout)
+        if index == 1:
+            time.sleep(200)
         self._hard_reboot(connection)
         connection.expect(self.config.bootloader_prompt, timeout=30)
         # clear the buffer
