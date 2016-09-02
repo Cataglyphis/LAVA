@@ -1281,7 +1281,7 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=100)
         connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
         index = connection.expect([self.config.bootloader_prompt, pexpect.TIMEOUT], timeout=600)
-        if index == 1:
+        if index == 0:
             connection.sendline('reset', send_char=self.config.send_char)
         else:
             logging.warning('can not burn 828 factory in 10 minutes, try again')
@@ -1304,6 +1304,7 @@ class Target(object):
             connection.expect(self.config.bootloader_prompt, timeout=100)
             connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt, timeout=600)
+            connection.sendline('reset', send_char=self.config.send_char)
         logging.info('end of burn 828 factory')
 
     def _burn_factory_hisi(self, connection):
