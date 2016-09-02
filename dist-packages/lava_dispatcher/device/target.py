@@ -454,7 +454,7 @@ class Target(object):
         connection.sendline('input keyevent 21', send_char=self.config.send_char)
         time.sleep(5)
         connection.empty_buffer()
-        connection.sendline('uiautomator runtest TvUiTools.jar -c com.whaley.cases.helios.viplogin.testcases.AutoLoginTestCase#testAutoLogin', send_char=self.config.send_char)
+        connection.sendline('uiautomator runtest TvUiTools.jar -c com.whaley.viplogin.testcases.AutoLoginTestCase#testAutoLogin', send_char=self.config.send_char)
         connection.expect(['shell@', 'root@', pexpect.TIMEOUT])
         logging.info('back to home page')
         connection.sendline('input keyevent 3', send_char=self.config.send_char)
@@ -1381,6 +1381,10 @@ class Target(object):
 
     def _wipe_data_828_emmc(self, connection):
         logging.info("[EMMC MSTAR 828] wipe data partition")
+        connection.sendline('setenv db_table 0')
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('saveenv')
+        connection.expect(self.config.bootloader_prompt)
         connection.sendline('recovery_wipe_partition data', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=30)
         connection.sendline('reset', send_char=self.config.send_char)
