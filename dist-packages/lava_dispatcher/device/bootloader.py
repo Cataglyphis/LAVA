@@ -182,9 +182,12 @@ class BootloaderTarget(MasterImageTarget):
             elif self.config.device_type == 'hisi':
                 logging.info("Set deployment data to whaley hisi platform")
                 self.deployment_data = deployment_data.whaley_hisi
-            elif self.config.device_type == 'mstar-938':
-                logging.info("Set deployment data to whaley mstar 938 platform")
-                self.deployment_data = deployment_data.whaley_mstar_938
+            elif self.config.device_type == 'mstar-sphinx':
+                logging.info("Set deployment data to whaley mstar 938 sphinx platform")
+                self.deployment_data = deployment_data.whaley_mstar_sphinx
+            elif self.config.device_type == 'mstar-titan':
+                logging.info("Set deployment data to whaley mstar 938 titan platform")
+                self.deployment_data = deployment_data.whaley_mstar_titan
             else:
                 logging.warning("No deployment data, please have a check")
         logging.debug("Set bootloader type to u_boot in whaley platform")

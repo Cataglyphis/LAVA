@@ -88,9 +88,23 @@ whaley_mstar = deployment_data_dict({
     'lava_test_results_dir': "/data/local/tmp/lava-%s",
 })
 
-whaley_mstar_938 = deployment_data_dict({
+whaley_mstar_sphinx = deployment_data_dict({
     'TESTER_PS1': "root@sphinx:/ # ",
     'TESTER_PS1_PATTERN': "root@sphinx:/ # ",
+    'TESTER_PS1_INCLUDES_RC': False,
+    'boot_cmds': "boot_cmds",
+
+    # for lava-test-shell
+    'distro': "android",
+    'lava_test_sh_cmd': "/system/bin/sh",
+    'lava_test_dir': "/data/local/tmp/lava-%s",
+    'lava_test_results_part_attr': "data_part_android_org",
+    'lava_test_results_dir': "/data/local/tmp/lava-%s",
+})
+
+whaley_mstar_titan = deployment_data_dict({
+    'TESTER_PS1': "root@titan:/ # ",
+    'TESTER_PS1_PATTERN': "root@titan:/ # ",
     'TESTER_PS1_INCLUDES_RC': False,
     'boot_cmds': "boot_cmds",
 
