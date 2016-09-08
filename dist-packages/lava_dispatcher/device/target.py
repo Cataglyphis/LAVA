@@ -1184,6 +1184,16 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         logging.info("[EMMC MSTAR 828] clear connection buffer")
         connection.empty_buffer()
+        logging.info("[EMMC MSTAR 828] clean all env")
+        connection.sendline('cleanallenv')
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('setenv bootdelay 10')
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('saveenv')
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('reset')
+        connection.expect(self.config.interrupt_boot_prompt, timeout=60)
+        connection.empty_buffer()
         logging.info("[EMMC MSTAR 828] end of burn mboot")
 
     def _burn_fastboot_hisi_emmc(self, connection):
@@ -1348,6 +1358,11 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=100)
         connection.sendline('exec %s' % factory, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=600)
+        connection.empty_buffer()
+        connection.sendline('printenv')
+        connection.expect(self.config.bootloader_prompt, timeout=60)
+        connection.sendline('ufts list')
+        connection.expect(self.config.bootloader_prompt)
         logging.info('[EMMC HISI] end of burn hisi factory')
     
     def _del_db_hisi_emmc(self, connection):
@@ -1427,6 +1442,9 @@ class Target(object):
         connection.sendline('setenv macaddr 00:30:1B:BA:02:DB', send_char=self.config.send_char)
         connection.sendline('saveenv', send_char=self.config.send_char)
         connection.expect('done')
+        connection.empty_buffer()
+        connection.sendline('printenv')
+        connection.expect(self.config.bootloader_prompt, timeout=60)
         logging.info('clear connection buffer')
         connection.empty_buffer()
         connection.sendline('usb start 3', send_char=self.config.send_char)
