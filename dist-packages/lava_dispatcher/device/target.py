@@ -984,6 +984,7 @@ class Target(object):
                 connection.sendline('reboot', send_char=self.config.send_char)
                 logging.info("[EMMC HISI] reboot device to make spi parameter take effect")
                 time.sleep(60)
+                self._show_pq_hisi_emmc(connection)
                 connection.sendline('reboot r', send_char=self.config.send_char)
                 connection.expect('StartGUI', timeout=150)
                 time.sleep(15)
@@ -1385,6 +1386,11 @@ class Target(object):
         connection.expect('TV')
         connection.sendline('q')
         connection.expect('shell@')
+        self._show_pq_hisi_emmc(connection)
+        logging.info("[EMMC HISI] end of set panel index with spi")
+    
+    def _show_pq_hisi_emmc(self, connection):
+        logging.info("[EMMC HISI] show pq and factory files")
         connection.sendline('cat /proc/msp/pdm')
         connection.expect('shell@')
         connection.sendline('cat /proc/msp/pq')
@@ -1393,7 +1399,7 @@ class Target(object):
         connection.sendline('cat /factory/factory.prop')
         connection.sendline('cat /factory/model_index.ini')
         connection.empty_buffer()
-        logging.info("[EMMC HISI] end of set panel index with spi")
+        logging.info("[EMMC HISI] end of show pq and factory files")
 
     def _wipe_data_828_emmc(self, connection):
         logging.info("[EMMC MSTAR 828] wipe data partition")
