@@ -515,17 +515,18 @@ class BootloaderTarget(MasterImageTarget):
         logging.info("deploy_whaley_image parameters: %s" % params)
         image = params.get("image", "").split("/")
         data["device"]["image"] = image[0] + "/" + image[1]
-
-        if "tags" in self.context.job_data:  # use tags
-            data["device"]["platform"] = self.context.job_data.get("tags")[0]
-        else:  # use target to specify one device
-            data["device"]["platform"] = self.context.job_data.get("target")
+        
+        # get prop ro.build.product
+        self.proc.sendline('')
+        self.proc.empty_buffer()
+        self.proc.sendline('getprop ro.build.product')
+        self.proc.expect(['shell@', 'root@', pexpect.TIMEOUT])
+        buffer_before = self.proc.before.strip()
+        platform = buffer_before.split('\r\n')[-1]
+        data["device"]["platform"] = platform.capitalize()
+        
         data["device"]["job_id"] = int(job_id)
         data["mail"]["subject"] = data["mail"]["subject"] + " " + self.context.job_data.get("job_name")
-        # data["git"]["git_name"] = git_info["git_name"]
-        # data["git"]["git_revision"] = git_info["git_revision"]
-        # data["git"]["git_subject"] = git_info["git_subject"]
-        # data["git"]["git_author"] = git_info["git_author"]
         data["git"] = git_info
 
         # H01P55D-01.13.00-1616508-65_1255
