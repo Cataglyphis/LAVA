@@ -27,7 +27,7 @@ class cmd_whaley_test_shell(BaseAction):
             'branch': {'type': 'string', 'optional': True, 'default': 'master'},
             'revision': {'type': 'string', 'optional': True, 'default': ''},
             'testdef': {'type': 'string', 'optional': False},
-            'parameter': {'type': 'string', 'optional': False, 'default': ''}
+            'parameter': {'type': 'array', 'optional': False, 'items': {'type': 'string'}}
         },
         'additionalProperties': False,
     }
@@ -56,7 +56,7 @@ class cmd_whaley_test_shell(BaseAction):
         # script_path = '/tmp/xxx/android-automation/TAP/whaleyTAP.py'
         script_name = str(testdef).strip()
         script_path = os.path.join(gitdir, script_name)
-        script_param = str(parameter).strip()
+        script_param = parameter[0].strip()
         script_param_path = os.path.join(gitdir, script_param)
         logging.info('script path is: %s' % script_path)
 
@@ -67,13 +67,16 @@ class cmd_whaley_test_shell(BaseAction):
                 os.chmod(script_path, XMOD)
                 logging.info('run command in file: %s' % script_name)
                 logging.info('command parameter: %s' % case_json)
-                script = script_path + ' ' + case_json
+                if len(parameter) == 1:
+                    script = script_path + ' ' + case_json
+                else:
+                    script = script_path + ' ' + case_json + ' '.join(parameter[1:])
                 self.context.run_command(script)
             else:
                 os.chmod(script_path, XMOD)
                 logging.info('run command in file: %s' % script_name)
                 logging.info('script parameter: %s' % script_param)
-                script = script_path + ' ' + script_param
+                script = script_path + ' ' + ' '.join(parameter[:])
                 self.context.run_command(script)
         else:
             logging.error('invalid script parameter')
