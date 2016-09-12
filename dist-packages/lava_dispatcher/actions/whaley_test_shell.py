@@ -70,7 +70,7 @@ class cmd_whaley_test_shell(BaseAction):
                 if len(parameter) == 1:
                     script = script_path + ' ' + case_json
                 else:
-                    script = script_path + ' ' + case_json + ' '.join(parameter[1:])
+                    script = script_path + ' ' + case_json + ' ' + ' '.join(parameter[1:])
                 self.context.run_command(script)
             else:
                 os.chmod(script_path, XMOD)
