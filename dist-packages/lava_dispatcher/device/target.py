@@ -1459,7 +1459,6 @@ class Target(object):
         connection.sendline('mmc dd mmc2usb 3', send_char=self.config.send_char)
         connection.expect('Dump Block', timeout=self.config.image_boot_msg_timeout)
         time.sleep(10)
-        connection.sendline('reset')
         logging.info("[EMMC MSTAR 828] end of dump emmc to usb disk")
     
     def _dump_emmc_hisi_emmc(self, connection):
