@@ -1187,6 +1187,10 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('reset')
         connection.expect(self.config.interrupt_boot_prompt, timeout=60)
+        for i in range(10):
+            connection.sendline('')
+        # << MStar >>#
+        connection.expect(self.config.bootloader_prompt)
         connection.empty_buffer()
         logging.info("[EMMC MSTAR 828] end of burn mboot")
 
@@ -1250,6 +1254,8 @@ class Target(object):
         connection.sendline('busybox cat /factory/model_index.ini')
         time.sleep(2)
         connection.sendline('busybox cat /factory/panel_index.ini')
+        time.sleep(2)
+        connection.sendline('busybox cat /factory/factory.prop')
         time.sleep(2)
         connection.sendline('busybox reboot -f')
         connection.expect(self.config.interrupt_boot_prompt, timeout=100)
@@ -1442,6 +1448,8 @@ class Target(object):
         connection.sendline('saveenv', send_char=self.config.send_char)
         connection.expect('done')
         connection.empty_buffer()
+        connection.sendline('mmc erase.boot 2 0 512')
+        connection.expect(self.config.bootloader_prompt, timeout=60)
         connection.sendline('printenv')
         connection.expect(self.config.bootloader_prompt, timeout=60)
         logging.info('clear connection buffer')
