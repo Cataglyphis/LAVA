@@ -1189,7 +1189,7 @@ class Target(object):
         # clear connection buffer
         connection.empty_buffer()
         logging.info('[EMMC MSTAR] end of burn factory')
-    
+
     def _generate_factory_image(self):
         current = os.getcwd()
         logging.info('change workspace to /var/lib/lava/dispatch/tmp/factory')
@@ -1489,12 +1489,20 @@ class Target(object):
             # add set mac address in bootloader, 2016.04.19
             logging.info('burn normal image, not factory emmc image')
             self._set_macaddr_whaley(connection)
-            if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-938':
+            if 'mstar' in self.config.device_type:
                 logging.info('burn mboot firstly for mstar platform')
                 mboot_path = os.path.join(os.path.dirname(image), 'auto_update_mboot.txt')
                 logging.info('mboot path is: %s' % mboot_path)
                 connection.empty_buffer()
                 connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
+                connection.expect(self.config.bootloader_prompt)
+                if self.config.device_type == 'mstar':
+                    connection.sendline('setenv factory_poweron_mode direct', send_char=self.config.send_char)
+                    connection.expect(self.config.bootloader_prompt)
+                elif self.config.device_type == 'mstar-938':
+                    connection.sendline('ufts set fts.pwr.power_loss_restore alwayson', send_char=self.config.send_char)
+                    connection.expect(self.config.bootloader_prompt)
+                connection.sendline('saveenv', send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt)
                 connection.sendline('mstar %s' % mboot_path, send_char=self.config.send_char)
                 connection.expect(self.config.interrupt_boot_prompt, timeout=600)
@@ -1511,6 +1519,8 @@ class Target(object):
                 logging.info('fastboot path is: %s' % fastboot_path)
                 connection.empty_buffer()
                 connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
+                connection.expect(self.config.bootloader_prompt)
+                connection.sendline('ufts reset', send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt)
                 connection.sendline('exec %s' % fastboot_path, send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt, timeout=600)
