@@ -179,7 +179,7 @@ class NetworkCommandRunner(CommandRunner):
                "'inet addr' | busybox awk -F: '{split($2,a,\" \"); print \"<\" a[1] \">\"}'" %
                self._client.context.config.lava_server_ip)
         self.run(
-            cmd, [pattern1, pexpect.EOF, pexpect.TIMEOUT], timeout=300)
+            cmd, [pattern1, pexpect.EOF, pexpect.TIMEOUT], wait_prompt=False, timeout=300)
         if self.match_id != 0:
             msg = "Unable to determine target image IP address"
             logging.exception(msg)
@@ -198,13 +198,13 @@ class NetworkCommandRunner(CommandRunner):
         lava_server_ip = self._client.context.config.lava_server_ip
         # add below line to su the os
         # firstly return to /, otherwise su return shell@helios:xxx/ doesn't match ps1
-        self.run('export PS1="%s"' % self._prompt_ps1)
-        self.run('cd /')
-        self.run('su')
+        # self.run('export PS1="%s"' % self._prompt_ps1)
+        self.run('cd /', wait_prompt=False)
+        self.run('su', wait_prompt=False)
         self.run(
             "LC_ALL=C ping -W4 -c1 %s" % lava_server_ip,
             ["1 received|1 packets received", "0 received|0 packets received", "Network is unreachable"],
-            timeout=60, failok=True)
+            timeout=60, wait_prompt=False, failok=True)
         if self.match_id == 0:
             return True
         else:
@@ -412,11 +412,13 @@ class LavaClient(object):
         self.vm_group = VmGroupHandler(self)
 
     ############################################################
-    # created by Wang Bo (wang.bo@whaley.cn), 2016.01.21
+    # created by Wang Bo (wang.bo@whaley.cn), 2016.09.18
     # call lava_dispatcher.device.bootloader: deploy_whaley_image
     ############################################################
-    def deploy_whaley_image(self, image, factory, image_server_ip, bootloadertype):
-        self.target_device.deploy_whaley_image(image, factory, image_server_ip, bootloadertype)
+    def deploy_whaley_image(self, image, factory, image_server_ip, bootloadertype, project_name,
+                            model_index, product_name, yun_os):
+        self.target_device.deploy_whaley_image(image, factory, image_server_ip, bootloadertype,
+                                               project_name, model_index, product_name, yun_os)
 
     def deploy_linaro_android(self, images, rootfstype,
                               bootloadertype, target_type):
@@ -571,12 +573,12 @@ class LavaClient(object):
         """
         Reboot the system to the test image
         """
-        logging.info("Start to boot whaley image")
+        logging.info('start to boot whaley image')
         boot_attempts = self.config.boot_retries
         attempts = 0
         in_whaley_image = False
         while (attempts < boot_attempts) and (not in_whaley_image):
-            logging.info("Booting the test image. Attempt: %d", attempts + 1)
+            logging.info('booting the test image. attempt: %d', attempts + 1)
 
             self.vm_group.wait_for_vms()
 
@@ -587,7 +589,7 @@ class LavaClient(object):
                 attempts += 1
                 continue
 
-            logging.info("System is in whaley image now, deploy and boot image successfully")
+            logging.info('system is in whaley image now, deploy and boot image successfully')
             # don't need add result here, since job.py will add it finally
             # comment at 2016.02.17
             # self.context.test_data.add_result('boot_whaley_image', 'pass')
@@ -595,7 +597,7 @@ class LavaClient(object):
             in_whaley_image = True
 
         if not in_whaley_image:
-            msg = "Test Image Error: Could not get whaley image booted properly"
+            msg = 'Test Image Error: Could not get whaley image booted properly'
             logging.error(msg)
             self.context.test_data.add_result('boot_whaley_image', 'fail')
             raise CriticalError(msg)

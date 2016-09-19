@@ -168,36 +168,27 @@ class BootloaderTarget(MasterImageTarget):
             raise CriticalError("Unknown bootloader type")
 
     ############################################################
-    # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.21
+    # modified by Wang Bo (wang.bo@whaley.cn), 2016.09.18
     # add function deploy_whaley_image in class BootloaderTarget
     ############################################################
 
-    def deploy_whaley_image(self, image, factory, image_server_ip, bootloadertype):
+    def deploy_whaley_image(self, image, factory, image_server_ip, bootloadertype, project_name,
+                            model_index, product_name, yun_os):
         if self.__deployment_data__ is None:
-            # Get deployment data
-            logging.debug("Attempting to set deployment data")
-            if self.config.device_type == 'mstar':
-                logging.info("Set deployment data to whaley mstar platform")
-                self.deployment_data = deployment_data.whaley_mstar
-            elif self.config.device_type == 'hisi':
-                logging.info("Set deployment data to whaley hisi platform")
-                self.deployment_data = deployment_data.whaley_hisi
-            elif self.config.device_type == 'mstar-sphinx':
-                logging.info("Set deployment data to whaley mstar 938 sphinx platform")
-                self.deployment_data = deployment_data.whaley_mstar_sphinx
-            elif self.config.device_type == 'mstar-titan':
-                logging.info("Set deployment data to whaley mstar 938 titan platform")
-                self.deployment_data = deployment_data.whaley_mstar_titan
-            else:
-                logging.warning("No deployment data, please have a check")
-        logging.debug("Set bootloader type to u_boot in whaley platform")
-
+            logging.debug('attempt to set deployment data')
+            logging.warning('no need to set deployment data for whaley platform')
+        
+        logging.info('image: %s, factory: %s, image_server_ip: %s' % (image, factory, image_server_ip))
+        logging.info('project_name: %s, model_index: %s, product_name: %s, yun_os: %s' % (project_name, model_index,
+                                                                                          product_name, yun_os))
+        logging.debug('set bootloader type to u_boot in whaley platform')
+        
         self._set_boot_type(bootloadertype)
         self._default_boot_cmds = 'boot_cmds'
+        
         if self._is_uboot():
             self._boot_tags['{IMAGE}'] = image
             self._boot_tags['{IMAGE_SERVER_IP}'] = image_server_ip
-            logging.info("Set {IMAGE} to %s, and {IMAGE_SERVER_IP} to %s" % (image, image_server_ip))
 
     def deploy_linaro_kernel(self, kernel, ramdisk, dtb, overlays, rootfs, nfsrootfs, image, bootloader, firmware,
                              bl0, bl1, bl2, bl31, rootfstype, bootloadertype, target_type, qemu_pflash=None):
@@ -351,7 +342,7 @@ class BootloaderTarget(MasterImageTarget):
         boot_cmds = self._load_boot_cmds(default=self._default_boot_cmds,
                                          boot_tags=self._boot_tags)
         # Sometimes a command must be run to clear u-boot console buffer
-        logging.info("boot cmds: %s", boot_cmds)
+        logging.info('boot cmds: %s', boot_cmds)
         if self.config.pre_boot_cmd:
             self.proc.sendline(self.config.pre_boot_cmd,
                                send_char=self.config.send_char)
@@ -380,11 +371,12 @@ class BootloaderTarget(MasterImageTarget):
                 self._soft_reboot(self.proc)
                 self._run_boot()
             self._booted = True
-        # bootloader and booted, 2016.01.21
+        # bootloader and booted, 2016.09.18
         elif self._is_bootloader() and self._booted:
-            self.proc.sendline('export PS1="%s"'
-                               % self.tester_ps1,
-                               send_char=self.config.send_char)
+            logging.info('already booted, try to run whaley_test_shell')
+            # self.proc.sendline('export PS1="%s"'
+            #                    % self.tester_ps1,
+            #                    send_char=self.config.send_char)
         else:
             super(BootloaderTarget, self)._boot_linaro_image()
 
@@ -434,16 +426,29 @@ class BootloaderTarget(MasterImageTarget):
 
     # modify at 2016.07.18
     def whaley_file_system(self, path, git_info):
-        logging.info("get the target device socat command, ip address and pdu port")
+        logging.info('get the target device socat command, ip address and pdu port')
         # socat command
         connection_command = self.config.connection_command
 
         ##############################################
         # get device ip address info
         ##############################################
-        pat = self.tester_ps1_pattern
-        incrc = self.tester_ps1_includes_rc
-        runner = NetworkCommandRunner(self, pat, incrc)
+        # pat = self.tester_ps1_pattern
+        # incrc = self.tester_ps1_includes_rc
+        
+        self.proc.empty_buffer()
+        self.proc.sendline('')
+        self.proc.empty_buffer()
+        if self.config.bootloader_prompt in self.proc.after:
+            logging.warning('now in mboot/fastboot interface, try to reset')
+            self.proc.sendline('reset')
+            raise CriticalError('in mboot/fastboot interface, not in common shell console')
+        if '/ #' in self.proc.after:
+            logging.warning('now in recovery mode, try to reboot')
+            self.proc.sendline('busybox reboot -f')
+            raise CriticalError('in recovery mode, not in common shell console')
+        
+        runner = NetworkCommandRunner(self)
         ip = ''
         for i in range(3):
             try:
@@ -460,7 +465,7 @@ class BootloaderTarget(MasterImageTarget):
                 self._skip_guide_whaley(self.proc)
 
         if not ip:
-            raise CriticalError("Network error detected..aborting")
+            raise CriticalError('Network error detected..aborting')
 
         ##############################################
         # get the pdu port info
@@ -480,41 +485,41 @@ class BootloaderTarget(MasterImageTarget):
                 pdu = pdu_ip + ':' + pdu_port
             else:
                 pdu = ''
-        logging.info("PDU port number is: %s" % pdu)
+        logging.info('PDU port number is: %s' % pdu)
 
         ##############################################
         # get current job id
         ##############################################
         output_dir = self.context.output.output_dir
         if output_dir:
-            logging.info("current job output directory: %s" % output_dir)
+            logging.info('current job output directory: %s' % output_dir)
             job_id = output_dir.strip().split('/')[-1]
             job_id = job_id.split('-')[-1]
         else:
-            job_id = "0"
+            job_id = '0'
 
         ##############################################
         # dump info to plan.json
         ###############################e###############
         if os.path.isfile(path):
-            with open(path, "r") as fin:
+            with open(path, 'r') as fin:
                 data = json.load(fin)
         else:
-            logging.error("no json file found")
+            logging.error('no json file found')
             raise
 
-        data["device"]["target"] = str(ip) + ":5555"
-        data["device"]["socat"] = connection_command
-        data["device"]["pdu"] = str(pdu)
+        data['device']['target'] = str(ip) + ':5555'
+        data['device']['socat'] = connection_command
+        data['device']['pdu'] = str(pdu)
 
         job_data = self.context.job_data
         params = {}
         for cmd in job_data['actions']:
             if cmd.get('command') == 'deploy_whaley_image':
                 params = cmd.get('parameters', {})
-        logging.info("deploy_whaley_image parameters: %s" % params)
-        image = params.get("image", "").split("/")
-        data["device"]["image"] = image[0] + "/" + image[1]
+        logging.info('deploy_whaley_image parameters: %s' % params)
+        image = params.get('image', '').split('/')
+        data['device']['image'] = image[0] + '/' + image[1]
         
         # get prop ro.build.product
         self.proc.sendline('')
@@ -523,29 +528,29 @@ class BootloaderTarget(MasterImageTarget):
         self.proc.expect(['shell@', 'root@', pexpect.TIMEOUT])
         buffer_before = self.proc.before.strip()
         platform = buffer_before.split('\r\n')[-1]
-        data["device"]["platform"] = platform.capitalize()
+        data['device']['platform'] = platform.capitalize()
         
-        data["device"]["job_id"] = int(job_id)
-        data["mail"]["subject"] = data["mail"]["subject"] + " " + self.context.job_data.get("job_name")
-        data["git"] = git_info
+        data['device']['job_id'] = int(job_id)
+        data['mail']['subject'] = data['mail']['subject'] + ' ' + self.context.job_data.get('job_name')
+        data['git'] = git_info
 
         # H01P55D-01.13.00-1616508-65_1255
-        result = self.context.job_data.get("job_name") + "_" + job_id
-        result_dir = os.path.join("/result", result)
+        result = self.context.job_data.get('job_name') + '_' + job_id
+        result_dir = os.path.join('/result', result)
         os.makedirs(result_dir)
         if os.path.isdir(result_dir):
-            logging.info("makedirs %s successfully" % result_dir)
+            logging.info('makedirs %s successfully' % result_dir)
         else:
             logging.warning("can't makedirs %s, try again" % result_dir)
             os.makedirs(result_dir)
 
-        case_json = os.path.join(result_dir, "plan.json")
+        case_json = os.path.join(result_dir, 'plan.json')
 
-        with open(case_json, "w") as fout:
-            logging.info("write lava to json file %s" % case_json)
-            json.dump(data, fout, indent=4)
+        with open(case_json, 'w') as fout:
+            logging.info('write data to json file %s' % case_json)
+            json.dump(data, fout, indent=2)
 
-        logging.warning("disconnect the serial connection, try to run the script")
+        logging.warning('disconnect the serial connection, try to run the script')
         if self.config.connection_command_terminate:
             self.proc.sendline(self.config.connection_command_terminate)
         finalize_process(self.proc)
@@ -556,7 +561,7 @@ class BootloaderTarget(MasterImageTarget):
     # modify at 2016.05.25
     def reconnect_serial(self):
         if not self.proc:
-            logging.info("reconnect the serial connection")
+            logging.info('reconnect the serial connection')
             self.proc = connect_to_serial(self.context)
             self.context.client.proc = self.proc
             # install busybox, close shutdown again
@@ -564,23 +569,21 @@ class BootloaderTarget(MasterImageTarget):
             self._close_shutdown_whaley(self.proc)
             self.proc.empty_buffer()
         else:
-            logging.info("no need to reconnect the serial connection")
+            logging.info('no need to reconnect the serial connection')
 
     # add in 2016.02.17
     # override
     def get_device_version(self):
         logging.info('get device version, ro.build.version.rom')
         self.proc.sendcontrol('c')
-        self.proc.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
         # empty the buffer
         self.proc.empty_buffer()
-        # self.proc.sendline('getprop ro.helios.version')
         self.proc.sendline('getprop ro.build.version.rom')
-        self.proc.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=2)
-        # 'getprop ro.helios.version\r\r\n01.07.01\r\n'
+        self.proc.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
+        # 'getprop ro.build.version.rom\r\r\n01.07.01\r\n'
         # 01.07.01
         try:
-            device_version = self.proc.before.strip().split('\n')[1].strip()
+            device_version = self.proc.before.strip().split('\r\n')[-1].strip()
         except:
             device_version = '0.0.0'
         return device_version

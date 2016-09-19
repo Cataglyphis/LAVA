@@ -385,7 +385,7 @@ class Target(object):
     def _skip_guide_whaley(self, connection):
         pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", "com.whaley.tv.tvplayer.ui", pexpect.TIMEOUT]
         for i in range(10):
-            logging.info("try to skip the guide. Attempt: %s" % str(i+1))
+            logging.info('try to skip the guide. attempt: %s' % str(i+1))
             connection.empty_buffer()
             connection.sendcontrol('c')
             connection.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=20)
@@ -396,7 +396,7 @@ class Target(object):
                 time.sleep(100)
                 continue
             elif pos1 == 1:
-                logging.info("now in com.helios.guide activity")
+                logging.info('now in com.helios.guide activity')
                 time.sleep(80)
                 connection.sendcontrol('c')
                 connection.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
@@ -406,22 +406,22 @@ class Target(object):
                 connection.sendline('dumpsys window | grep mFocusedApp', send_char=self.config.send_char)
                 pos2 = connection.expect(pattern, timeout=10)
                 if pos2 == 2:
-                    logging.info("now in com.helios.launcher activity, skip the guide successfully")
+                    logging.info('now in com.helios.launcher activity, skip the guide successfully')
                     break
                 else:
                     logging.info("can't skip the guide, try it again")
             elif pos1 == 2:
-                logging.info("already in com.helios.launch activity")
+                logging.info('already in com.helios.launch activity')
                 break
             elif pos1 == 3:
-                logging.info("already in com.whaley.tv.tvplayer.ui activity")
+                logging.info('already in com.whaley.tv.tvplayer.ui activity')
                 break
             else:
                 time.sleep(100)
                 continue
         else:
             logging.error("can't skip the guide, please have a check")
-            self.context.test_data.add_result("skip_guide_whaley", "fail")
+            self.context.test_data.add_result('skip_guide_whaley', 'fail')
 
     # install busybox in /system/xbin
     def _install_busybox_whaley(self, connection):
@@ -509,45 +509,25 @@ class Target(object):
     def _burn_su_image(self, connection):
         connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
         logging.info('current deploy image is Release version, should enable console and su')
-        if self.config.device_type == 'mstar':
+        if 'mstar' in self.config.device_type:  # mstar/mstar-938
             for i in range(10):
                 connection.sendline('')
             # << MStar >>#
             connection.expect(self.config.bootloader_prompt)
             # clear connection buffer
-            logging.info('clear connection buffer')
             connection.empty_buffer()
-            connection.sendcontrol('c')
-            connection.expect(self.config.bootloader_prompt)
             # burn su image
-            logging.info("use 172.16.10.41 for su image, and burun su.img to tvinfo")
+            logging.info('use 172.16.10.41 for su image, and burun su.img to tvinfo')
             connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('estart')
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('dhcp')
             connection.expect(self.config.bootloader_prompt, timeout=100)
-            connection.sendline('mstar su/mstar', send_char=self.config.send_char)
-            connection.expect(self.config.bootloader_prompt, timeout=600)
-        elif self.config.device_type == 'mstar-sphinx' or self.config.device_type == 'mstar-titan':
-            for i in range(10):
-                connection.sendline('')
-            # << MStar >>#
-            connection.expect(self.config.bootloader_prompt)
-            # clear connection buffer
-            logging.info('clear connection buffer')
-            connection.empty_buffer()
-            connection.sendcontrol('c')
-            connection.expect(self.config.bootloader_prompt)
-            # burn su image
-            logging.info("use 172.16.10.41 for su image, and burun su.img to tvinfo")
-            connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
-            connection.expect(self.config.bootloader_prompt)
-            connection.sendline('estart')
-            connection.expect(self.config.bootloader_prompt)
-            connection.sendline('dhcp')
-            connection.expect(self.config.bootloader_prompt, timeout=100)
-            connection.sendline('mstar su/mstar_938', send_char=self.config.send_char)
+            if self.config.device_type == 'mstar':
+                connection.sendline('mstar su/mstar', send_char=self.config.send_char)
+            elif self.config.device_type == 'mstar-938':
+                connection.sendline('mstar su/mstar_938', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt, timeout=600)
         elif self.config.device_type == 'hisi':
             try:
@@ -555,6 +535,7 @@ class Target(object):
                     self.context.run_command(self.config.power_off_cmd)
                     time.sleep(20)
                     self.context.run_command(self.config.power_on_cmd)
+                    connection.expect(self.config.interrupt_boot_prompt, timeout=20)
                     for i in range(50):
                         connection.sendline('')
                         time.sleep(0.1)
@@ -567,29 +548,24 @@ class Target(object):
                 msg = 'Infrastructure Error: failed to enter the bootloader.'
                 logging.error(msg)
                 raise
-            logging.info('clear connection buffer')
+            # clear connection buffer
             connection.empty_buffer()
-            connection.sendcontrol('c')
-            connection.expect(self.config.bootloader_prompt)
             # burn su.ext4.gz image
-            logging.info("use 172.16.10.41 for su image, and burun su.ext4.gz to tvinfo")
+            logging.info("use 172.16.10.41 for su image, and buru su.ext4.gz to tvinfo")
             connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('exec su/hisi', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt, timeout=600)
         else:
             logging.warning('no device type mstar or hisi found')
-        logging.info('end of burn su.img or su.ext4.gz to tvinfo')
+        logging.info('end of burn su image to tvinfo')
 
     # enter recovery mode
     def _enter_recovery_whaley(self, connection):
         logging.info('enter recovery mode')
-        logging.info('clear connection buffer')
+        # clear connection buffer
         connection.empty_buffer()
-        connection.sendcontrol('c')
-        connection.expect(self.config.bootloader_prompt)
-        if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-sphinx' \
-                or self.config.device_type == 'mstar-titan':
+        if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-938':
             connection.sendline('ac androidboot.debuggable 1', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('recovery', send_char=self.config.send_char)
@@ -610,6 +586,7 @@ class Target(object):
             time.sleep(15)
         else:
             logging.warning('no device type mstar or hisi found')
+        connection.empty_buffer()
         logging.info('end of enter recovery mode')
 
     # su device in recovery mode
@@ -619,8 +596,7 @@ class Target(object):
         connection.expect('/ #')
         connection.sendline('busybox --install /sbin', send_char=self.config.send_char)
         connection.sendline('busybox mkdir /tmp/disk', send_char=self.config.send_char)
-        if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-sphinx' \
-                or self.config.device_type == 'mstar-titan':
+        if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-938':
             tvinfo = '/dev/block/platform/mstar_mci.0/by-name/tvinfo'
             connection.sendline('busybox mount %s /tmp/disk' % tvinfo, send_char=self.config.send_char)
         elif self.config.device_type == 'hisi':
@@ -641,31 +617,29 @@ class Target(object):
     # get current device mac address
     def _get_macaddr_whaley(self):
         mac_addr = self.config.macaddr
-        logging.info("mac address: %s" % mac_addr)
+        logging.info('mac address: %s' % mac_addr)
         return mac_addr
 
     # get current device sn
     def _get_sn_whaley(self):
         sn = self.config.sn
-        logging.info("sn: %s" % sn)
+        logging.info('sn: %s' % sn)
         return sn
 
     # set mac address in bootloader
     def _set_macaddr_whaley(self, connection):
-        logging.info("set mac address and bootdelay in bootloader")
+        logging.info('set mac address and bootdelay in bootloader')
         mac_addr = self._get_macaddr_whaley()
         # device_type = self.context.job_data['device_type']
         # if we define target parameter in job json, no job_data['device_type'] found
         # use self.config.device_type to replace job_data['device_type']
         device_type = self.config.device_type
-        if device_type == 'mstar' or device_type == 'mstar-sphinx' \
-                or device_type == 'mstar-titan':
+        if device_type == 'mstar' or device_type == 'mstar-938':
             connection.sendline('setenv ethaddr %s' % mac_addr, send_char=self.config.send_char)
             connection.sendline('setenv macaddr %s' % mac_addr, send_char=self.config.send_char)
             connection.sendline('setenv bootdelay 10', send_char=self.config.send_char)
             connection.sendline('saveenv', send_char=self.config.send_char)
             connection.expect('done')
-            logging.info('clear connection buffer')
             connection.empty_buffer()
         elif device_type == 'hisi':
             connection.sendline('setenv ethaddr %s' % mac_addr, send_char=self.config.send_char)
@@ -823,34 +797,27 @@ class Target(object):
     # to match the whaley platform
     ############################################################
     def _soft_reboot(self, connection):
-        logging.info('Perform soft reboot the system')
+        logging.info('perform soft reboot the system')
         # Try to C-c the running process, if any.
         connection.empty_buffer()
         connection.sendcontrol('c')
         connection.expect(['shell@', 'root@'])
         connection.sendline(self.config.soft_boot_cmd)
-        # Looking for reboot messages or if they are missing, the U-Boot
-        # message will also indicate the reboot is done.
-        # patterns = [pexpect.TIMEOUT, 'Restarting system',
-        #             'The system is going down for reboot NOW',
-        #             'Will now restart', 'U-Boot']
-        # # change timeout from 120 to 5
-        # match_id = connection.expect(patterns, timeout=5)
-        # logging.info('Matched %s', patterns[match_id])
-        # if match_id == 0:
-        #     raise OperationFailed("Soft reboot failed")
-        connection.expect(self.config.interrupt_boot_prompt, timeout=20)
+        if self.config.device_type == 'hisi':  # hisi platform
+            connection.expect(self.config.interrupt_boot_prompt, timeout=20)
+        else:  # mstar platform, mstar/mstar-938
+            connection.expect('U-Boot', timeout=20)
         for i in range(100):
             connection.sendline('')
             time.sleep(0.06)
 
     def _hard_reboot(self, connection):
-        logging.info('Perform hard reset on the system')
+        logging.info('perform hard reset on the system')
         connection.empty_buffer()
         connection.sendline('')
         index = connection.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
         if index == 0:
-            logging.info('in normal shell console')
+            logging.info('in normal shell console, try to display usb info')
             self._display_usb_whaley(connection)
         else:
             logging.info('not in normal shell console, skip display usb info')
@@ -861,7 +828,11 @@ class Target(object):
             self.context.run_command(self.config.power_off_cmd)
             time.sleep(20)
             self.context.run_command(self.config.power_on_cmd)
-            connection.expect(self.config.interrupt_boot_prompt, timeout=20)
+            if self.config.device_type == 'hisi':  # hisi platform
+                connection.expect(self.config.interrupt_boot_prompt, timeout=20)
+            else:  # mstar platform, mstar/mstar-938
+                connection.expect('U-Boot', timeout=20)
+
             for i in range(100):
                 connection.sendline('')
                 time.sleep(0.06)
@@ -871,18 +842,8 @@ class Target(object):
     def _enter_bootloader(self, connection):
         try:
             start = time.time()
-            # expect Hit any key to stop autoboot
-            # connection.expect(self.config.interrupt_boot_prompt,
-            #                   timeout=self.config.bootloader_timeout)
-            # if self.config.interrupt_boot_control_character:
-            #     connection.sendcontrol(self.config.interrupt_boot_control_character)
-            # else:
-            #     connection.send(self.config.interrupt_boot_command, delay=50)
-            #     connection.sendcontrol('c')
-            # add below line, 2016.01.21
+            # add below line, 2016.09.18
             connection.expect(self.config.bootloader_prompt, timeout=self.config.bootloader_timeout)
-            # clear connection buffer
-            logging.info("clear connection buffer")
             connection.empty_buffer()
             # Record the time it takes to enter the bootloader.
             enter_bootloader_time = '{0:.2f}'.format(time.time() - start)
@@ -927,27 +888,23 @@ class Target(object):
         emmc = self.boot_params.get('emmc', False)
 
         if not skip and emmc:  # skip=False, emmc=True
-            if self.config.device_type == 'mstar':
-                logging.info("[EMMC MSTAR 828] wait for end of auto_update_factory.txt")
+            if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-938':
+                logging.info('[EMMC MSTAR] wait for end of auto_update_factory.txt')
                 # timeout = 3600s
                 connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
                 for i in range(10):
                     connection.sendline('')
                 connection.expect(self.config.bootloader_prompt)
                 # clear connection buffer
-                logging.info('clear connection buffer')
                 connection.empty_buffer()
-                connection.sendcontrol('c')
-                # << MStar >>#
-                connection.expect(self.config.bootloader_prompt)
-                self._burn_factory_828_emmc(connection)
-                self._show_factory_828_emmc(connection)
-                self._wipe_data_828_emmc(connection)
-                self._burn_mboot_script_828_emmc(connection)
-                self._dump_emmc_828_emmc(connection)
+                self._burn_factory_mstar_emmc(connection)
+                self._show_factory_mstar_emmc(connection)
+                self._wipe_data_mstar_emmc(connection)
+                self._burn_mboot_script_mstar_emmc(connection)
+                self._dump_emmc_mstar_emmc(connection)
                 return
             elif self.config.device_type == 'hisi':
-                logging.info("[EMMC HISI] wait for end of auto.txt or auto_factory.txt")
+                logging.info('[EMMC HISI] wait for end of auto.txt')
                 logging.info('clear connection buffer')
                 connection.empty_buffer()
                 # apollo#
@@ -975,7 +932,7 @@ class Target(object):
                 self._del_db_hisi_emmc(connection)
                 self._set_spi_hisi_emmc(connection, model_index)
                 connection.sendline('reboot', send_char=self.config.send_char)
-                logging.info("[EMMC HISI] reboot device to make spi parameter take effect")
+                logging.info('[EMMC HISI] reboot device to make spi parameter take effect')
                 time.sleep(60)
                 self._show_pq_hisi_emmc(connection)
                 connection.sendline('reboot r', send_char=self.config.send_char)
@@ -983,15 +940,14 @@ class Target(object):
                 time.sleep(15)
                 self._dump_emmc_hisi_emmc(connection)
                 return
-            else:
-                logging.warning("[EMMC MSTAR 828] only support mstar 828 platform now")
         else:  # skip=False, emmc=False
             # burn factory image
-            if self.config.device_type == 'mstar' and factory:
-                self._burn_factory_828(connection)
+            if factory:
+                if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-938':
+                    self._burn_factory_mstar(connection)
             
-            if self.config.device_type == 'hisi' and factory:
-                self._burn_factory_hisi(connection)
+                if self.config.device_type == 'hisi':
+                    self._burn_factory_hisi(connection)
 
             if 'R' in image and not skip:
                 self._burn_su_image(connection)
@@ -1090,7 +1046,7 @@ class Target(object):
             # set factory info, mac addr, sn
             self._set_factory_whaley(connection)
             # set logctl
-            self._set_logctl_whlay(connection)
+            # self._set_logctl_whlay(connection)
             # display usb info
             self._display_usb_whaley(connection)
             # reboot device
@@ -1148,39 +1104,37 @@ class Target(object):
             logging.info("Kernel boot time: %s seconds" % kernel_boot_time)
             logging.info("Userspace boot time: %s seconds" % userspace_boot_time)
 
-    def _burn_mboot_828_emmc(self, connection):
+    def _burn_mboot_mstar_emmc(self, connection):
         image = self.image_params.get('image', '')
         image_server_ip = self.image_params.get('image_server_ip', '')
-        logging.info("[EMMC MSTAR 828] burn mboot through tftp with auto_update_mboot.txt")
-        mboot_txt = os.path.join(os.path.split(image)[0], 'auto_update_mboot.txt')
-        logging.info("[EMMC MSTAR 828] path of auto_update_mboot.txt: %s" % mboot_txt)
+        logging.info('[EMMC MSTAR] burn mboot through tftp with auto_update_mboot.txt')
+        mboot_txt = os.path.join(os.path.dirname(image), 'auto_update_mboot.txt')
+        logging.info('[EMMC MSTAR] path of auto_update_mboot.txt: %s' % mboot_txt)
         connection.sendline('setenv bootdelay 10', send_char=self.config.send_char)
         connection.sendline('setenv macaddr', send_char=self.config.send_char)
         connection.sendline('setenv ethaddr', send_char=self.config.send_char)
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.sendline('saveenv', send_char=self.config.send_char)
         connection.expect('done')
-        logging.info('clear connection buffer')
         connection.empty_buffer()
-        connection.sendcontrol('c')
-        connection.expect(self.config.bootloader_prompt)
         connection.sendline('estart', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=20)
         connection.sendline('dhcp', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=20)
-        connection.sendcontrol('c')
-        connection.expect(self.config.bootloader_prompt)
         connection.sendline('mstar %s' % mboot_txt, send_char=self.config.send_char)
         connection.expect(self.config.interrupt_boot_prompt, timeout=300)
         for i in range(10):
             connection.sendline('')
         # << MStar >>#
         connection.expect(self.config.bootloader_prompt)
-        logging.info("[EMMC MSTAR 828] clear connection buffer")
+        logging.info('[EMMC MSTAR] clear connection buffer')
         connection.empty_buffer()
-        logging.info("[EMMC MSTAR 828] clean all env")
+        logging.info('[EMMC MSTAR] clean all env for mstar platfrom')
         connection.sendline('cleanallenv')
         connection.expect(self.config.bootloader_prompt)
+        if self.config.device_type == 'mstar-938':
+            connection.sendline('ufts reset')
+            connection.expect(self.config.bootloader_prompt)
         connection.sendline('setenv bootdelay 10')
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('saveenv')
@@ -1192,12 +1146,12 @@ class Target(object):
         # << MStar >>#
         connection.expect(self.config.bootloader_prompt)
         connection.empty_buffer()
-        logging.info("[EMMC MSTAR 828] end of burn mboot")
+        logging.info('[EMMC MSTAR] end of burn mboot')
 
     def _burn_fastboot_hisi_emmc(self, connection):
         image = self.image_params.get('image', '')
         image_server_ip = self.image_params.get('image_server_ip', '')
-        logging.info("[EMMC HISI] burn fastboot through tftp with factory.txt")
+        logging.info('[EMMC HISI] burn fastboot through tftp with factory.txt')
         fastboot_path = os.path.join(os.path.dirname(image), 'fastboot.txt')
         logging.info('fastboot path is: %s' % fastboot_path)
         connection.empty_buffer()
@@ -1217,15 +1171,13 @@ class Target(object):
         connection.sendline('setenv ethaddr %s' % mac_addr, send_char=self.config.send_char)
         logging.info('clear connection buffer')
         connection.empty_buffer()
-        logging.info("[EMMC HISI] end of burn fastboot")
+        logging.info('[EMMC HISI] end of burn fastboot')
 
-    def _burn_factory_828_emmc(self, connection):
-        factory = self.image_params.get('factory', '')
-        image_server_ip = self.image_params.get('image_server_ip', '')
-        logging.info("[EMMC MSTAR 828] burn factory through tftp")
-        logging.info("[EMMC MSTAR 828] path of factory image: %s" % factory)
-        # connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
-        connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
+    def _burn_factory_mstar_emmc(self, connection):
+        logging.info("[EMMC MSTAR] burn factory through tftp")
+        factory = self._generate_factory_image()
+        logging.info("[EMMC MSTAR] path of factory image: %s" % factory)
+        connection.sendline('setenv serverip %s' % self.context.config.lava_server_ip, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('estart')
         connection.expect(self.config.bootloader_prompt)
@@ -1235,13 +1187,52 @@ class Target(object):
         # << MStar >>#
         connection.expect(self.config.bootloader_prompt, timeout=600)
         # clear connection buffer
-        logging.info("[EMMC MSTAR 828] clear connection buffer")
         connection.empty_buffer()
-        connection.sendcontrol('c')
-        connection.expect(self.config.bootloader_prompt)
-        logging.info("[EMMC MSTAR 828] end of burn factory")
+        logging.info('[EMMC MSTAR] end of burn factory')
     
-    def _show_factory_828_emmc(self, connection):
+    def _generate_factory_image(self):
+        current = os.getcwd()
+        logging.info('change workspace to /var/lib/lava/dispatch/tmp/factory')
+        factory_tool = os.path.join(self.context.config.lava_image_tmpdir, 'factory')
+        os.chdir(factory_tool)
+        # get current job id
+        output_dir = self.context.output.output_dir
+        logging.info('current job output directory: %s' % output_dir)
+        job_id = output_dir.strip().split('/')[-1]
+        job_id = job_id.split('-')[-1]
+        logging.info('job id: %s' % job_id)
+        project_name = self.image_params.get('project_name')
+        model_index = self.image_params.get('model_index')
+        product_name = self.image_params.get('product_name')
+        yun_os = self.image_params.get('yun_os', 'false')
+        command = ['sudo', '-u', 'root', './factory.sh', job_id, project_name, model_index, product_name, yun_os]
+        subprocess.call(command)
+        if project_name in ['apollo']:
+            if os.path.isfile(os.path.join(factory_tool, 'image', job_id, 'factory')) and \
+                    os.path.isfile(os.path.join(factory_tool, 'image', job_id, 'factory.ext4.gz')):
+                logging.info('generate factory image successfully')
+                os.system('sudo -u root mv image/%s %s' % (job_id, self.context.config.lava_image_tmpdir))
+                os.chdir(current)
+                return os.path.join(job_id, 'factory')
+            else:
+                os.chdir(current)
+                raise CriticalError('can not generate factory image')
+        elif project_name in ['sphinx', 'titan', 'helios']:
+            if os.path.isfile(os.path.join(factory_tool, 'image', job_id, 'factory')) and \
+                    os.path.isfile(os.path.join(factory_tool, 'image', job_id, 'factory.img')):
+                logging.info('generate factory image successfully')
+                logging.info('generate factory image successfully')
+                os.system('sudo -u root mv image/%s %s' % (job_id, self.context.config.lava_image_tmpdir))
+                os.chdir(current)
+                return os.path.join(job_id, 'factory')
+            else:
+                os.chdir(current)
+                raise CriticalError('can not generate factory image')
+        else:
+            os.chdir(current)
+            logging.warning('only support apollo, helios, sphinx, titan')
+
+    def _show_factory_mstar_emmc(self, connection):
         connection.sendline('recovery')
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('reset')
@@ -1252,8 +1243,6 @@ class Target(object):
         connection.sendline('busybox ls -lh /factory')
         time.sleep(2)
         connection.sendline('busybox cat /factory/model_index.ini')
-        time.sleep(2)
-        connection.sendline('busybox cat /factory/panel_index.ini')
         time.sleep(2)
         connection.sendline('busybox cat /factory/factory.prop')
         time.sleep(2)
@@ -1267,12 +1256,11 @@ class Target(object):
         connection.empty_buffer()
         connection.sendcontrol('c')
         connection.expect(self.config.bootloader_prompt)
-        logging.info("[EMMC MSTAR 828] end of show factory partition")
+        logging.info('[EMMC MSTAR] end of show factory partition')
 
-    def _burn_factory_828(self, connection):
+    def _burn_factory_mstar(self, connection):
         factory = self.image_params.get('factory', '')
-        image_server_ip = self.image_params.get('image_server_ip', '')
-        logging.info('start to burn 828 factory')
+        logging.info('start to burn mstar factory image')
         connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
         # timeout = 3600s
         for i in range(10):
@@ -1280,9 +1268,7 @@ class Target(object):
         # << MStar >>#
         connection.expect(self.config.bootloader_prompt)
         # clear the buffer
-        logging.info('clear connection buffer')
         connection.empty_buffer()
-        # connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('estart')
@@ -1294,10 +1280,10 @@ class Target(object):
         if index == 0:
             connection.sendline('reset', send_char=self.config.send_char)
         else:
-            logging.warning('can not burn 828 factory in 10 minutes, try again')
+            logging.warning('can not burn mstar factory in 10 minutes, try again')
             connection.sendcontrol('c')
-            connection.empty_buffer()
             connection.sendline('reset')
+            connection.empty_buffer()
             connection.expect(self.config.interrupt_boot_prompt, timeout=100)
             for i in range(10):
                 connection.sendline('')
@@ -1315,11 +1301,10 @@ class Target(object):
             connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt, timeout=600)
             connection.sendline('reset', send_char=self.config.send_char)
-        logging.info('end of burn 828 factory')
+        logging.info('end of burn mstar factory')
 
     def _burn_factory_hisi(self, connection):
-        factory = self.image_params.get('factory', '')
-        image_server_ip = self.image_params.get('image_server_ip', '')
+        factory = self.image_params.get('factory')
         logging.info('start to burn hisi factory')
         connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
         # timeout = 3600s
@@ -1329,9 +1314,7 @@ class Target(object):
         # apollo#
         connection.expect(self.config.bootloader_prompt)
         # clear the buffer
-        logging.info('clear connection buffer')
         connection.empty_buffer()
-        # connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('dhcp')
@@ -1342,17 +1325,11 @@ class Target(object):
         logging.info('end of burn hisi factory')
     
     def _burn_factory_hisi_emmc(self, connection):
-        factory = self.image_params.get('factory', '')
-        image_server_ip = self.image_params.get('image_server_ip', '')
+        factory = self._generate_factory_image()
         logging.info('[EMMC HISI] start to burn hisi factory')
-        # apollo#
-        connection.sendcontrol('c')
-        connection.expect(self.config.bootloader_prompt)
         # clear the buffer
-        logging.info('clear connection buffer')
         connection.empty_buffer()
-        # connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
-        connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
+        connection.sendline('setenv serverip %s' % self.context.config.lava_server_ip, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('dhcp')
         connection.expect(self.config.bootloader_prompt, timeout=100)
@@ -1366,15 +1343,15 @@ class Target(object):
         logging.info('[EMMC HISI] end of burn hisi factory')
     
     def _del_db_hisi_emmc(self, connection):
-        logging.info("[EMMC HISI] delete database")
+        logging.info('[EMMC HISI] delete database')
         connection.sendline('rm -rf /tvdatabase/db/*')
         connection.sendline('rm -rf /tvdatabase/dtv/*')
         connection.sendline('rm -rf /atv/db/*')
         connection.empty_buffer()
-        logging.info("[EMMC HISI] end of delete database")
+        logging.info('[EMMC HISI] end of delete database')
     
     def _set_spi_hisi_emmc(self, connection, model_index):
-        logging.info("[EMMC HISI] set panel index with spi")
+        logging.info('[EMMC HISI] set panel index with spi')
         connection.sendline('hidebug')
         connection.expect('TV')
         connection.sendline('factory')
@@ -1386,22 +1363,25 @@ class Target(object):
         connection.sendline('q')
         connection.expect('shell@')
         self._show_pq_hisi_emmc(connection)
-        logging.info("[EMMC HISI] end of set panel index with spi")
+        logging.info('[EMMC HISI] end of set panel index with spi')
     
     def _show_pq_hisi_emmc(self, connection):
-        logging.info("[EMMC HISI] show pq and factory files")
+        logging.info('[EMMC HISI] show pq and factory files')
         connection.sendline('cat /proc/msp/pdm')
         connection.expect('shell@')
         connection.sendline('cat /proc/msp/pq')
         connection.expect('shell@')
-        connection.sendline('ls -l /factory')
+        connection.sendline('busybox ls -lh /factory')
+        time.sleep(2)
         connection.sendline('cat /factory/factory.prop')
+        time.sleep(2)
         connection.sendline('cat /factory/model_index.ini')
+        time.sleep(2)
         connection.empty_buffer()
-        logging.info("[EMMC HISI] end of show pq and factory files")
+        logging.info('[EMMC HISI] end of show pq and factory files')
 
-    def _wipe_data_828_emmc(self, connection):
-        logging.info("[EMMC MSTAR 828] wipe data partition")
+    def _wipe_data_mstar_emmc(self, connection):
+        logging.info('[EMMC MSTAR] wipe data partition')
         connection.sendline('setenv db_table 0')
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('saveenv')
@@ -1410,25 +1390,22 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=30)
         connection.sendline('reset', send_char=self.config.send_char)
         connection.expect('/ #', timeout=300)
-        logging.info("[EMMC MSTAR 828] end of wipe data partition")
+        logging.info('[EMMC MSTAR] end of wipe data partition')
 
-    def _burn_mboot_script_828_emmc(self, connection):
-        logging.info("[EMMC MSTAR 828] wait for android booted")
+    def _burn_mboot_script_mstar_emmc(self, connection):
+        logging.info('[EMMC MSTAR] wait for android booted')
         index = connection.expect(['start test', 'TVOS'], timeout=self.config.image_boot_msg_timeout)
         if index == 1:
             time.sleep(200)
         self._hard_reboot(connection)
         connection.expect(self.config.bootloader_prompt, timeout=30)
         # clear the buffer
-        logging.info('[EMMC MSTAR 828] clear connection buffer')
         connection.empty_buffer()
-        connection.sendcontrol('c')
-        connection.expect(self.config.bootloader_prompt)
-        logging.info("[EMMC MSTAR 828] start to burn [[mboot")
+        logging.info('[EMMC MSTAR] start to burn [[mboot')
         image = self.image_params.get('image', '')
         image_server_ip = self.image_params.get('image_server_ip', '')
-        mboot_script = os.path.join(os.path.split(image)[0], 'scripts', '[[mboot')
-        logging.info("[EMMC MSTAR 828] path of [[mboot: %s" % mboot_script)
+        mboot_script = os.path.join(os.path.dirname(image), 'scripts', '[[mboot')
+        logging.info('[EMMC MSTAR 828] path of [[mboot: %s' % mboot_script)
         connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('estart')
@@ -1437,12 +1414,15 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=100)
         connection.sendline('mstar %s' % mboot_script, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=600)
-        logging.info("[EMMC MSTAR 828] end of burn [[mboot")
+        logging.info('[EMMC MSTAR] end of burn [[mboot')
 
-    def _dump_emmc_828_emmc(self, connection):
-        logging.info("[EMMC MSTAR 828] begin to dump emmc to usb disk")
+    def _dump_emmc_mstar_emmc(self, connection):
+        logging.info('[EMMC MSTAR] begin to dump emmc to usb disk')
         logging.info('clear connection buffer')
         connection.empty_buffer()
+        if self.config.device_type == 'mstar-938':
+            connection.sendline('ufts set fts.fac.factory_mode 1')
+            connection.expect(self.config.bootloader_prompt)
         connection.sendline('setenv bootdelay', send_char=self.config.send_char)
         connection.sendline('setenv macaddr 00:30:1B:BA:02:DB', send_char=self.config.send_char)
         connection.sendline('saveenv', send_char=self.config.send_char)
@@ -1452,18 +1432,19 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=60)
         connection.sendline('printenv')
         connection.expect(self.config.bootloader_prompt, timeout=60)
-        logging.info('clear connection buffer')
+        if self.config.device_type == 'mstar-938':
+            connection.sendline('ufts list')
+            connection.expect(self.config.bootloader_prompt)
         connection.empty_buffer()
         connection.sendline('usb start 3', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=60)
         connection.sendline('mmc dd mmc2usb 3', send_char=self.config.send_char)
         connection.expect('Dump Block', timeout=self.config.image_boot_msg_timeout)
         time.sleep(10)
-        connection.sendline('reset')
-        logging.info("[EMMC MSTAR 828] end of dump emmc to usb disk")
+        logging.info('[EMMC MSTAR] end of dump emmc to usb disk')
     
     def _dump_emmc_hisi_emmc(self, connection):
-        logging.info("[EMMC HISI] begin to dump emmc to usb disk in recovery mode")
+        logging.info('[EMMC HISI] begin to dump emmc to usb disk in recovery mode')
         logging.info('clear connection buffer')
         connection.sendcontrol('c')
         connection.expect('/ #')
@@ -1481,8 +1462,7 @@ class Target(object):
         connection.expect('/ #', timeout=600)
         connection.sendline('busybox umount /tmp/disk')
         connection.expect('/ #')
-        connection.sendline('busybox reboot -f')
-        logging.info("[EMMC HISI] end of dump emmc to usb disk")
+        logging.info('[EMMC HISI] end of dump emmc to usb disk')
 
     def _customize_bootloader(self, connection, boot_cmds):
         # get deploy_whaley_image parameters
@@ -1493,24 +1473,24 @@ class Target(object):
         emmc = self.boot_params.get('emmc', False)
 
         if not skip and emmc:  # skip=False, emmc=True
-            if self.config.device_type == 'mstar':
-                logging.info("[EMMC MSTAR 828] make factory emmc image for mstar 828 platform")
-                self._burn_mboot_828_emmc(connection)
-                logging.info("[EMMC MSTAR 828] burn factory image through tftp with auto_update_factory.txt")
-                logging.info("[EMMC MSTAR 828] path of auto_update_factory.txt: %s" % image)
+            if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-938':
+                logging.info('[EMMC MSTAR] make emmc image for mstar platform')
+                self._burn_mboot_mstar_emmc(connection)
+                logging.info('[EMMC MSTAR] burn factory image through tftp with auto_update_factory.txt')
+                logging.info('[EMMC MSTAR] path of auto_update_factory.txt: %s' % image)
             elif self.config.device_type == 'hisi':
-                logging.info("[EMMC HISI] make factory emmc image for hisi platform")
+                logging.info('[EMMC HISI] make emmc image for hisi platform')
                 self._burn_fastboot_hisi_emmc(connection)
-                logging.info("[EMMC HISI] burn factory image through tftp with auto_factory.txt")
-                logging.info("[EMMC HISI] path of auto_factory.txt: %s" % image)
+                logging.info('[EMMC HISI] burn factory image through tftp with auto_factory.txt')
+                logging.info('[EMMC HISI] path of auto_factory.txt: %s' % image)
             else:
                 logging.warning('no device type mstar or hisi found')
         else:  # skip=False, emmc=False
             # add set mac address in bootloader, 2016.04.19
             logging.info('burn normal image, not factory emmc image')
             self._set_macaddr_whaley(connection)
-            if self.config.device_type == 'mstar':
-                logging.info("burn mboot firstly for mstar 828 platform")
+            if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-938':
+                logging.info('burn mboot firstly for mstar platform')
                 mboot_path = os.path.join(os.path.dirname(image), 'auto_update_mboot.txt')
                 logging.info('mboot path is: %s' % mboot_path)
                 connection.empty_buffer()
@@ -1524,31 +1504,9 @@ class Target(object):
                 # << MStar >>#
                 connection.expect(self.config.bootloader_prompt)
                 # clear the buffer
-                logging.info('clear connection buffer')
                 connection.empty_buffer()
-                connection.sendcontrol('c')
-                connection.expect(self.config.bootloader_prompt)
-            elif self.config.device_type == 'mstar-sphinx' or self.config.device_type == 'mstar-titan':
-                logging.info("burn mboot firstly for mstar 938 sphinx/titan platform")
-                mboot_path = os.path.join(os.path.dirname(image), 'scripts', '[[mboot')
-                logging.info('mboot path is: %s' % mboot_path)
-                connection.empty_buffer()
-                connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
-                connection.expect(self.config.bootloader_prompt)
-                connection.sendline('mstar %s' % mboot_path, send_char=self.config.send_char)
-                connection.expect(self.config.interrupt_boot_prompt, timeout=600)
-                for i in range(10):
-                    connection.sendline('')
-                    time.sleep(0.06)
-                # << MStar >>#
-                connection.expect(self.config.bootloader_prompt)
-                # clear the buffer
-                logging.info('clear connection buffer')
-                connection.empty_buffer()
-                connection.sendcontrol('c')
-                connection.expect(self.config.bootloader_prompt)
             elif self.config.device_type == 'hisi':
-                logging.info("burn fastboot firstly for hisi platform")
+                logging.info('burn fastboot firstly for hisi platform')
                 fastboot_path = os.path.join(os.path.dirname(image), 'fastboot.txt')
                 logging.info('fastboot path is: %s' % fastboot_path)
                 connection.empty_buffer()
@@ -1568,7 +1526,7 @@ class Target(object):
                 connection.sendline('setenv ethaddr %s' % mac_addr, send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt)
             else:
-                logging.warning('no device type mstar or hisi found')
+                logging.warning('no device type mstar/mstar-938 or hisi found')
 
         delay = self.config.bootloader_serial_delay_ms
         _boot_cmds = self._boot_cmds_preprocessing(boot_cmds)

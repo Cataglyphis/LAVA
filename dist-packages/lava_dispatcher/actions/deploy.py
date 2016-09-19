@@ -362,6 +362,13 @@ class cmd_deploy_whaley_image(BaseAction):
             'image': {'type': 'string', 'optional': True},
             'factory': {'type': 'string', 'optional': True, 'default': ''},
             'image_server_ip': {'type': 'string', 'optional': True},
+            'project_name': {'type': 'string', 'optional': True,
+                             'enum': ["helios", "apollo", "sphinx", "titan"]},
+            'model_index': {'type': 'integer', 'optional': True, 'default': 0},
+            'product_name': {'type': 'string', 'optional': True, 'default': ''},
+            'yun_os': {'type': 'string', 'optional': True, 'default': 'false',
+                       'enum': ["true", "false"]
+                       },
             'bootloadertype': {'type': 'string', 'optional': True, 'default': 'u_boot'},
             'role': {'type': 'string', 'optional': True}
         },
@@ -376,9 +383,11 @@ class cmd_deploy_whaley_image(BaseAction):
         if 'image_server_ip' not in parameters:
             raise ValueError('must specify image server ip address in deploy_whaley_image')
 
-    def run(self, image=None, factory=None, image_server_ip=None, bootloadertype='u_boot'):
-        self.client.deploy_whaley_image(image=image, factory=factory,
-                                        image_server_ip=image_server_ip,
-                                        bootloadertype=bootloadertype)
+    def run(self, image=None, factory=None, image_server_ip=None, project_name=None,
+            model_index=None, product_name=None, yun_os='false', bootloadertype='u_boot'):
+        self.client.deploy_whaley_image(image=image, factory=factory, image_server_ip=image_server_ip,
+                                        bootloadertype=bootloadertype, project_name=project_name,
+                                        model_index=model_index, product_name=product_name,
+                                        yun_os=yun_os)
 
 cmd_deploy_whaley = cmd_deploy_whaley_image

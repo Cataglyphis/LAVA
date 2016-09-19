@@ -71,7 +71,7 @@ def link_or_copy_file(src, dest):
 
 def copy_file(src, dest):
     dirname = os.path.dirname(dest)
-    if not os.path.exists(dir):
+    if not os.path.exists(dirname):
         os.makedirs(dirname)
     shutil.copy(src, dest)
 

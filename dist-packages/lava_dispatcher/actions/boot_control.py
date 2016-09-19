@@ -185,6 +185,5 @@ class cmd_boot_whaley_image(BaseAction):
     }
 
     def run(self, skip=False, emmc=False):
-        client = self.client
-        client.boot_whaley_image(skip, emmc)
+        self.client.boot_whaley_image(skip, emmc)
 
