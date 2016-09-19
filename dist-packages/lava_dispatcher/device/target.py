@@ -1508,31 +1508,20 @@ class Target(object):
             # add set mac address in bootloader, 2016.04.19
             logging.info('burn normal image, not factory emmc image')
             self._set_macaddr_whaley(connection)
-            if self.config.device_type == 'mstar':
-                logging.info("burn mboot firstly for mstar 828 platform")
+            if 'mstar' in self.config.device_type:
+                logging.info('burn mboot firstly for mstar platform')
                 mboot_path = os.path.join(os.path.dirname(image), 'auto_update_mboot.txt')
                 logging.info('mboot path is: %s' % mboot_path)
                 connection.empty_buffer()
                 connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt)
-                connection.sendline('mstar %s' % mboot_path, send_char=self.config.send_char)
-                connection.expect(self.config.interrupt_boot_prompt, timeout=600)
-                for i in range(10):
-                    connection.sendline('')
-                    time.sleep(0.06)
-                # << MStar >>#
-                connection.expect(self.config.bootloader_prompt)
-                # clear the buffer
-                logging.info('clear connection buffer')
-                connection.empty_buffer()
-                connection.sendcontrol('c')
-                connection.expect(self.config.bootloader_prompt)
-            elif self.config.device_type == 'mstar-sphinx' or self.config.device_type == 'mstar-titan':
-                logging.info("burn mboot firstly for mstar 938 sphinx/titan platform")
-                mboot_path = os.path.join(os.path.dirname(image), 'scripts', '[[mboot')
-                logging.info('mboot path is: %s' % mboot_path)
-                connection.empty_buffer()
-                connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
+                if self.config.device_type == 'mstar':
+                    connection.sendline('setenv factory_poweron_mode direct', send_char=self.config.send_char)
+                    connection.expect(self.config.bootloader_prompt)
+                elif self.config.device_type == 'mstar-938':
+                    connection.sendline('ufts reset', send_char=self.config.send_char)
+                    connection.expect(self.config.bootloader_prompt)
+                connection.sendline('saveenv', send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt)
                 connection.sendline('mstar %s' % mboot_path, send_char=self.config.send_char)
                 connection.expect(self.config.interrupt_boot_prompt, timeout=600)
@@ -1542,16 +1531,15 @@ class Target(object):
                 # << MStar >>#
                 connection.expect(self.config.bootloader_prompt)
                 # clear the buffer
-                logging.info('clear connection buffer')
                 connection.empty_buffer()
-                connection.sendcontrol('c')
-                connection.expect(self.config.bootloader_prompt)
             elif self.config.device_type == 'hisi':
-                logging.info("burn fastboot firstly for hisi platform")
+                logging.info('burn fastboot firstly for hisi platform')
                 fastboot_path = os.path.join(os.path.dirname(image), 'fastboot.txt')
                 logging.info('fastboot path is: %s' % fastboot_path)
                 connection.empty_buffer()
                 connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
+                connection.expect(self.config.bootloader_prompt)
+                connection.sendline('ufts reset', send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt)
                 connection.sendline('exec %s' % fastboot_path, send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt, timeout=600)
@@ -1561,13 +1549,12 @@ class Target(object):
                     connection.sendline('')
                     time.sleep(0.06)
                 connection.expect(self.config.bootloader_prompt)
-                logging.info('clear connection buffer')
                 connection.empty_buffer()
                 mac_addr = self._get_macaddr_whaley()
                 connection.sendline('setenv ethaddr %s' % mac_addr, send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt)
             else:
-                logging.warning('no device type mstar or hisi found')
+                logging.warning('no device type mstar/mstar-938 or hisi found')
 
         delay = self.config.bootloader_serial_delay_ms
         _boot_cmds = self._boot_cmds_preprocessing(boot_cmds)
