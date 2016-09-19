@@ -1500,7 +1500,7 @@ class Target(object):
                     connection.sendline('setenv factory_poweron_mode direct', send_char=self.config.send_char)
                     connection.expect(self.config.bootloader_prompt)
                 elif self.config.device_type == 'mstar-938':
-                    connection.sendline('ufts set fts.pwr.power_loss_restore alwayson', send_char=self.config.send_char)
+                    connection.sendline('ufts reset', send_char=self.config.send_char)
                     connection.expect(self.config.bootloader_prompt)
                 connection.sendline('saveenv', send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt)
