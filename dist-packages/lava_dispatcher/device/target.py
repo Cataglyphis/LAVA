@@ -1347,6 +1347,7 @@ class Target(object):
         connection.sendline('rm -rf /tvdatabase/db/*')
         connection.sendline('rm -rf /tvdatabase/dtv/*')
         connection.sendline('rm -rf /atv/db/*')
+        connection.sendline('sync')
         connection.empty_buffer()
         logging.info('[EMMC HISI] end of delete database')
     
