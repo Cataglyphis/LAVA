@@ -1057,52 +1057,52 @@ class Target(object):
             # set vip account
             self._set_vip_whaley(connection)
 
-        try:
-            self._auto_login(connection, is_master)
-        except pexpect.TIMEOUT:
-            msg = "Userspace Error: auto login prompt not found."
-            logging.error(msg)
-            self.context.test_data.add_result(wait_for_login_prompt, bad, message=msg)
-            raise
-
-        try:
-            if is_master:
-                pattern = self.config.master_str
-            else:
-                pattern = self.config.test_image_prompts
-            logging.info("test image prompts pattern: %s" % pattern)
-            self._wait_for_prompt(connection, pattern, self.config.boot_linaro_timeout)
-            if not is_master:
-                if self.target_distro == 'android':
-                    # Gain root access
-                    connection.sendline('su')
-                    self._wait_for_prompt(connection, pattern, timeout=10)
-            connection.sendline('export PS1="%s"' % ps1,
-                                send_char=self.config.send_char)
-            self._wait_for_prompt(connection, ps1_pattern, timeout=10)
-            if self.config.has_kernel_messages:
-                userspace_boot_time = "{0:.2f}".format(time.time() - start)
-            self.context.test_data.add_result(wait_for_image_prompt, good)
-        except pexpect.TIMEOUT:
-            msg = "Userspace Error: image prompt not found."
-            logging.error(msg)
-            self.context.test_data.add_result(wait_for_image_prompt, bad)
-            raise
-
-        # Record results
-        boot_meta = {}
-        boot_meta['dtb-append'] = str(self.config.append_dtb)
-        self.context.test_data.add_metadata(boot_meta)
-        if self.config.has_kernel_messages:
-            self.context.test_data.add_result(image_boot, 'pass',
-                                              image_boot_time, 'seconds')
-            self.context.test_data.add_result(kernel_boot, 'pass',
-                                              kernel_boot_time, 'seconds')
-            self.context.test_data.add_result(userspace_boot, 'pass',
-                                              userspace_boot_time, 'seconds')
-            logging.info("Image boot time: %s seconds" % image_boot_time)
-            logging.info("Kernel boot time: %s seconds" % kernel_boot_time)
-            logging.info("Userspace boot time: %s seconds" % userspace_boot_time)
+        # try:
+        #     self._auto_login(connection, is_master)
+        # except pexpect.TIMEOUT:
+        #     msg = "Userspace Error: auto login prompt not found."
+        #     logging.error(msg)
+        #     self.context.test_data.add_result(wait_for_login_prompt, bad, message=msg)
+        #     raise
+        #
+        # try:
+        #     if is_master:
+        #         pattern = self.config.master_str
+        #     else:
+        #         pattern = self.config.test_image_prompts
+        #     logging.info("test image prompts pattern: %s" % pattern)
+        #     self._wait_for_prompt(connection, pattern, self.config.boot_linaro_timeout)
+        #     if not is_master:
+        #         if self.target_distro == 'android':
+        #             # Gain root access
+        #             connection.sendline('su')
+        #             self._wait_for_prompt(connection, pattern, timeout=10)
+        #     connection.sendline('export PS1="%s"' % ps1,
+        #                         send_char=self.config.send_char)
+        #     self._wait_for_prompt(connection, ps1_pattern, timeout=10)
+        #     if self.config.has_kernel_messages:
+        #         userspace_boot_time = "{0:.2f}".format(time.time() - start)
+        #     self.context.test_data.add_result(wait_for_image_prompt, good)
+        # except pexpect.TIMEOUT:
+        #     msg = "Userspace Error: image prompt not found."
+        #     logging.error(msg)
+        #     self.context.test_data.add_result(wait_for_image_prompt, bad)
+        #     raise
+        #
+        # # Record results
+        # boot_meta = {}
+        # boot_meta['dtb-append'] = str(self.config.append_dtb)
+        # self.context.test_data.add_metadata(boot_meta)
+        # if self.config.has_kernel_messages:
+        #     self.context.test_data.add_result(image_boot, 'pass',
+        #                                       image_boot_time, 'seconds')
+        #     self.context.test_data.add_result(kernel_boot, 'pass',
+        #                                       kernel_boot_time, 'seconds')
+        #     self.context.test_data.add_result(userspace_boot, 'pass',
+        #                                       userspace_boot_time, 'seconds')
+        #     logging.info("Image boot time: %s seconds" % image_boot_time)
+        #     logging.info("Kernel boot time: %s seconds" % kernel_boot_time)
+        #     logging.info("Userspace boot time: %s seconds" % userspace_boot_time)
 
     def _burn_mboot_mstar_emmc(self, connection):
         image = self.image_params.get('image', '')
@@ -1805,11 +1805,13 @@ class Target(object):
 
     @property
     def tester_ps1(self):
-        return self._get_from_config_or_deployment_data('tester_ps1')
+        # return self._get_from_config_or_deployment_data('tester_ps1')
+        return ''
 
     @property
     def tester_ps1_pattern(self):
-        return self._get_from_config_or_deployment_data('tester_ps1_pattern')
+        # return self._get_from_config_or_deployment_data('tester_ps1_pattern')
+        return ''
 
     @property
     def tester_ps1_includes_rc(self):
@@ -1817,18 +1819,19 @@ class Target(object):
         # yes/no/ not set. If it isn't set, we stick with the device
         # default. We can't do the tri-state logic as a BoolOption because an
         # unset BoolOption returns False, not None, so we can't detect not set.
-        value = self._get_from_config_or_deployment_data(
-            'tester_ps1_includes_rc')
-
-        if isinstance(value, bool):
-            return value
-
-        if value.lower() in ['y', '1', 'yes', 'on', 'true']:
-            return True
-        elif value.lower() in ['n', '0', 'no', 'off', 'false']:
-            return False
-        else:
-            raise ValueError("Unable to determine boolosity of %r" % value)
+        # value = self._get_from_config_or_deployment_data(
+        #     'tester_ps1_includes_rc')
+        #
+        # if isinstance(value, bool):
+        #     return value
+        #
+        # if value.lower() in ['y', '1', 'yes', 'on', 'true']:
+        #     return True
+        # elif value.lower() in ['n', '0', 'no', 'off', 'false']:
+        #     return False
+        # else:
+        #     raise ValueError("Unable to determine boolosity of %r" % value)
+        return False
 
     @property
     def tester_rc_cmd(self):
