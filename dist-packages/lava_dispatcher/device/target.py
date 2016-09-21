@@ -1463,9 +1463,9 @@ class Target(object):
         connection.empty_buffer()
         connection.sendline('busybox dd if=/dev/block/mmcblk0 of=/tmp/disk/android.bin bs=512', send_char=self.config.send_char)
         connection.expect('/ #', timeout=3600)
-        connection.sendline('busybox md5sum /tmp/disk/android.bin')
+        connection.sendline('busybox md5sum /tmp/disk/android.bin', send_char=self.config.send_char)
         connection.expect('/ #', timeout=600)
-        connection.sendline('busybox umount /tmp/disk')
+        connection.sendline('busybox umount /tmp/disk', send_char=self.config.send_char)
         connection.expect('/ #')
         logging.info('[EMMC HISI] end of dump emmc to usb disk')
 
