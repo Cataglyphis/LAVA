@@ -1174,8 +1174,8 @@ class Target(object):
             connection.sendline('')
             time.sleep(0.06)
         connection.expect(self.config.bootloader_prompt)
+        connection.sendline('ufts reset', send_char=self.config.send_char)
         connection.sendline('setenv ethaddr %s' % mac_addr, send_char=self.config.send_char)
-        logging.info('clear connection buffer')
         connection.empty_buffer()
         logging.info('[EMMC HISI] end of burn fastboot')
 
