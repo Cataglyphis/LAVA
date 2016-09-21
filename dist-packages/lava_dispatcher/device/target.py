@@ -924,13 +924,6 @@ class Target(object):
                 connection.sendline('panel_index')
                 connection.expect(self.config.bootloader_prompt)
                 if 'Unknown command' in connection.before:
-                    logging.info('[EMMC HISI] use panel_index command to set panel parameter')
-                    connection.sendline('panel_index write %s' % model_index, send_char=self.config.send_char)
-                    connection.expect(self.config.bootloader_prompt)
-                    connection.sendline('panel_index read')
-                    connection.expect(self.config.bootloader_prompt)
-                    connection.sendline('reset')
-                else:
                     logging.info('[EMMC HISI] use spi command to set panel parameter')
                     connection.sendline('reset')
                     time.sleep(60)
@@ -939,6 +932,13 @@ class Target(object):
                     self._set_spi_hisi_emmc(connection, model_index)
                     connection.sendline('reboot', send_char=self.config.send_char)
                     logging.info('[EMMC HISI] reboot device to make spi parameter take effect')
+                else:
+                    logging.info('[EMMC HISI] use panel_index command to set panel parameter')
+                    connection.sendline('panel_index write %s' % model_index, send_char=self.config.send_char)
+                    connection.expect(self.config.bootloader_prompt)
+                    connection.sendline('panel_index read')
+                    connection.expect(self.config.bootloader_prompt)
+                    connection.sendline('reset')
                 time.sleep(60)
                 self._show_pq_hisi_emmc(connection)
                 connection.sendline('reboot r', send_char=self.config.send_char)
@@ -1227,7 +1227,6 @@ class Target(object):
             if os.path.isfile(os.path.join(factory_tool, 'image', job_id, 'factory')) and \
                     os.path.isfile(os.path.join(factory_tool, 'image', job_id, 'factory.img')):
                 logging.info('generate factory image successfully')
-                logging.info('generate factory image successfully')
                 os.system('sudo -u root mv image/%s %s' % (job_id, self.context.config.lava_image_tmpdir))
                 os.chdir(current)
                 return os.path.join(job_id, 'factory')
@@ -1452,7 +1451,6 @@ class Target(object):
     
     def _dump_emmc_hisi_emmc(self, connection):
         logging.info('[EMMC HISI] begin to dump emmc to usb disk in recovery mode')
-        logging.info('clear connection buffer')
         connection.sendcontrol('c')
         connection.expect('/ #')
         connection.empty_buffer()
