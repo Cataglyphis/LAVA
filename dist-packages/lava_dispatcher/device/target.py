@@ -882,6 +882,7 @@ class Target(object):
         # get deploy_whaley_image parameters
         image = self.image_params.get('image', '')
         factory = self.image_params.get('factory', '')
+        model_index = self.image_params.get('model_index')
 
         # get boot_whaley_image parameters
         skip = self.boot_params.get('skip', False)
@@ -905,7 +906,6 @@ class Target(object):
                 return
             elif self.config.device_type == 'hisi':
                 logging.info('[EMMC HISI] wait for end of auto.txt')
-                logging.info('clear connection buffer')
                 connection.empty_buffer()
                 # apollo#
                 if 'auto.txt' in image:
@@ -919,20 +919,26 @@ class Target(object):
                     connection.expect(self.config.bootloader_prompt)
                 self._burn_factory_hisi_emmc(connection)
                 connection.empty_buffer()
-                # 1/2/3, ...
-                model_index = re.search(r'factory_(\d+)\.txt', factory).group(1)
                 # write panel index to deviceinfo
-                # connection.sendline('panel_index write %s' % model_index, send_char=self.config.send_char)
-                # connection.expect(self.config.bootloader_prompt)
-                # connection.sendline('panel_index read')
-                # connection.expect(self.config.bootloader_prompt)
-                connection.sendline('reset')
-                time.sleep(60)
-                self._skip_guide_whaley(connection)
-                self._del_db_hisi_emmc(connection)
-                self._set_spi_hisi_emmc(connection, model_index)
-                connection.sendline('reboot', send_char=self.config.send_char)
-                logging.info('[EMMC HISI] reboot device to make spi parameter take effect')
+                logging.info('[EMMC HISI] try use panel_index command to judge whether fastboot support')
+                connection.sendline('panel_index')
+                connection.expect(self.config.bootloader_prompt)
+                if 'Unknown command' in connection.before:
+                    logging.info('[EMMC HISI] use panel_index command to set panel parameter')
+                    connection.sendline('panel_index write %s' % model_index, send_char=self.config.send_char)
+                    connection.expect(self.config.bootloader_prompt)
+                    connection.sendline('panel_index read')
+                    connection.expect(self.config.bootloader_prompt)
+                    connection.sendline('reset')
+                else:
+                    logging.info('[EMMC HISI] use spi command to set panel parameter')
+                    connection.sendline('reset')
+                    time.sleep(60)
+                    self._skip_guide_whaley(connection)
+                    self._del_db_hisi_emmc(connection)
+                    self._set_spi_hisi_emmc(connection, model_index)
+                    connection.sendline('reboot', send_char=self.config.send_char)
+                    logging.info('[EMMC HISI] reboot device to make spi parameter take effect')
                 time.sleep(60)
                 self._show_pq_hisi_emmc(connection)
                 connection.sendline('reboot r', send_char=self.config.send_char)

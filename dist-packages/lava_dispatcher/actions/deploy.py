@@ -364,7 +364,7 @@ class cmd_deploy_whaley_image(BaseAction):
             'image_server_ip': {'type': 'string', 'optional': True},
             'project_name': {'type': 'string', 'optional': True,
                              'enum': ["helios", "apollo", "sphinx", "titan"]},
-            'model_index': {'type': 'integer', 'optional': True, 'default': 0},
+            'model_index': {'type': 'string', 'optional': True, 'default': '0'},
             'product_name': {'type': 'string', 'optional': True, 'default': ''},
             'yun_os': {'type': 'string', 'optional': True, 'default': 'false',
                        'enum': ["true", "false"]

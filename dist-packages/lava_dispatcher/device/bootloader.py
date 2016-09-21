@@ -437,18 +437,22 @@ class BootloaderTarget(MasterImageTarget):
         # incrc = self.tester_ps1_includes_rc
         
         self.proc.empty_buffer()
+        self.proc.sendcontrol('c')
         self.proc.sendline('')
-        self.proc.empty_buffer()
-        if self.config.bootloader_prompt in self.proc.after:
+        self.proc.expect('.+')
+        logging.info('proc.after: %s' % self.proc.after)
+        if 'shell@' in self.proc.after or 'root@' in self.proc.after:
+            pass
+        elif self.config.bootloader_prompt in self.proc.after:
             logging.warning('now in mboot/fastboot interface, try to reset')
             self.proc.sendline('reset')
             raise CriticalError('in mboot/fastboot interface, not in common shell console')
-        if '/ #' in self.proc.after:
+        elif '/ #' in self.proc.after:
             logging.warning('now in recovery mode, try to reboot')
             self.proc.sendline('busybox reboot -f')
             raise CriticalError('in recovery mode, not in common shell console')
         
-        runner = NetworkCommandRunner(self)
+        runner = NetworkCommandRunner(self, '', '')
         ip = ''
         for i in range(3):
             try:
