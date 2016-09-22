@@ -1462,7 +1462,7 @@ class Target(object):
         time.sleep(2)
         connection.empty_buffer()
         connection.sendline('busybox dd if=/dev/block/mmcblk0 of=/tmp/disk/android.bin bs=512', send_char=self.config.send_char)
-        connection.expect('/ #', timeout=3600)
+        connection.expect('/ #', timeout=None)
         connection.sendline('busybox md5sum /tmp/disk/android.bin', send_char=self.config.send_char)
         connection.expect('/ #', timeout=600)
         connection.sendline('busybox umount /tmp/disk', send_char=self.config.send_char)
