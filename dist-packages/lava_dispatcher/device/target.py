@@ -496,6 +496,9 @@ class Target(object):
         connection.sendline('rm -rf /data/dalvik-cache/arm/system@priv-app@HeliosGuide@HeliosGuide.apk@classes.dex', send_char=self.config.send_char)
         connection.sendline('mount -o remount,rw /system', send_char=self.config.send_char)
         connection.sendline('rm -rf /system/priv-app/HeliosGuide', send_char=self.config.send_char)
+        if self.config.device_type == 'mstar-938':
+            connection.sendline("busybox sed -i 's/name=\"user_setup_complete\" value=\"0\"/name=\"user_setup_complete\" value=\"1\"/g' /data/system/users/0/settings_secure.xml",
+                                send_char=self.config.send_char)
         connection.empty_buffer()
         logging.info('end remove helios guide')
 
