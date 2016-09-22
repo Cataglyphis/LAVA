@@ -819,7 +819,7 @@ class Target(object):
         connection.empty_buffer()
         connection.sendline('')
         index = connection.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
-        if index == 0:
+        if index == 0 or index == 1:
             logging.info('in normal shell console, try to display usb info')
             self._display_usb_whaley(connection)
         else:
