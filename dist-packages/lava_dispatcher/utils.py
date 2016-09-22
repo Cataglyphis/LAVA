@@ -548,7 +548,7 @@ def connect_to_serial(context):
 
     while retry_count < retry_limit:
         try:
-            proc = context.spawn(context.device_config.connection_command, timeout=120)
+            proc = context.spawn(context.device_config.connection_command, timeout=30)
             logging.info('Attempting to connect to device using: %s', context.device_config.connection_command)
             match = proc.expect(patterns, timeout=8)
             result = results[match]
