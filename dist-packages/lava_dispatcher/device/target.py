@@ -1201,15 +1201,22 @@ class Target(object):
 
     def _generate_factory_image(self):
         current = os.getcwd()
-        logging.info('change workspace to /var/lib/lava/dispatch/tmp/factory')
-        factory_tool = os.path.join(self.context.config.lava_image_tmpdir, 'factory')
-        os.chdir(factory_tool)
+        # /var/lib/lava/dispatcher/tmp
+        image_tmpdir = self.context.config.lava_image_tmpdir
+        # factory_tool path
+        factory_tool = os.path.join(image_tmpdir, 'factory')
         # get current job id
         output_dir = self.context.output.output_dir
         logging.info('current job output directory: %s' % output_dir)
         job_id = output_dir.strip().split('/')[-1]
         job_id = job_id.split('-')[-1]
-        logging.info('job id: %s' % job_id)
+        logging.info('job id: % s' % job_id)
+        # scratch dir
+        # /var/lib/lava/dispatcher/tmp/xxxx/factory
+        factory = os.path.join(self.scratch_dir, 'factory')
+        shutil.copytree(factory_tool, factory)
+        logging.info('change workspace to %s' % factory)
+        os.chdir(factory)
         project_name = self.image_params.get('project_name')
         model_index = self.image_params.get('model_index')
         product_name = self.image_params.get('product_name')
@@ -1217,8 +1224,8 @@ class Target(object):
         command = ['sudo', '-u', 'root', './factory.sh', job_id, project_name, model_index, product_name, yun_os]
         subprocess.call(command)
         if project_name in ['apollo']:
-            if os.path.isfile(os.path.join(factory_tool, 'image', job_id, 'factory')) and \
-                    os.path.isfile(os.path.join(factory_tool, 'image', job_id, 'factory.ext4.gz')):
+            if os.path.isfile(os.path.join(factory, 'image', job_id, 'factory')) and \
+                    os.path.isfile(os.path.join(factory, 'image', job_id, 'factory.ext4.gz')):
                 logging.info('generate factory image successfully')
                 os.system('sudo -u root mv image/%s %s' % (job_id, self.context.config.lava_image_tmpdir))
                 os.chdir(current)
@@ -1227,8 +1234,8 @@ class Target(object):
                 os.chdir(current)
                 raise CriticalError('can not generate factory image')
         elif project_name in ['sphinx', 'titan', 'helios']:
-            if os.path.isfile(os.path.join(factory_tool, 'image', job_id, 'factory')) and \
-                    os.path.isfile(os.path.join(factory_tool, 'image', job_id, 'factory.img')):
+            if os.path.isfile(os.path.join(factory, 'image', job_id, 'factory')) and \
+                    os.path.isfile(os.path.join(factory, 'image', job_id, 'factory.img')):
                 logging.info('generate factory image successfully')
                 os.system('sudo -u root mv image/%s %s' % (job_id, self.context.config.lava_image_tmpdir))
                 os.chdir(current)
