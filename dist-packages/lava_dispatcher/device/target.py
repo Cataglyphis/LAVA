@@ -1280,7 +1280,7 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         # clear the buffer
         connection.empty_buffer()
-        connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
+        connection.sendline('setenv serverip %s' % self.context.config.lava_server_ip, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('estart')
         connection.expect(self.config.bootloader_prompt)
@@ -1304,7 +1304,7 @@ class Target(object):
             # clear the buffer
             logging.info('clear connection buffer')
             connection.empty_buffer()
-            connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
+            connection.sendline('setenv serverip %s' % self.context.config.lava_server_ip, send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('estart')
             connection.expect(self.config.bootloader_prompt)
@@ -1326,7 +1326,7 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         # clear the buffer
         connection.empty_buffer()
-        connection.sendline('setenv serverip 172.16.10.41', send_char=self.config.send_char)
+        connection.sendline('setenv serverip %s' % self.context.config.lava_server_ip, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('dhcp')
         connection.expect(self.config.bootloader_prompt, timeout=100)
