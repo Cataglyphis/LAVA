@@ -1492,8 +1492,6 @@ class Target(object):
                 mboot_path = os.path.join(os.path.dirname(image), 'auto_update_mboot.txt')
                 logging.info('mboot path is: %s' % mboot_path)
                 connection.empty_buffer()
-                connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
-                connection.expect(self.config.bootloader_prompt)
                 if self.config.device_type == 'mstar':
                     connection.sendline('cleanallenv')
                     connection.expect(self.config.bootloader_prompt)
@@ -1516,6 +1514,8 @@ class Target(object):
                 connection.expect(self.config.bootloader_prompt)
                 # clear the buffer
                 connection.empty_buffer()
+                connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
+                connection.expect(self.config.bootloader_prompt)
                 self._set_macaddr_whaley(connection)
                 connection.sendline('mstar %s' % mboot_path, send_char=self.config.send_char)
                 connection.expect(self.config.interrupt_boot_prompt, timeout=600)
@@ -1544,7 +1544,6 @@ class Target(object):
                     connection.sendline('')
                     time.sleep(0.06)
                 connection.expect(self.config.bootloader_prompt)
-                logging.info('clear connection buffer')
                 connection.empty_buffer()
                 mac_addr = self._get_macaddr_whaley()
                 connection.sendline('setenv ethaddr %s' % mac_addr, send_char=self.config.send_char)
