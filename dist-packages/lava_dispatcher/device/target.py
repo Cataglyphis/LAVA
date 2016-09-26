@@ -1274,7 +1274,6 @@ class Target(object):
         logging.info('[EMMC MSTAR] end of show factory partition')
 
     def _burn_factory_mstar(self, connection):
-        factory = self.image_params.get('factory', '')
         logging.info('start to burn mstar factory image')
         connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
         # timeout = 3600s
@@ -1290,6 +1289,7 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('dhcp')
         connection.expect(self.config.bootloader_prompt, timeout=100)
+        factory = self._generate_factory_image()
         connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
         index = connection.expect([self.config.bootloader_prompt, pexpect.TIMEOUT], timeout=600)
         if index == 0:
@@ -1319,7 +1319,6 @@ class Target(object):
         logging.info('end of burn mstar factory')
 
     def _burn_factory_hisi(self, connection):
-        factory = self.image_params.get('factory')
         logging.info('start to burn hisi factory')
         connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
         # timeout = 3600s
@@ -1334,6 +1333,7 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('dhcp')
         connection.expect(self.config.bootloader_prompt, timeout=100)
+        factory = self._generate_factory_image()
         connection.sendline('exec %s' % factory, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=600)
         connection.sendline('reset', send_char=self.config.send_char)
