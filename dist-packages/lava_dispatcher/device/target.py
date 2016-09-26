@@ -884,7 +884,6 @@ class Target(object):
     def _monitor_boot(self, connection, ps1, ps1_pattern, is_master=False):
         # get deploy_whaley_image parameters
         image = self.image_params.get('image', '')
-        factory = self.image_params.get('factory', '')
         model_index = self.image_params.get('model_index')
 
         # get boot_whaley_image parameters
@@ -951,12 +950,10 @@ class Target(object):
                 return
         else:  # skip=False, emmc=False
             # burn factory image
-            if factory:
-                if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-938':
-                    self._burn_factory_mstar(connection)
-            
-                if self.config.device_type == 'hisi':
-                    self._burn_factory_hisi(connection)
+            if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-938':
+                self._burn_factory_mstar(connection)
+            elif self.config.device_type == 'hisi':
+                self._burn_factory_hisi(connection)
 
             if 'R' in image and not skip:
                 self._burn_su_image(connection)
