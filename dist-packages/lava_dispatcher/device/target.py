@@ -647,8 +647,6 @@ class Target(object):
         elif device_type == 'hisi':
             connection.sendline('setenv ethaddr %s' % mac_addr, send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt)
-            connection.sendline('ufts set fts.fac.factory_mode 0', send_char=self.config.send_char)
-            logging.info('clear connection buffer')
             connection.empty_buffer()
         else:
             logging.warning('no device type mstar or hisi found')
@@ -1197,6 +1195,8 @@ class Target(object):
         logging.info('[EMMC MSTAR] end of burn factory')
 
     def _generate_factory_image(self):
+        logging.info('context.config: %s' % self.context.config)
+        logging.info('config: %s' % self.config)
         current = os.getcwd()
         # /var/lib/lava/dispatcher/tmp
         image_tmpdir = self.context.config.lava_image_tmpdir
@@ -1500,9 +1500,7 @@ class Target(object):
             else:
                 logging.warning('no device type mstar or hisi found')
         else:  # skip=False, emmc=False
-            # add set mac address in bootloader, 2016.04.19
             logging.info('burn normal image, not factory emmc image')
-            self._set_macaddr_whaley(connection)
             if 'mstar' in self.config.device_type:
                 logging.info('burn mboot firstly for mstar platform')
                 mboot_path = os.path.join(os.path.dirname(image), 'auto_update_mboot.txt')
@@ -1511,18 +1509,33 @@ class Target(object):
                 connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt)
                 if self.config.device_type == 'mstar':
-                    connection.sendline('setenv factory_poweron_mode direct', send_char=self.config.send_char)
+                    connection.sendline('cleanallenv')
+                    connection.expect(self.config.bootloader_prompt)
+                    connection.sendline('setenv bootdelay 10')
                     connection.expect(self.config.bootloader_prompt)
                 elif self.config.device_type == 'mstar-938':
+                    connection.sendline('cleanallenv')
+                    connection.expect(self.config.bootloader_prompt)
+                    connection.sendline('setenv bootdelay 10')
+                    connection.expect(self.config.bootloader_prompt)
                     connection.sendline('ufts reset', send_char=self.config.send_char)
                     connection.expect(self.config.bootloader_prompt)
                 connection.sendline('saveenv', send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt)
+                connection.sendline('reset')
+                connection.expect(self.config.interrupt_boot_prompt, timeout=100)
+                for i in range(10):
+                    connection.sendline('')
+                    time.sleep(0.1)
+                connection.expect(self.config.bootloader_prompt)
+                # clear the buffer
+                connection.empty_buffer()
+                self._set_macaddr_whaley(connection)
                 connection.sendline('mstar %s' % mboot_path, send_char=self.config.send_char)
                 connection.expect(self.config.interrupt_boot_prompt, timeout=600)
                 for i in range(10):
                     connection.sendline('')
-                    time.sleep(0.06)
+                    time.sleep(0.1)
                 # << MStar >>#
                 connection.expect(self.config.bootloader_prompt)
                 # clear the buffer
@@ -1532,6 +1545,7 @@ class Target(object):
                 fastboot_path = os.path.join(os.path.dirname(image), 'fastboot.txt')
                 logging.info('fastboot path is: %s' % fastboot_path)
                 connection.empty_buffer()
+                self._set_macaddr_whaley(connection)
                 connection.sendline('setenv serverip %s' % image_server_ip, send_char=self.config.send_char)
                 connection.expect(self.config.bootloader_prompt)
                 connection.sendline('ufts reset', send_char=self.config.send_char)
