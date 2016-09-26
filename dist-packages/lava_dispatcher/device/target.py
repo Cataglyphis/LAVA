@@ -1214,9 +1214,9 @@ class Target(object):
         shutil.copytree(factory_tool, factory)
         logging.info('change workspace to %s' % factory)
         os.chdir(factory)
-        project_name = self.image_params.get('project_name')
-        model_index = self.image_params.get('model_index')
-        product_name = self.image_params.get('product_name')
+        project_name = self.image_params.get('project_name', '')
+        model_index = self.image_params.get('model_index', '')
+        product_name = self.image_params.get('product_name', '')
         yun_os = self.image_params.get('yun_os', 'false')
         command = ['sudo', '-u', 'root', './factory.sh', job_id, project_name, model_index, product_name, yun_os]
         subprocess.call(command)
@@ -1243,6 +1243,7 @@ class Target(object):
         else:
             os.chdir(current)
             logging.warning('only support apollo, helios, sphinx, titan')
+            raise CriticalError('only support apollo, helios, sphinx, titan')
 
     def _show_factory_mstar_emmc(self, connection):
         connection.sendline('recovery')
@@ -1286,32 +1287,13 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('dhcp')
         connection.expect(self.config.bootloader_prompt, timeout=100)
-        factory = self._generate_factory_image()
-        connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
-        index = connection.expect([self.config.bootloader_prompt, pexpect.TIMEOUT], timeout=600)
-        if index == 0:
-            connection.sendline('reset', send_char=self.config.send_char)
-        else:
-            logging.warning('can not burn mstar factory in 10 minutes, try again')
-            connection.sendcontrol('c')
-            connection.sendline('reset')
-            connection.empty_buffer()
-            connection.expect(self.config.interrupt_boot_prompt, timeout=100)
-            for i in range(10):
-                connection.sendline('')
-            # << MStar >>#
-            connection.expect(self.config.bootloader_prompt)
-            # clear the buffer
-            logging.info('clear connection buffer')
-            connection.empty_buffer()
-            connection.sendline('setenv serverip %s' % self.context.config.lava_server_ip, send_char=self.config.send_char)
-            connection.expect(self.config.bootloader_prompt)
-            connection.sendline('estart')
-            connection.expect(self.config.bootloader_prompt)
-            connection.sendline('dhcp')
-            connection.expect(self.config.bootloader_prompt, timeout=100)
+        try:
+            factory = self._generate_factory_image()
             connection.sendline('mstar %s' % factory, send_char=self.config.send_char)
-            connection.expect(self.config.bootloader_prompt, timeout=600)
+            connection.expect([self.config.bootloader_prompt, pexpect.TIMEOUT], timeout=600)
+        except CriticalError:
+            logging.warning('skip burn factory image')
+        finally:
             connection.sendline('reset', send_char=self.config.send_char)
         logging.info('end of burn mstar factory')
 
@@ -1330,10 +1312,14 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('dhcp')
         connection.expect(self.config.bootloader_prompt, timeout=100)
-        factory = self._generate_factory_image()
-        connection.sendline('exec %s' % factory, send_char=self.config.send_char)
-        connection.expect(self.config.bootloader_prompt, timeout=600)
-        connection.sendline('reset', send_char=self.config.send_char)
+        try:
+            factory = self._generate_factory_image()
+            connection.sendline('exec %s' % factory, send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt, timeout=600)
+        except CriticalError:
+            logging.warning('skip burn factory image')
+        finally:
+            connection.sendline('reset', send_char=self.config.send_char)
         logging.info('end of burn hisi factory')
     
     def _burn_factory_hisi_emmc(self, connection):
