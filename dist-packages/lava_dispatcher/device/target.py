@@ -1136,6 +1136,9 @@ class Target(object):
         connection.sendline('dhcp', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=20)
         connection.sendline('mstar %s' % mboot_txt, send_char=self.config.send_char)
+        if self.config.device_type == 'mstar-938':
+            connection.expect(self.config.bootloader_prompt, timeout=300)
+            connection.sendline('reset')
         connection.expect(self.config.interrupt_boot_prompt, timeout=300)
         for i in range(10):
             connection.sendline('')
