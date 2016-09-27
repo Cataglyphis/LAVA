@@ -1426,11 +1426,7 @@ class Target(object):
 
     def _dump_emmc_mstar_emmc(self, connection):
         logging.info('[EMMC MSTAR] begin to dump emmc to usb disk')
-        logging.info('clear connection buffer')
         connection.empty_buffer()
-        if self.config.device_type == 'mstar-938':
-            connection.sendline('ufts set fts.fac.factory_mode 1')
-            connection.expect(self.config.bootloader_prompt)
         connection.sendline('setenv bootdelay', send_char=self.config.send_char)
         connection.sendline('setenv deployargs', send_char=self.config.send_char)
         connection.sendline('setenv bootcmd', send_char=self.config.send_char)
