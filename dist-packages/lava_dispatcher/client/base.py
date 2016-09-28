@@ -415,9 +415,9 @@ class LavaClient(object):
     # created by Wang Bo (wang.bo@whaley.cn), 2016.09.18
     # call lava_dispatcher.device.bootloader: deploy_whaley_image
     ############################################################
-    def deploy_whaley_image(self, image, factory, image_server_ip, bootloadertype, project_name,
+    def deploy_whaley_image(self, image, image_server_ip, bootloadertype, project_name,
                             model_index, product_name, yun_os):
-        self.target_device.deploy_whaley_image(image, factory, image_server_ip, bootloadertype,
+        self.target_device.deploy_whaley_image(image, image_server_ip, bootloadertype,
                                                project_name, model_index, product_name, yun_os)
 
     def deploy_linaro_android(self, images, rootfstype,

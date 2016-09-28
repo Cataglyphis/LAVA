@@ -1232,7 +1232,7 @@ class Target(object):
         yun_os = self.image_params.get('yun_os', 'false')
         command = ['sudo', '-u', 'root', './factory.sh', job_id, project_name, model_index, product_name, yun_os]
         subprocess.call(command)
-        if project_name in ['apollo']:
+        if project_name in ['apollo', 'phoebus']:
             if os.path.isfile(os.path.join(factory, 'image', job_id, 'factory')) and \
                     os.path.isfile(os.path.join(factory, 'image', job_id, 'factory.ext4.gz')):
                 logging.info('generate factory image successfully')

@@ -172,13 +172,13 @@ class BootloaderTarget(MasterImageTarget):
     # add function deploy_whaley_image in class BootloaderTarget
     ############################################################
 
-    def deploy_whaley_image(self, image, factory, image_server_ip, bootloadertype, project_name,
+    def deploy_whaley_image(self, image, image_server_ip, bootloadertype, project_name,
                             model_index, product_name, yun_os):
         if self.__deployment_data__ is None:
             logging.debug('attempt to set deployment data')
             logging.warning('no need to set deployment data for whaley platform')
         
-        logging.info('image: %s, factory: %s, image_server_ip: %s' % (image, factory, image_server_ip))
+        logging.info('image: %s, image_server_ip: %s' % (image, image_server_ip))
         logging.info('project_name: %s, model_index: %s, product_name: %s, yun_os: %s' % (project_name, model_index,
                                                                                           product_name, yun_os))
         logging.debug('set bootloader type to u_boot in whaley platform')

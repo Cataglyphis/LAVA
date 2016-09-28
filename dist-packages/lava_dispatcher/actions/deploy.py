@@ -360,13 +360,12 @@ class cmd_deploy_whaley_image(BaseAction):
         'type': 'object',
         'properties': {
             'image': {'type': 'string', 'optional': True},
-            'factory': {'type': 'string', 'optional': True, 'default': ''},
             'image_server_ip': {'type': 'string', 'optional': True},
-            'project_name': {'type': 'string', 'optional': True,
+            'project_name': {'type': 'string', 'optional': False,
                              'enum': ["helios", "apollo", "sphinx", "titan"]},
-            'model_index': {'type': 'string', 'optional': True, 'default': '0'},
-            'product_name': {'type': 'string', 'optional': True, 'default': ''},
-            'yun_os': {'type': 'string', 'optional': True, 'default': 'false',
+            'model_index': {'type': 'string', 'optional': False, 'default': '0'},
+            'product_name': {'type': 'string', 'optional': False, 'default': ''},
+            'yun_os': {'type': 'string', 'optional': False, 'default': 'false',
                        'enum': ["true", "false"]
                        },
             'bootloadertype': {'type': 'string', 'optional': True, 'default': 'u_boot'},
@@ -383,9 +382,9 @@ class cmd_deploy_whaley_image(BaseAction):
         if 'image_server_ip' not in parameters:
             raise ValueError('must specify image server ip address in deploy_whaley_image')
 
-    def run(self, image=None, factory=None, image_server_ip=None, project_name=None,
+    def run(self, image=None, image_server_ip=None, project_name=None,
             model_index=None, product_name=None, yun_os='false', bootloadertype='u_boot'):
-        self.client.deploy_whaley_image(image=image, factory=factory, image_server_ip=image_server_ip,
+        self.client.deploy_whaley_image(image=image, image_server_ip=image_server_ip,
                                         bootloadertype=bootloadertype, project_name=project_name,
                                         model_index=model_index, product_name=product_name,
                                         yun_os=yun_os)
