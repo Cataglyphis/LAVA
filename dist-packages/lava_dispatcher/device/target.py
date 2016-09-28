@@ -437,6 +437,8 @@ class Target(object):
                 connection.sendline('busybox wget -O sqlite3 http://172.16.117.1:8000/resource/sqlite3', send_char=self.config.send_char)
             elif self.config.device_type == 'hisi':
                 connection.sendline('busybox wget -O sqlite3 http://172.16.117.1:8000/resource/sqlite3_hisi', send_char=self.config.send_char)
+            elif self.config.device_type == 'mstar-938':
+                connection.sendline('busybox wget -O sqlite3 http://172.16.117.1:8000/resource/sqlite3_938', send_char=self.config.send_char)
             time.sleep(5)
             connection.sendline('busybox chmod 755 sqlite3', send_char=self.config.send_char)
         # go back to /, otherwise block the next step in whaley_test_shell
