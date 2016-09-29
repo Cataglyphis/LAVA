@@ -1249,6 +1249,8 @@ class Target(object):
         time.sleep(2)
         connection.sendline('busybox cat /factory/model_index.ini')
         time.sleep(2)
+        connection.sendline('busybox cat /factory/panel_index.ini')
+        time.sleep(2)
         connection.sendline('busybox cat /factory/factory.prop')
         time.sleep(2)
         connection.sendline('busybox reboot -f')
