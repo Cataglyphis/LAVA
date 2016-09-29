@@ -464,23 +464,6 @@ class Target(object):
         connection.empty_buffer()
         logging.info('end setting vip info')
 
-    # set logctl
-    def _set_logctl_whlay(self, connection):
-        logging.info('set logctl file to /data/local/tmp/log')
-        connection.sendline('cd /data/local/tmp', send_char=self.config.send_char)
-        connection.sendline('su')
-        connection.sendline('mkdir log')
-        connection.sendline('chmod 777 log')
-        connection.sendline('setprop persist.svc.logctl.file /data/local/tmp/log/logcat.log')
-        connection.sendline('setprop persist.svc.logctl.size 10000')
-        connection.sendline('setprop persist.service.logcat.enable true')
-        connection.sendline('stop logctl')
-        connection.sendline('getprop | grep logctl')
-        connection.sendline('start logctl')
-        connection.sendline('cd /', send_char=self.config.send_char)
-        connection.empty_buffer()
-        logging.info('end set logctl file')
-
     # display /mnt/usb/sda1/多媒体
     def _display_usb_whaley(self, connection):
         logging.info('display /mnt/usb/sdx/多媒体 info')
@@ -927,27 +910,24 @@ class Target(object):
                 self._burn_factory_hisi_emmc(connection)
                 connection.empty_buffer()
                 # write panel index to deviceinfo
-                logging.info('[EMMC HISI] try use panel_index command to judge whether fastboot support')
+                logging.info('[EMMC HISI] panel_index command to read panel info from deviceinfo partition')
                 connection.sendline('panel_index')
                 connection.expect(self.config.bootloader_prompt)
                 if 'Unknown command' in connection.before:
-                    logging.info('[EMMC HISI] use spi command to set panel parameter')
-                    connection.sendline('reset')
-                    time.sleep(60)
-                    self._skip_guide_whaley(connection)
-                    self._del_db_hisi_emmc(connection)
-                    self._set_spi_hisi_emmc(connection, model_index)
-                    connection.sendline('reboot', send_char=self.config.send_char)
-                    logging.info('[EMMC HISI] reboot device to make spi parameter take effect')
+                    logging.info('[EMMC HISI] current fastboot do not support panel_index')
                 else:
                     logging.info('[EMMC HISI] use panel_index command to set panel parameter')
-                    connection.sendline('panel_index write %s' % model_index, send_char=self.config.send_char)
-                    connection.expect(self.config.bootloader_prompt)
                     connection.sendline('panel_index read')
                     connection.expect(self.config.bootloader_prompt)
-                    connection.sendline('reset')
+                    match = re.search('panel\s*index:\s*(\d+)', connection.before)
+                    if match and match.groups()[0] == model_index:
+                        logging.info('[EMMC HISI] set panel index in deviceinfo partition successfully')
+                    else:
+                        logging.error('[EMMC HISI] current panel index do not match')
+                        raise
+                connection.sendline('reset')
                 time.sleep(120)
-                self._show_pq_hisi_emmc(connection)
+                self._show_pq_hisi_emmc(connection, model_index)
                 connection.sendline('reboot r', send_char=self.config.send_char)
                 connection.expect('StartGUI', timeout=150)
                 time.sleep(15)
@@ -1056,8 +1036,6 @@ class Target(object):
             self._remove_helios_guide(connection)
             # set factory info, mac addr, sn
             self._set_factory_whaley(connection)
-            # set logctl
-            # self._set_logctl_whlay(connection)
             # display usb info
             self._display_usb_whaley(connection)
             # reboot device
@@ -1328,6 +1306,10 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=100)
         try:
             factory = self._generate_factory_image()
+            deviceinfo = os.path.join(os.path.dirname(factory), 'deviceinfo.txt')
+            logging.info('deviceinfo.txt path: %s' % deviceinfo)
+            connection.sendline('exec %s' % deviceinfo, send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt, timeout=600)
             connection.sendline('exec %s' % factory, send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt, timeout=600)
         except CriticalError:
@@ -1338,13 +1320,17 @@ class Target(object):
     
     def _burn_factory_hisi_emmc(self, connection):
         factory = self._generate_factory_image()
-        logging.info('[EMMC HISI] start to burn hisi factory')
+        logging.info('[EMMC HISI] start to burn hisi deviceinfo and factory')
         # clear the buffer
         connection.empty_buffer()
         connection.sendline('setenv serverip %s' % self.context.config.lava_server_ip, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('dhcp')
         connection.expect(self.config.bootloader_prompt, timeout=100)
+        deviceinfo = os.path.join(os.path.dirname(factory), 'deviceinfo.txt')
+        logging.info('deviceinfo.txt path: %s' % deviceinfo)
+        connection.sendline('exec %s' % deviceinfo, send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt, timeout=600)
         connection.sendline('exec %s' % factory, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=600)
         connection.empty_buffer()
@@ -1375,13 +1361,20 @@ class Target(object):
         connection.expect('TV')
         connection.sendline('q')
         connection.expect('shell@')
-        self._show_pq_hisi_emmc(connection)
+        self._show_pq_hisi_emmc(connection, model_index)
         logging.info('[EMMC HISI] end of set panel index with spi')
     
-    def _show_pq_hisi_emmc(self, connection):
+    def _show_pq_hisi_emmc(self, connection, model_index):
         logging.info('[EMMC HISI] show pq and factory files')
+        connection.empty_buffer()
         connection.sendline('cat /proc/msp/pdm')
         connection.expect('shell@')
+        match = re.search('Panel\s*Current\s*Index\s*:\s*(\d+)', connection.before)
+        if match and match.groups()[0] == model_index:
+            logging.info('[EMMC HISI] set panel index in pdm successfully')
+        else:
+            logging.info('[EMMC HISI] current panel index in pdm do not match')
+            raise
         connection.sendline('cat /proc/msp/pq')
         connection.expect('shell@')
         connection.sendline('busybox ls -lh /factory')
