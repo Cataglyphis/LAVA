@@ -177,15 +177,17 @@ class BootloaderTarget(MasterImageTarget):
         if self.__deployment_data__ is None:
             logging.debug('attempt to set deployment data')
             logging.warning('no need to set deployment data for whaley platform')
-        
-        logging.info('image: %s, image_server_ip: %s' % (image, image_server_ip))
-        logging.info('project_name: %s, model_index: %s, product_name: %s, yun_os: %s' % (project_name, model_index,
+        if image and image_server_ip:
+            logging.info('image: %s, image_server_ip: %s' % (image, image_server_ip))
+            logging.info('project_name: %s, model_index: %s, product_name: %s, yun_os: %s' % (project_name, model_index,
                                                                                           product_name, yun_os))
-        logging.debug('set bootloader type to u_boot in whaley platform')
-        
-        self._set_boot_type(bootloadertype)
-        self._default_boot_cmds = 'boot_cmds'
-        
+            logging.debug('set bootloader type to u_boot in whaley platform')
+            self._set_boot_type(bootloadertype)
+            self._default_boot_cmds = 'boot_cmds'
+        else:
+            logging.error('invalid image or image_server_ip')
+            raise
+
         if self._is_uboot():
             self._boot_tags['{IMAGE}'] = image
             self._boot_tags['{IMAGE_SERVER_IP}'] = image_server_ip
