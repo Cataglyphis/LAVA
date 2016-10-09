@@ -570,7 +570,7 @@ class Target(object):
             connection.sendline('ufts set fts.boot.recovery', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('reset', send_char=self.config.send_char)
-            connection.expect('StartGUI', timeout=150)
+            connection.expect('/ #', timeout=200)
             time.sleep(15)
         else:
             logging.warning('no device type mstar or hisi found')
@@ -929,7 +929,7 @@ class Target(object):
                 time.sleep(120)
                 self._show_pq_hisi_emmc(connection, model_index)
                 connection.sendline('reboot r', send_char=self.config.send_char)
-                connection.expect('StartGUI', timeout=150)
+                connection.expect('/ #', timeout=200)
                 time.sleep(15)
                 self._dump_emmc_hisi_emmc(connection)
                 return
