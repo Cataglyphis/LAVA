@@ -921,7 +921,7 @@ class Target(object):
                     connection.expect(self.config.bootloader_prompt)
                     match = re.search('panel\s*index:\s*(\d+)', connection.before)
                     if match and match.groups()[0] == model_index:
-                        logging.info('[EMMC HISI] set panel index in deviceinfo partition successfully')
+                        logging.info('[EMMC HISI] read panel index in deviceinfo partition successfully')
                     else:
                         logging.error('[EMMC HISI] current panel index do not match')
                         raise
