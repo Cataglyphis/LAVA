@@ -916,7 +916,7 @@ class Target(object):
                 if 'Unknown command' in connection.before:
                     logging.info('[EMMC HISI] current fastboot do not support panel_index')
                 else:
-                    logging.info('[EMMC HISI] use panel_index command to set panel parameter')
+                    logging.info('[EMMC HISI] use panel_index command to read panel parameter')
                     connection.sendline('panel_index read')
                     connection.expect(self.config.bootloader_prompt)
                     match = re.search('panel\s*index:\s*(\d+)', connection.before)
@@ -1288,7 +1288,20 @@ class Target(object):
         except CriticalError:
             logging.warning('skip burn factory image')
         finally:
+            logging.info('start to setenv db_table to 0')
+            connection.sendline('setenv db_table 0', send_char=self.config.send_char)
+            connection.sendline('saveenv', send_char=self.config.send_char)
             connection.sendline('reset', send_char=self.config.send_char)
+            connection.expect(self.config.interrupt_boot_prompt, timeout=30)
+            for i in range(10):
+                connection.sendline('')
+            # << MStar >>#
+            connection.expect(self.config.bootloader_prompt)
+            # clear connection buffer
+            connection.empty_buffer()
+            connection.sendline('recovery_wipe_partition data', send_char=self.config.send_char)
+            connection.sendline('reset', send_char=self.config.send_char)
+            connection.expect('/ #', timeout=100)
         logging.info('end of burn mstar factory')
 
     def _burn_factory_hisi(self, connection):
@@ -1430,7 +1443,8 @@ class Target(object):
         connection.sendline('setenv bootdelay', send_char=self.config.send_char)
         connection.sendline('setenv deployargs', send_char=self.config.send_char)
         connection.sendline('setenv bootcmd', send_char=self.config.send_char)
-        connection.sendline('setenv macaddr 00:30:1B:BA:02:DB', send_char=self.config.send_char)
+        # connection.sendline('setenv macaddr 00:30:1B:BA:02:DB', send_char=self.config.send_char)
+        connection.sendline('setenv macaddr', send_char=self.config.send_char)
         connection.sendline('saveenv', send_char=self.config.send_char)
         connection.expect('done')
         connection.empty_buffer()
