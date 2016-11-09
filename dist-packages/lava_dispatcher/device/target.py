@@ -401,8 +401,9 @@ class Target(object):
                 connection.sendcontrol('c')
                 connection.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
                 connection.sendline('su', send_char=self.config.send_char)
-                connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=self.config.send_char)
-                time.sleep(20)
+                # connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=self.config.send_char)
+                # time.sleep(20)
+                self._skip_helios_guide(connection)
                 connection.sendline('dumpsys window | grep mFocusedApp', send_char=self.config.send_char)
                 pos2 = connection.expect(pattern, timeout=10)
                 if pos2 == 2:
@@ -411,7 +412,7 @@ class Target(object):
                 else:
                     logging.info("can't skip the guide, try it again")
             elif pos1 == 2:
-                logging.info('already in com.helios.launch activity')
+                logging.info('already in com.helios.launcher activity')
                 break
             elif pos1 == 3:
                 logging.info('already in com.whaley.tv.tvplayer.ui activity')
@@ -473,6 +474,28 @@ class Target(object):
         connection.expect(['shell@', 'root@', pexpect.TIMEOUT])
         connection.empty_buffer()
         logging.info('end display /mnt/usb/sdx/多媒体 info')
+    
+    def _skip_focus_command(self, connection):
+        connection.sendline('input keyevent 66')
+        time.sleep(1)
+        connection.sendline('input keyevent 3')
+        time.sleep(1)
+        connection.sendline('input keyevent 3')
+
+    def _broadcast_rc_connected(self, connection):
+        connection.sendline('am broadcast -a com.helios.whaleyremote.action.BONDED')
+        connection.sendline('am broadcast -a com.helios.whaleyremote.action.CONNECTED')
+
+    def _skip_helios_guide(self, connection):
+        logging.info('skip helios guide')
+        for i in range(5):
+            connection.sendline('dumpsys window | grep mCurrentFocus')
+            index = connection.expect(['com.helios.launcher', pexpect.TIMEOUT], timeout=10)
+            if index == 0:
+                break
+            time.sleep(5)
+            self._skip_focus_command(connection)
+            self._broadcast_rc_connected(connection)
 
     # remove helios guide, so after reboot no guide appear
     def _remove_helios_guide(self, connection):
@@ -1032,8 +1055,10 @@ class Target(object):
             self._install_busybox_whaley(connection)
             # set shutdown time to -1, no shutdown
             self._close_shutdown_whaley(connection)
+            # skip helios guide
+            # self._skip_helios_guide(connection)
             # remove helios guide
-            self._remove_helios_guide(connection)
+            # self._remove_helios_guide(connection)
             # set factory info, mac addr, sn
             self._set_factory_whaley(connection)
             # display usb info
