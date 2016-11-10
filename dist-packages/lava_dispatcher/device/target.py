@@ -949,11 +949,13 @@ class Target(object):
                         logging.error('[EMMC HISI] current panel index do not match')
                         raise
                 connection.sendline('reset')
-                time.sleep(120)
+                logging.info('[EMMC HISI] wait for 600s totally')
+                for i in range(10):
+                    time.sleep(60)
+                    connection.empty_buffer()
+                    logging.info('[EMMC HISI] current loop %s, wait %s seconds' % (i, (i+1)*60))
+                self._reboot_recovery_hisi_emmc(connection)
                 self._show_pq_hisi_emmc(connection, model_index)
-                connection.sendline('reboot r', send_char=self.config.send_char)
-                connection.expect('/ #', timeout=200)
-                time.sleep(15)
                 self._dump_emmc_hisi_emmc(connection)
                 return
         else:  # skip=False, emmc=False
@@ -1380,35 +1382,28 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         logging.info('[EMMC HISI] end of burn hisi factory')
     
-    def _del_db_hisi_emmc(self, connection):
-        logging.info('[EMMC HISI] delete database')
-        connection.sendline('rm -rf /tvdatabase/db/*')
-        connection.sendline('rm -rf /tvdatabase/dtv/*')
-        connection.sendline('rm -rf /atv/db/*')
-        connection.sendline('sync')
+    def _reboot_recovery_hisi_emmc(self, connection):
+        self._hard_reboot(connection)
+        connection.expect(self.config.bootloader_prompt, timeout=30)
+        # clear the buffer
         connection.empty_buffer()
-        logging.info('[EMMC HISI] end of delete database')
-    
-    def _set_spi_hisi_emmc(self, connection, model_index):
-        logging.info('[EMMC HISI] set panel index with spi')
-        connection.sendline('hidebug')
-        connection.expect('TV')
-        connection.sendline('factory')
-        connection.expect('factory@TV')
-        connection.sendline('spi %s' % model_index)
-        connection.expect('factory@TV')
-        connection.sendline('q')
-        connection.expect('TV')
-        connection.sendline('q')
-        connection.expect('shell@')
-        self._show_pq_hisi_emmc(connection, model_index)
-        logging.info('[EMMC HISI] end of set panel index with spi')
-    
+        logging.info('[EMMC HISI] reboot to recovery')
+        connection.sendline('ufts set fts.boot.command boot-recovery', send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('ufts set fts.boot.status', send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('ufts set fts.boot.recovery', send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('reset', send_char=self.config.send_char)
+        connection.expect('/ #', timeout=200)
+        time.sleep(15)
+
     def _show_pq_hisi_emmc(self, connection, model_index):
         logging.info('[EMMC HISI] show pq and factory files')
         connection.empty_buffer()
+        connection.sendline('busybox --install /sbin', send_char=self.config.send_char)
         connection.sendline('cat /proc/msp/pdm')
-        connection.expect('shell@')
+        connection.expect('/ #')
         match = re.search('Panel\s*Current\s*Index\s*:\s*(\d+)', connection.before)
         if match and match.groups()[0] == model_index:
             logging.info('[EMMC HISI] set panel index in pdm successfully')
@@ -1416,13 +1411,18 @@ class Target(object):
             logging.info('[EMMC HISI] current panel index in pdm do not match')
             raise
         connection.sendline('cat /proc/msp/pq')
-        connection.expect('shell@')
-        connection.sendline('busybox ls -lh /factory')
+        connection.expect('/ #')
+        connection.sendline('busybox mkdir /tmp/factory')
+        connection.sendline('busybox mount /dev/block/platform/hi_mci.1/by-name/factory /tmp/factory')
+        connection.sendline('busybox ls -lh /tmp/factory')
         time.sleep(2)
-        connection.sendline('cat /factory/factory.prop')
+        connection.sendline('cat /tmp/factory/factory.prop')
         time.sleep(2)
-        connection.sendline('cat /factory/model_index.ini')
+        connection.sendline('cat /tmp/factory/model_index.ini')
         time.sleep(2)
+        connection.sendline('busybox umount /tmp/factory')
+        time.sleep(2)
+        connection.sendline('busybox rm -rf /tmp/factory')
         connection.empty_buffer()
         logging.info('[EMMC HISI] end of show pq and factory files')
 
@@ -1442,7 +1442,7 @@ class Target(object):
         logging.info('[EMMC MSTAR] wait for android booted')
         index = connection.expect(['start test', 'TVOS'], timeout=self.config.image_boot_msg_timeout)
         if index == 1:
-            time.sleep(200)
+            time.sleep(300)
         self._hard_reboot(connection)
         connection.expect(self.config.bootloader_prompt, timeout=30)
         # clear the buffer
