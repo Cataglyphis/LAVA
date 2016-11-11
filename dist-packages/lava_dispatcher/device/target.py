@@ -489,13 +489,16 @@ class Target(object):
     def _skip_helios_guide(self, connection):
         logging.info('skip helios guide')
         for i in range(5):
-            connection.sendline('dumpsys window | grep mCurrentFocus')
+            connection.sendline('dumpsys window | grep mFocusedApp')
             index = connection.expect(['com.helios.launcher', pexpect.TIMEOUT], timeout=10)
             if index == 0:
                 break
             time.sleep(5)
             self._skip_focus_command(connection)
             self._broadcast_rc_connected(connection)
+            if i == 2:
+                connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=self.config.send_char)
+                time.sleep(5)
 
     # remove helios guide, so after reboot no guide appear
     def _remove_helios_guide(self, connection):
@@ -1402,6 +1405,7 @@ class Target(object):
         logging.info('[EMMC HISI] show pq and factory files')
         connection.empty_buffer()
         connection.sendline('busybox --install /sbin', send_char=self.config.send_char)
+        connection.expect('/ #')
         connection.sendline('cat /proc/msp/pdm')
         connection.expect('/ #')
         match = re.search('Panel\s*Current\s*Index\s*:\s*(\d+)', connection.before)
