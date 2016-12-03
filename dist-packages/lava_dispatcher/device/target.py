@@ -470,7 +470,7 @@ class Target(object):
         logging.info('display /mnt/usb/sdx/多媒体 info')
         connection.sendline('su')
         connection.expect(['shell@', 'root@', pexpect.TIMEOUT])
-        connection.sendline('for usb in `ls /mnt/usb`; do busybox du -sh /mnt/usb/$usb/多媒体; busybox ls -lh /mnt/usb/$usb/多媒体; done')
+        connection.sendline('for usb in `ls /mnt/usb`; do echo $usb; busybox du -sh /mnt/usb/$usb/多媒体; busybox ls -lh /mnt/usb/$usb/多媒体; done')
         connection.expect(['shell@', 'root@', pexpect.TIMEOUT])
         connection.empty_buffer()
         logging.info('end display /mnt/usb/sdx/多媒体 info')
@@ -1075,6 +1075,8 @@ class Target(object):
             self._skip_guide_whaley(connection)
             # set vip account
             self._set_vip_whaley(connection)
+            # display usb info
+            self._display_usb_whaley(connection)
 
         # try:
         #     self._auto_login(connection, is_master)

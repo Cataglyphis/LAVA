@@ -535,7 +535,8 @@ class BootloaderTarget(MasterImageTarget):
         buffer_before = self.proc.before.strip()
         platform = buffer_before.split('\r\n')[-1]
         data['device']['platform'] = platform.capitalize()
-        
+        data['device']['hostname'] = self.config.hostname
+
         data['device']['job_id'] = int(job_id)
         data['mail']['subject'] = data['mail']['subject'] + ' ' + self.context.job_data.get('job_name')
         data['git'] = git_info
