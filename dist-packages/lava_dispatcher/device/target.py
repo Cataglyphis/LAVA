@@ -909,10 +909,10 @@ class Target(object):
                 connection.expect(self.config.bootloader_prompt)
                 # clear connection buffer
                 connection.empty_buffer()
-                if self.config.device_type == 'mstar-938':
-                    logging.info('[EMMC MSTAR] set factory mode for mstar 938')
-                    connection.sendline('ufts set fts.fac.factory_mode 1', send_char=self.config.send_char)
-                    connection.expect(self.config.bootloader_prompt)
+                # if self.config.device_type == 'mstar-938':
+                #     logging.info('[EMMC MSTAR] set factory mode for mstar 938')
+                #     connection.sendline('ufts set fts.fac.factory_mode 1', send_char=self.config.send_char)
+                #     connection.expect(self.config.bootloader_prompt)
                 self._burn_factory_mstar_emmc(connection)
                 self._show_factory_mstar_emmc(connection)
                 self._wipe_data_mstar_emmc(connection)
@@ -1381,10 +1381,6 @@ class Target(object):
         connection.sendline('exec %s' % factory, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=600)
         connection.empty_buffer()
-        # connection.sendline('printenv')
-        # connection.expect(self.config.bootloader_prompt, timeout=60)
-        # connection.sendline('ufts list')
-        # connection.expect(self.config.bootloader_prompt)
         logging.info('[EMMC HISI] end of burn hisi factory')
     
     def _reboot_recovery_hisi_emmc(self, connection):
@@ -1394,23 +1390,29 @@ class Target(object):
         connection.empty_buffer()
         logging.info('[EMMC HISI] show env in fastboot')
         image = self.image_params.get('image', '')
-        if '01.24' in image:
-            logging.info('[EMMC HISI] set fts.boot.resize_data in fastboot for 01.24 image')
-            connection.sendline('ufts set fts.boot.resize_data 1')
-            connection.expect(self.config.bootloader_prompt, timeout=10)
-        connection.sendline('printenv')
-        connection.expect(self.config.bootloader_prompt, timeout=60)
-        connection.sendline('ufts list')
-        connection.expect(self.config.bootloader_prompt)
-        connection.sendline('ufts set fts.boot.command boot-recovery', send_char=self.config.send_char)
-        connection.expect(self.config.bootloader_prompt)
-        connection.sendline('ufts set fts.boot.status', send_char=self.config.send_char)
-        connection.expect(self.config.bootloader_prompt)
-        connection.sendline('ufts set fts.boot.recovery', send_char=self.config.send_char)
-        connection.expect(self.config.bootloader_prompt)
-        connection.sendline('reset', send_char=self.config.send_char)
-        connection.expect('/ #', timeout=200)
-        time.sleep(20)
+        match = re.search('-(\d+)\.(\d+)\.(\d+)-', image)
+        if match:
+            image_version = match.groups()
+            logging.info('[EMMC HISI] image version is: %s' % str(image_version))
+            if image_version >= ('01', '24', '00'):
+                logging.info('[EMMC HISI] set fts.boot.resize_data in fastboot')
+                connection.sendline('ufts set fts.boot.resize_data 1')
+                connection.expect(self.config.bootloader_prompt, timeout=10)
+            connection.sendline('printenv')
+            connection.expect(self.config.bootloader_prompt, timeout=60)
+            connection.sendline('ufts list')
+            connection.expect(self.config.bootloader_prompt)
+            connection.sendline('ufts set fts.boot.command boot-recovery', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt)
+            connection.sendline('ufts set fts.boot.status', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt)
+            connection.sendline('ufts set fts.boot.recovery', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt)
+            connection.sendline('reset', send_char=self.config.send_char)
+            connection.expect('/ #', timeout=200)
+            time.sleep(20)
+        else:
+            raise
 
     def _show_pq_hisi_emmc(self, connection, model_index):
         logging.info('[EMMC HISI] show pq and factory files')
@@ -1486,26 +1488,37 @@ class Target(object):
         # connection.sendline('setenv macaddr 00:30:1B:BA:02:DB', send_char=self.config.send_char)
         connection.sendline('setenv macaddr', send_char=self.config.send_char)
         image = self.image_params.get('image', '')
-        if '01.24' in image:
-            logging.info('[EMMC MSTAR] set do_resize_userdata in mboot for 01.24 image')
-            connection.sendline('setenv do_resize_userdata 1')
-        connection.sendline('saveenv', send_char=self.config.send_char)
-        connection.expect('done')
-        connection.empty_buffer()
-        connection.sendline('mmc erase.boot 2 0 512', send_char=self.config.send_char)
-        connection.expect(self.config.bootloader_prompt, timeout=60)
-        connection.sendline('printenv')
-        connection.expect(self.config.bootloader_prompt, timeout=60)
-        if self.config.device_type == 'mstar-938':
-            connection.sendline('ufts list', send_char=self.config.send_char)
-            connection.expect(self.config.bootloader_prompt)
-        connection.empty_buffer()
-        connection.sendline('usb start 3', send_char=self.config.send_char)
-        connection.expect(self.config.bootloader_prompt, timeout=60)
-        connection.sendline('mmc dd mmc2usb 3', send_char=self.config.send_char)
-        connection.expect('Dump Block', timeout=self.config.image_boot_msg_timeout)
-        time.sleep(10)
-        logging.info('[EMMC MSTAR] end of dump emmc to usb disk')
+        match = re.search('-(\d+)\.(\d+)\.(\d+)-', image)
+        if match:
+            image_version = match.groups()
+            logging.info('[EMMC MSTAR] image version is: %s' % str(image_version))
+            if image_version >= ('01', '24', '00') and self.config.device_type == 'mstar':
+                logging.info('[EMMC MSTAR] set do_resize_userdata/factory_mode in mboot for mstar 828')
+                connection.sendline('setenv do_resize_userdata 1')
+                connection.sendline('setenv factory_mode 1')
+            if self.config.device_type == 'mstar-938':
+                logging.info('[EMMC MSTAR] set factory mode for mstar 938')
+                connection.sendline('ufts set fts.fac.factory_mode 1', send_char=self.config.send_char)
+                connection.expect(self.config.bootloader_prompt)
+            connection.sendline('saveenv', send_char=self.config.send_char)
+            connection.expect('done')
+            connection.empty_buffer()
+            connection.sendline('mmc erase.boot 2 0 512', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt, timeout=60)
+            connection.sendline('printenv')
+            connection.expect(self.config.bootloader_prompt, timeout=60)
+            if self.config.device_type == 'mstar-938':
+                connection.sendline('ufts list', send_char=self.config.send_char)
+                connection.expect(self.config.bootloader_prompt)
+            connection.empty_buffer()
+            connection.sendline('usb start 3', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt, timeout=60)
+            connection.sendline('mmc dd mmc2usb 3', send_char=self.config.send_char)
+            connection.expect('Dump Block', timeout=self.config.image_boot_msg_timeout)
+            time.sleep(10)
+            logging.info('[EMMC MSTAR] end of dump emmc to usb disk')
+        else:
+            raise
     
     def _dump_emmc_hisi_emmc(self, connection):
         logging.info('[EMMC HISI] begin to dump emmc to usb disk in recovery mode')
