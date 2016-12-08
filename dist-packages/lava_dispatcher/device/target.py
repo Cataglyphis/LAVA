@@ -1459,9 +1459,12 @@ class Target(object):
 
     def _burn_mboot_script_mstar_emmc(self, connection):
         logging.info('[EMMC MSTAR] wait for android booted')
-        index = connection.expect(['start test', 'TVOS'], timeout=self.config.image_boot_msg_timeout)
-        if index == 1:
-            time.sleep(300)
+        connection.expect(['start test', 'TVOS'], timeout=self.config.image_boot_msg_timeout)
+        logging.info('[EMMC MSTAR] wait for 300s totally')
+        for i in range(5):
+            time.sleep(60)
+            connection.empty_buffer()
+            logging.info('[EMMC MSTAR] current loop %s, wait %s seconds' % (i, (i + 1) * 60))
         self._hard_reboot(connection)
         connection.expect(self.config.bootloader_prompt, timeout=30)
         # clear the buffer
