@@ -1410,7 +1410,7 @@ class Target(object):
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('reset', send_char=self.config.send_char)
             connection.expect('/ #', timeout=200)
-            time.sleep(20)
+            time.sleep(30)
         else:
             raise
 
@@ -1427,6 +1427,8 @@ class Target(object):
         else:
             logging.info('[EMMC HISI] current panel index in pdm do not match')
             raise
+        connection.sendline('cat /proc/msp/panel')
+        connection.expect('/ #')
         connection.sendline('cat /proc/msp/pq')
         connection.expect('/ #')
         connection.sendline('busybox mkdir /tmp/factory')
