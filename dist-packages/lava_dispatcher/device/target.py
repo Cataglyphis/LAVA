@@ -968,7 +968,7 @@ class Target(object):
             elif self.config.device_type == 'hisi':
                 self._burn_factory_hisi(connection)
 
-            if 'R' in image and not skip:
+            if 'R-' in image and not skip:
                 self._burn_su_image(connection)
                 self._enter_recovery_whaley(connection)
                 self._su_device_whaley(connection)
@@ -1070,7 +1070,7 @@ class Target(object):
             self._display_usb_whaley(connection)
             # reboot device
             connection.sendline('reboot', send_char=self.config.send_char)
-            time.sleep(50)
+            time.sleep(80)
             # wait for system reboot
             self._skip_guide_whaley(connection)
             # set vip account
@@ -1381,10 +1381,10 @@ class Target(object):
         connection.sendline('exec %s' % factory, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt, timeout=600)
         connection.empty_buffer()
-        connection.sendline('printenv')
-        connection.expect(self.config.bootloader_prompt, timeout=60)
-        connection.sendline('ufts list')
-        connection.expect(self.config.bootloader_prompt)
+        # connection.sendline('printenv')
+        # connection.expect(self.config.bootloader_prompt, timeout=60)
+        # connection.sendline('ufts list')
+        # connection.expect(self.config.bootloader_prompt)
         logging.info('[EMMC HISI] end of burn hisi factory')
     
     def _reboot_recovery_hisi_emmc(self, connection):
@@ -1392,7 +1392,16 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=30)
         # clear the buffer
         connection.empty_buffer()
-        logging.info('[EMMC HISI] reboot to recovery')
+        logging.info('[EMMC HISI] show env in fastboot')
+        image = self.image_params.get('image', '')
+        if '01.24' in image:
+            logging.info('[EMMC HISI] set fts.boot.resize_data in fastboot for 01.24 image')
+            connection.sendline('ufts set fts.boot.resize_data 1')
+            connection.expect(self.config.bootloader_prompt, timeout=10)
+        connection.sendline('printenv')
+        connection.expect(self.config.bootloader_prompt, timeout=60)
+        connection.sendline('ufts list')
+        connection.expect(self.config.bootloader_prompt)
         connection.sendline('ufts set fts.boot.command boot-recovery', send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('ufts set fts.boot.status', send_char=self.config.send_char)
@@ -1401,7 +1410,7 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('reset', send_char=self.config.send_char)
         connection.expect('/ #', timeout=200)
-        time.sleep(15)
+        time.sleep(20)
 
     def _show_pq_hisi_emmc(self, connection, model_index):
         logging.info('[EMMC HISI] show pq and factory files')
@@ -1476,6 +1485,10 @@ class Target(object):
         connection.sendline('setenv bootcmd', send_char=self.config.send_char)
         # connection.sendline('setenv macaddr 00:30:1B:BA:02:DB', send_char=self.config.send_char)
         connection.sendline('setenv macaddr', send_char=self.config.send_char)
+        image = self.image_params.get('image', '')
+        if '01.24' in image:
+            logging.info('[EMMC MSTAR] set do_resize_userdata in mboot for 01.24 image')
+            connection.sendline('setenv do_resize_userdata 1')
         connection.sendline('saveenv', send_char=self.config.send_char)
         connection.expect('done')
         connection.empty_buffer()
