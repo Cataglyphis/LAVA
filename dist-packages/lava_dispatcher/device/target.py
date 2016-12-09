@@ -468,13 +468,14 @@ class Target(object):
     # display /mnt/usb/sda1/多媒体
     def _display_usb_whaley(self, connection):
         logging.info('display /mnt/usb/sdx/多媒体 info')
+        connection.empty_buffer()
         connection.sendline('su')
         connection.expect(['shell@', 'root@', pexpect.TIMEOUT])
         connection.sendline('for usb in `ls /mnt/usb`; do echo $usb; busybox du -sh /mnt/usb/$usb/多媒体; busybox ls -lh /mnt/usb/$usb/多媒体; done')
         connection.expect(['shell@', 'root@', pexpect.TIMEOUT])
         connection.empty_buffer()
         logging.info('end display /mnt/usb/sdx/多媒体 info')
-    
+
     def _skip_focus_command(self, connection):
         connection.sendline('input keyevent 66')
         time.sleep(1)
@@ -674,9 +675,14 @@ class Target(object):
         if mac_addr:
             connection.sendline('echo ro.hardware.lan_mac=%s >> /factory/factory.prop' % mac_addr, send_char=self.config.send_char)
         if sn:
-            # connection.sendline('echo ro.helios.sn=%s >> /factory/factory.prop' % sn, send_char=self.config.send_char)
             connection.sendline('echo ro.device.serialno=%s >> /factory/factory.prop' % sn, send_char=self.config.send_char)
         connection.sendline('chmod 644 /factory/factory.prop', send_char=self.config.send_char)
+        connection.sendline('busybox ls -lh /factory', send_char=self.config.send_char)
+        connection.sendline('cat /factory/factory.prop', send_char=self.config.send_char)
+        connection.sendline('cat /factory/model_index.ini', send_char=self.config.send_char)
+        connection.sendline('cat /factory/factory2.prop', send_char=self.config.send_char)
+        time.sleep(5)
+        connection.empty_buffer()
         logging.info('end set factory mode info')
 
     def _auto_login(self, connection, is_master=False):
