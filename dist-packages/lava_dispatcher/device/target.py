@@ -1330,16 +1330,16 @@ class Target(object):
             connection.sendline('setenv db_table 0', send_char=self.config.send_char)
             connection.sendline('saveenv', send_char=self.config.send_char)
             connection.sendline('reset', send_char=self.config.send_char)
-            connection.expect(self.config.interrupt_boot_prompt, timeout=30)
-            for i in range(10):
-                connection.sendline('')
-            # << MStar >>#
-            connection.expect(self.config.bootloader_prompt)
-            # clear connection buffer
-            connection.empty_buffer()
-            connection.sendline('recovery_wipe_partition data', send_char=self.config.send_char)
-            connection.sendline('reset', send_char=self.config.send_char)
-            connection.expect('/ #', timeout=100)
+            # connection.expect(self.config.interrupt_boot_prompt, timeout=30)
+            # for i in range(10):
+            #     connection.sendline('')
+            # # << MStar >>#
+            # connection.expect(self.config.bootloader_prompt)
+            # # clear connection buffer
+            # connection.empty_buffer()
+            # connection.sendline('recovery_wipe_partition data', send_char=self.config.send_char)
+            # connection.sendline('reset', send_char=self.config.send_char)
+            # connection.expect('/ #', timeout=100)
         logging.info('end of burn mstar factory')
 
     def _burn_factory_hisi(self, connection):
@@ -1457,15 +1457,16 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('saveenv')
         connection.expect(self.config.bootloader_prompt)
-        connection.sendline('recovery_wipe_partition data', send_char=self.config.send_char)
-        connection.expect(self.config.bootloader_prompt, timeout=30)
+        # connection.sendline('recovery_wipe_partition data', send_char=self.config.send_char)
+        # connection.expect(self.config.bootloader_prompt, timeout=30)
         connection.sendline('reset', send_char=self.config.send_char)
-        connection.expect('/ #', timeout=300)
+        # connection.expect('/ #', timeout=300)
         logging.info('[EMMC MSTAR] end of wipe data partition')
+        
 
     def _burn_mboot_script_mstar_emmc(self, connection):
         logging.info('[EMMC MSTAR] wait for android booted')
-        connection.expect(['start test', 'TVOS'], timeout=self.config.image_boot_msg_timeout)
+        connection.expect(['start test', 'TVOS'], timeout=1200)
         logging.info('[EMMC MSTAR] wait for 300s totally')
         for i in range(5):
             time.sleep(60)
