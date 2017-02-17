@@ -1370,7 +1370,7 @@ class Target(object):
         finally:
             connection.sendline('reset', send_char=self.config.send_char)
         logging.info('end of burn hisi factory')
-    
+
     def _burn_factory_hisi_emmc(self, connection):
         factory = self._generate_factory_image()
         logging.info('[EMMC HISI] start to burn hisi deviceinfo and factory')
@@ -1388,7 +1388,7 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=600)
         connection.empty_buffer()
         logging.info('[EMMC HISI] end of burn hisi factory')
-    
+
     def _reboot_recovery_hisi_emmc(self, connection):
         self._hard_reboot(connection)
         connection.expect(self.config.bootloader_prompt, timeout=30)
@@ -1457,12 +1457,11 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('saveenv')
         connection.expect(self.config.bootloader_prompt)
-        # connection.sendline('recovery_wipe_partition data', send_char=self.config.send_char)
-        # connection.expect(self.config.bootloader_prompt, timeout=30)
+        connection.sendline('recovery_wipe_partition data', send_char=self.config.send_char)
+        connection.expect(self.config.bootloader_prompt, timeout=30)
         connection.sendline('reset', send_char=self.config.send_char)
-        # connection.expect('/ #', timeout=300)
+        connection.expect('/ #', timeout=300)
         logging.info('[EMMC MSTAR] end of wipe data partition')
-        
 
     def _burn_mboot_script_mstar_emmc(self, connection):
         logging.info('[EMMC MSTAR] wait for android booted')
@@ -1531,7 +1530,7 @@ class Target(object):
             logging.info('[EMMC MSTAR] end of dump emmc to usb disk')
         else:
             raise
-    
+
     def _dump_emmc_hisi_emmc(self, connection):
         logging.info('[EMMC HISI] begin to dump emmc to usb disk in recovery mode')
         connection.sendcontrol('c')
@@ -1584,6 +1583,8 @@ class Target(object):
                     connection.sendline('cleanallenv')
                     connection.expect(self.config.bootloader_prompt)
                     connection.sendline('setenv bootdelay 10')
+                    connection.expect(self.config.bootloader_prompt)
+                    connection.sendline('setenv kernel_msg verbose')
                     connection.expect(self.config.bootloader_prompt)
                 elif self.config.device_type == 'mstar-938':
                     connection.sendline('cleanallenv')
