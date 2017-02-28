@@ -543,7 +543,7 @@ class BootloaderTarget(MasterImageTarget):
 
         # H01P55D-01.13.00-1616508-65_1255
         result = self.context.job_data.get('job_name') + '_' + job_id
-        result_dir = os.path.join('/result', result)
+        result_dir = os.path.join('/mfs', result)
         os.makedirs(result_dir)
         if os.path.isdir(result_dir):
             logging.info('makedirs %s successfully' % result_dir)

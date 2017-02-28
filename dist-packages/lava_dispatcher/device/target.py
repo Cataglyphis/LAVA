@@ -383,6 +383,7 @@ class Target(object):
 
     # judge current state, and skip guide
     def _skip_guide_whaley(self, connection):
+        connection.expect(['boot is finished', pexpect.TIMEOUT], timeout=180)
         pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", "com.whaley.tv.tvplayer.ui", pexpect.TIMEOUT]
         for i in range(10):
             logging.info('try to skip the guide. attempt: %s' % str(i+1))
@@ -401,8 +402,6 @@ class Target(object):
                 connection.sendcontrol('c')
                 connection.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
                 connection.sendline('su', send_char=self.config.send_char)
-                # connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=self.config.send_char)
-                # time.sleep(20)
                 self._skip_helios_guide(connection)
                 connection.sendline('dumpsys window | grep mFocusedApp', send_char=self.config.send_char)
                 pos2 = connection.expect(pattern, timeout=10)
@@ -478,9 +477,9 @@ class Target(object):
 
     def _skip_focus_command(self, connection):
         connection.sendline('input keyevent 66')
-        time.sleep(1)
+        time.sleep(5)
         connection.sendline('input keyevent 3')
-        time.sleep(1)
+        time.sleep(5)
         connection.sendline('input keyevent 3')
 
     def _broadcast_rc_connected(self, connection):
@@ -500,19 +499,6 @@ class Target(object):
             if i == 2:
                 connection.sendline('am start -n com.helios.launcher/.LauncherActivity', send_char=self.config.send_char)
                 time.sleep(5)
-
-    # remove helios guide, so after reboot no guide appear
-    def _remove_helios_guide(self, connection):
-        logging.info('remove helios guide')
-        connection.sendline('su', send_char=self.config.send_char)
-        connection.sendline('rm -rf /data/dalvik-cache/arm/system@priv-app@HeliosGuide@HeliosGuide.apk@classes.dex', send_char=self.config.send_char)
-        connection.sendline('mount -o remount,rw /system', send_char=self.config.send_char)
-        connection.sendline('rm -rf /system/priv-app/HeliosGuide', send_char=self.config.send_char)
-        if self.config.device_type == 'mstar-938':
-            connection.sendline("busybox sed -i 's/name=\"user_setup_complete\" value=\"0\"/name=\"user_setup_complete\" value=\"1\"/g' /data/system/users/0/settings_secure.xml",
-                                send_char=self.config.send_char)
-        connection.empty_buffer()
-        logging.info('end remove helios guide')
 
     # close shutdown
     def _close_shutdown_whaley(self, connection):
@@ -910,15 +896,24 @@ class Target(object):
                 logging.info('[EMMC MSTAR] wait for end of auto_update.txt or auto_update_factory.txt')
                 # timeout = 3600s
                 connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
+                before_buffer = connection.before
                 for i in range(10):
                     connection.sendline('')
+                if 'cleanallenv' in before_buffer and 'recovery_wipe_partition' in before_buffer:
+                    logging.info('cleanallenv and recovery_wipe_partition in auto_update.txt')
+                    connection.expect('/ #', timeout=300)
+                    connection.expect('U-Boot', timeout=100)
+                    for i in range(100):
+                        connection.sendline('')
+                        time.sleep(0.06)
+                # << MStar >>#
                 connection.expect(self.config.bootloader_prompt)
-                # clear connection buffer
+                # clear the buffer
                 connection.empty_buffer()
-                # if self.config.device_type == 'mstar-938':
-                #     logging.info('[EMMC MSTAR] set factory mode for mstar 938')
-                #     connection.sendline('ufts set fts.fac.factory_mode 1', send_char=self.config.send_char)
-                #     connection.expect(self.config.bootloader_prompt)
+                connection.sendline('setenv bootdelay 10')
+                connection.expect(self.config.bootloader_prompt)
+                connection.sendline('saveenv')
+                connection.expect(self.config.bootloader_prompt)
                 self._burn_factory_mstar_emmc(connection)
                 self._show_factory_mstar_emmc(connection)
                 self._wipe_data_mstar_emmc(connection)
@@ -1066,10 +1061,6 @@ class Target(object):
             self._install_busybox_whaley(connection)
             # set shutdown time to -1, no shutdown
             self._close_shutdown_whaley(connection)
-            # skip helios guide
-            # self._skip_helios_guide(connection)
-            # remove helios guide
-            # self._remove_helios_guide(connection)
             # set factory info, mac addr, sn
             self._set_factory_whaley(connection)
             # display usb info
@@ -1309,10 +1300,22 @@ class Target(object):
         # timeout = 3600s
         for i in range(10):
             connection.sendline('')
+        before_buffer = connection.before
+        if 'cleanallenv' in before_buffer and 'recovery_wipe_partition' in before_buffer:
+            logging.info('cleanallenv and recovery_wipe_partition in auto_update.txt')
+            connection.expect('/ #', timeout=300)
+            connection.expect('U-Boot', timeout=100)
+            for i in range(100):
+                connection.sendline('')
+                time.sleep(0.06)
         # << MStar >>#
         connection.expect(self.config.bootloader_prompt)
         # clear the buffer
         connection.empty_buffer()
+        connection.sendline('setenv bootdelay 10')
+        connection.expect(self.config.bootloader_prompt)
+        connection.sendline('saveenv')
+        connection.expect(self.config.bootloader_prompt)
         connection.sendline('setenv serverip %s' % self.context.config.lava_server_ip, send_char=self.config.send_char)
         connection.expect(self.config.bootloader_prompt)
         connection.sendline('estart')
@@ -1584,7 +1587,7 @@ class Target(object):
                     connection.expect(self.config.bootloader_prompt)
                     connection.sendline('setenv bootdelay 10')
                     connection.expect(self.config.bootloader_prompt)
-                    connection.sendline('setenv kernel_msg verbose')
+                    connection.sendline('setenv kernel_msg quiet')
                     connection.expect(self.config.bootloader_prompt)
                 elif self.config.device_type == 'mstar-938':
                     connection.sendline('cleanallenv')
