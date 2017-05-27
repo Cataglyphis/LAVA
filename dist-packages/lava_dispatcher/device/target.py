@@ -383,7 +383,7 @@ class Target(object):
 
     # judge current state, and skip guide
     def _skip_guide_whaley(self, connection):
-        connection.expect(['boot is finished', pexpect.TIMEOUT], timeout=180)
+        connection.expect(['boot is finished', pexpect.TIMEOUT], timeout=300)
         pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", "com.whaley.tv.tvplayer.ui", pexpect.TIMEOUT]
         for i in range(10):
             logging.info('try to skip the guide. attempt: %s' % str(i+1))
