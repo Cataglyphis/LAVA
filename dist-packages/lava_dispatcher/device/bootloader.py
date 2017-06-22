@@ -375,6 +375,40 @@ class BootloaderTarget(MasterImageTarget):
             self._booted = True
         # bootloader and booted, 2016.09.18
         elif self._is_bootloader() and self._booted:
+            self._hard_reboot(self.proc)
+            self.proc.empty_buffer()
+            self.proc.sendline('cleanallenv')
+            time.sleep(1)
+            self.proc.sendline('setenv bootdelay 10')
+            time.sleep(1)
+            self.proc.sendline('saveenv')
+            time.sleep(1)
+            self.proc.sendline('ufts reset')
+            time.sleep(1)
+            self.proc.sendline('reset')
+            self.proc.empty_buffer()
+            time.sleep(5)
+            if 'mstar' in self.config.device_type:
+                self.proc.expect(self.config.interrupt_boot_prompt, timeout=60)
+                for i in range(10):
+                    self.proc.sendline('')
+                    time.sleep(0.06)
+                self.proc.expect(self.config.bootloader_prompt)
+                self.proc.sendline('ac androidboot.debuggable 1')
+                time.sleep(1)
+                self.proc.sendline('reset')
+            self._skip_guide_whaley(self.proc)
+            self.proc.empty_buffer()
+            self.proc.sendline('su')
+            self.proc.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
+            before = self.proc.before
+            if 'not found' in before or 'permission denied' in before:
+                self.proc.sendline('reboot')
+                self._burn_su_image(self.proc)
+                self._enter_recovery_whaley(self.proc)
+                self._su_device_whaley(self.proc)
+                self._skip_guide_whaley(self.proc)
+
             logging.info('already booted, try to run whaley_test_shell')
             # self.proc.sendline('export PS1="%s"'
             #                    % self.tester_ps1,
@@ -463,11 +497,17 @@ class BootloaderTarget(MasterImageTarget):
                 break
             except Exception as e:
                 logging.warning("can't get target ip, try reboot")
-                self.proc.sendline('reboot')
-                self._burn_su_image(self.proc)
-                self._enter_recovery_whaley(self.proc)
-                self._su_device_whaley(self.proc)
-                time.sleep(30)
+                self.proc.empty_buffer()
+                self.proc.sendline('su')
+                self.proc.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
+                before = self.proc.before
+                if 'not found' in before or 'permission denied' in before:
+                    self.proc.sendline('reboot')
+                    self._burn_su_image(self.proc)
+                    self._enter_recovery_whaley(self.proc)
+                    self._su_device_whaley(self.proc)
+                else:
+                    self.proc.sendline('reboot')
                 self._skip_guide_whaley(self.proc)
 
         if not ip:
