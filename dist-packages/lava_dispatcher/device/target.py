@@ -383,8 +383,8 @@ class Target(object):
 
     # judge current state, and skip guide
     def _skip_guide_whaley(self, connection):
-        connection.expect(['boot is finished', pexpect.TIMEOUT], timeout=300)
-        pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", "com.whaley.tv.tvplayer.ui", pexpect.TIMEOUT]
+        connection.expect(['boot is finished', 'Android Boot complete', pexpect.TIMEOUT], timeout=300)
+        pattern = ["Can't find service", "com.helios.guide", "com.helios.launcher", pexpect.TIMEOUT]
         for i in range(10):
             logging.info('try to skip the guide. attempt: %s' % str(i+1))
             connection.empty_buffer()
@@ -413,9 +413,6 @@ class Target(object):
             elif pos1 == 2:
                 logging.info('already in com.helios.launcher activity')
                 break
-            elif pos1 == 3:
-                logging.info('already in com.whaley.tv.tvplayer.ui activity')
-                break
             else:
                 time.sleep(100)
                 continue
@@ -431,7 +428,7 @@ class Target(object):
         connection.sendline('cd /system/xbin', send_char=self.config.send_char)
         connection.sendline('busybox --install .', send_char=self.config.send_char)
         image = self.image_params.get('image', '')
-        if 'R' in image:
+        if 'R-' in image:
             logging.info('download sqlite3 to /system/xbin')
             if self.config.device_type == 'mstar':
                 connection.sendline('busybox wget -O sqlite3 http://172.16.117.1:8000/resource/sqlite3', send_char=self.config.send_char)
@@ -557,8 +554,31 @@ class Target(object):
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('exec su/hisi', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt, timeout=600)
-        else:
-            logging.warning('no device type mstar or hisi found')
+        elif self.config.device_type == 'h551':
+            try:
+                if self.config.hard_reset_command != '':
+                    self.context.run_command(self.config.power_off_cmd)
+                    time.sleep(20)
+                    self.context.run_command(self.config.power_on_cmd)
+                    connection.expect(self.config.interrupt_boot_prompt, timeout=20)
+                    for i in range(50):
+                        connection.sendline('')
+                        time.sleep(0.1)
+                else:
+                    for i in range(50):
+                        connection.sendline('')
+                        time.sleep(0.1)
+                connection.expect(self.config.bootloader_prompt)
+            except pexpect.TIMEOUT:
+                msg = 'Infrastructure Error: failed to enter the bootloader.'
+                logging.error(msg)
+                raise
+            # clear connection buffer
+            connection.empty_buffer()
+            # burn su.ext4.gz image
+            logging.info("use 172.16.10.41 for su image, and buru su.ext4.gz to tvinfo")
+            connection.sendline('otftp 172.16.10.41:su/h551', send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt, timeout=600)
         logging.info('end of burn su image to tvinfo')
 
     # enter recovery mode
@@ -574,7 +594,7 @@ class Target(object):
             connection.sendline('reset', send_char=self.config.send_char)
             connection.expect('/ #', timeout=150)
             time.sleep(15)
-        elif self.config.device_type == 'hisi':
+        elif self.config.device_type == 'hisi' or self.config.device_type == 'h551':
             connection.sendline('ufts set fts.fac.factory_mode 0', send_char=self.config.send_char)
             connection.sendline('ufts set fts.boot.command boot-recovery', send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt)
@@ -584,9 +604,6 @@ class Target(object):
             connection.expect(self.config.bootloader_prompt)
             connection.sendline('reset', send_char=self.config.send_char)
             connection.expect('/ #', timeout=200)
-            time.sleep(15)
-        else:
-            logging.warning('no device type mstar or hisi found')
         connection.empty_buffer()
         logging.info('end of enter recovery mode')
 
@@ -600,7 +617,7 @@ class Target(object):
         if self.config.device_type == 'mstar' or self.config.device_type == 'mstar-938':
             tvinfo = '/dev/block/platform/mstar_mci.0/by-name/tvinfo'
             connection.sendline('busybox mount %s /tmp/disk' % tvinfo, send_char=self.config.send_char)
-        elif self.config.device_type == 'hisi':
+        elif self.config.device_type == 'hisi' or self.config.device_type == 'h551':
             tvinfo = '/dev/block/platform/hi_mci.1/by-name/tvinfo'
             connection.sendline('busybox mount %s /tmp/disk' % tvinfo, send_char=self.config.send_char)
         else:
@@ -819,7 +836,7 @@ class Target(object):
         logging.info('perform hard reset on the system')
         connection.empty_buffer()
         connection.sendline('')
-        index = connection.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
+        index = connection.expect(['shell@', 'root@', pexpect.TIMEOUT, pexpect.EOF], timeout=5)
         if index == 0 or index == 1:
             logging.info('in normal shell console, try to display usb info')
             self._display_usb_whaley(connection)
@@ -832,7 +849,7 @@ class Target(object):
             self.context.run_command(self.config.power_off_cmd)
             time.sleep(20)
             self.context.run_command(self.config.power_on_cmd)
-            if self.config.device_type == 'hisi':  # hisi platform
+            if self.config.device_type == 'hisi' or self.config.device_type == 'h551':  # hisi platform
                 connection.expect(self.config.interrupt_boot_prompt, timeout=20)
             else:  # mstar platform, mstar/mstar-938
                 connection.expect('U-Boot', timeout=20)
@@ -968,6 +985,8 @@ class Target(object):
                 self._burn_factory_mstar(connection)
             elif self.config.device_type == 'hisi':
                 self._burn_factory_hisi(connection)
+            elif self.config.device_type == 'h551':
+                self._burn_factory_h551(connection)
 
             if 'R-' in image and not skip:
                 self._burn_su_image(connection)
@@ -1071,7 +1090,7 @@ class Target(object):
             # wait for system reboot
             self._skip_guide_whaley(connection)
             # set vip account
-            self._set_vip_whaley(connection)
+            # self._set_vip_whaley(connection)
             # display usb info
             self._display_usb_whaley(connection)
 
@@ -1241,7 +1260,7 @@ class Target(object):
         yun_os = self.image_params.get('yun_os', 'false')
         command = ['sudo', '-u', 'root', './factory.sh', job_id, project_name, model_index, product_name, yun_os]
         subprocess.call(command)
-        if project_name in ['apollo', 'phoebus']:
+        if project_name in ['apollo', 'athena']:
             if os.path.isfile(os.path.join(factory, 'image', job_id, 'factory')) and \
                     os.path.isfile(os.path.join(factory, 'image', job_id, 'factory.ext4.gz')):
                 logging.info('generate factory image successfully')
@@ -1362,11 +1381,40 @@ class Target(object):
         connection.expect(self.config.bootloader_prompt, timeout=100)
         try:
             factory = self._generate_factory_image()
-            deviceinfo = os.path.join(os.path.dirname(factory), 'deviceinfo.txt')
-            logging.info('deviceinfo.txt path: %s' % deviceinfo)
-            connection.sendline('exec %s' % deviceinfo, send_char=self.config.send_char)
-            connection.expect(self.config.bootloader_prompt, timeout=600)
+            model_index = self.image_params.get('model_index', '')
+            connection.sendline('panel_index write %s' % model_index, send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt, timeout=10)
             connection.sendline('exec %s' % factory, send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt, timeout=600)
+        except CriticalError:
+            logging.warning('skip burn factory image')
+        finally:
+            connection.sendline('reset', send_char=self.config.send_char)
+        logging.info('end of burn hisi factory')
+
+    def _burn_factory_h551(self, connection):
+        if 'no-factory' in self.image_params.get('image', ''):
+            logging.info('do not need to burn factory')
+            connection.sendline('reset', send_char=self.config.send_char)
+            return
+        logging.info('start to burn h551 factory')
+        connection.expect(self.config.interrupt_boot_prompt, timeout=self.config.image_boot_msg_timeout)
+        # timeout = 3600s
+        for i in range(30):
+            connection.sendline('')
+            time.sleep(0.06)
+        # apollo#
+        connection.expect(self.config.bootloader_prompt)
+        # clear the buffer
+        connection.empty_buffer()
+        connection.sendline('dhcp')
+        connection.expect(self.config.bootloader_prompt, timeout=100)
+        try:
+            factory = self._generate_factory_image()
+            model_index = self.image_params.get('model_index', '')
+            connection.sendline('panel_index write %s' % model_index, send_char=self.config.send_char)
+            connection.expect(self.config.bootloader_prompt, timeout=10)
+            connection.sendline('otftp %s:%s' % (self.context.config.lava_server_ip, factory), send_char=self.config.send_char)
             connection.expect(self.config.bootloader_prompt, timeout=600)
         except CriticalError:
             logging.warning('skip burn factory image')

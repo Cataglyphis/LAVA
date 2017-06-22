@@ -361,11 +361,11 @@ class cmd_deploy_whaley_image(BaseAction):
         'properties': {
             'image': {'type': 'string', 'optional': True},
             'image_server_ip': {'type': 'string', 'optional': True},
-            'project_name': {'type': 'string', 'optional': False,
-                             'enum': ["helios", "apollo", "sphinx", "titan"]},
-            'model_index': {'type': 'string', 'optional': False, 'default': '0'},
-            'product_name': {'type': 'string', 'optional': False, 'default': ''},
-            'yun_os': {'type': 'string', 'optional': False, 'default': 'false',
+            'project_name': {'type': 'string', 'optional': True,
+                             'enum': ["helios", "apollo", "sphinx", "cronus", "athena"]},
+            'model_index': {'type': 'string', 'optional': True, 'default': '0'},
+            'product_name': {'type': 'string', 'optional': True, 'default': ''},
+            'yun_os': {'type': 'string', 'optional': True, 'default': 'false',
                        'enum': ["true", "false"]
                        },
             'bootloadertype': {'type': 'string', 'optional': True, 'default': 'u_boot'},
