@@ -473,7 +473,7 @@ class BootloaderTarget(MasterImageTarget):
         ##############################################
         # pat = self.tester_ps1_pattern
         # incrc = self.tester_ps1_includes_rc
-        
+
         self.proc.empty_buffer()
         self.proc.sendcontrol('c')
         self.proc.sendline('')
@@ -485,17 +485,19 @@ class BootloaderTarget(MasterImageTarget):
             logging.warning('now in mboot/fastboot interface, try to reset')
             self.proc.sendline('ufts set fts.boot.oobe 1')
             self.proc.sendline('reset')
-            raise CriticalError('in mboot/fastboot interface, not in common shell console')
+            time.sleep(20)
+            self._skip_guide_whaley(self.proc)
         elif '/ #' in self.proc.after:
             logging.warning('now in recovery mode, try to reboot')
             self.proc.sendline('busybox reboot -f')
-            raise CriticalError('in recovery mode, not in common shell console')
+            time.sleep(20)
+            self._skip_guide_whaley(self.proc)
 
+        ip = ''
         if 'phoebus' in self.image_params.get('image', '') or 'formula' in self.image_params.get('image', ''):
             pass
         else:
             runner = NetworkCommandRunner(self, '', '')
-            ip = ''
             for i in range(3):
                 try:
                     # get the target device ip
@@ -571,7 +573,7 @@ class BootloaderTarget(MasterImageTarget):
         logging.info('deploy_whaley_image parameters: %s' % params)
         image = params.get('image', '').split('/')
         data['device']['image'] = image[0] + '/' + image[1]
-        
+
         # get prop ro.build.product
         self.proc.sendline('')
         self.proc.empty_buffer()
