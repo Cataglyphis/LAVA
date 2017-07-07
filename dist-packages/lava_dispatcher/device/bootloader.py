@@ -32,6 +32,8 @@ import os
 import json
 import time
 
+from datetime import datetime
+
 from lava_dispatcher.device.master import (
     MasterImageTarget
 )
@@ -481,37 +483,40 @@ class BootloaderTarget(MasterImageTarget):
             pass
         elif self.config.bootloader_prompt in self.proc.after:
             logging.warning('now in mboot/fastboot interface, try to reset')
+            self.proc.sendline('ufts set fts.boot.oobe 1')
             self.proc.sendline('reset')
             raise CriticalError('in mboot/fastboot interface, not in common shell console')
         elif '/ #' in self.proc.after:
             logging.warning('now in recovery mode, try to reboot')
             self.proc.sendline('busybox reboot -f')
             raise CriticalError('in recovery mode, not in common shell console')
-        
-        runner = NetworkCommandRunner(self, '', '')
-        ip = ''
-        for i in range(3):
-            try:
-                # get the target device ip
-                ip = runner.get_target_ip()
-                break
-            except Exception as e:
-                logging.warning("can't get target ip, try reboot")
-                self.proc.empty_buffer()
-                self.proc.sendline('su')
-                self.proc.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
-                before = self.proc.before
-                if 'not found' in before or 'permission denied' in before:
-                    self.proc.sendline('reboot')
-                    self._burn_su_image(self.proc)
-                    self._enter_recovery_whaley(self.proc)
-                    self._su_device_whaley(self.proc)
-                else:
-                    self.proc.sendline('reboot')
-                self._skip_guide_whaley(self.proc)
 
-        if not ip:
-            raise CriticalError('Network error detected..aborting')
+        if 'phoebus' in self.image_params.get('image', '') or 'formula' in self.image_params.get('image', ''):
+            pass
+        else:
+            runner = NetworkCommandRunner(self, '', '')
+            ip = ''
+            for i in range(3):
+                try:
+                    # get the target device ip
+                    ip = runner.get_target_ip()
+                    break
+                except Exception as e:
+                    logging.warning("can't get target ip, try reboot")
+                    self.proc.empty_buffer()
+                    self.proc.sendline('su')
+                    self.proc.expect(['shell@', 'root@', pexpect.TIMEOUT], timeout=5)
+                    before = self.proc.before
+                    if 'not found' in before or 'permission denied' in before:
+                        self.proc.sendline('reboot')
+                        self._burn_su_image(self.proc)
+                        self._enter_recovery_whaley(self.proc)
+                        self._su_device_whaley(self.proc)
+                    else:
+                        self.proc.sendline('reboot')
+                    self._skip_guide_whaley(self.proc)
+            if not ip:
+                raise CriticalError('Network error detected..aborting')
 
         ##############################################
         # get the pdu port info
@@ -583,7 +588,8 @@ class BootloaderTarget(MasterImageTarget):
 
         # H01P55D-01.13.00-1616508-65_1255
         result = self.context.job_data.get('job_name') + '_' + job_id
-        result_dir = os.path.join('/mfs', result)
+        time_dir = datetime.now().strftime('%y%W')
+        result_dir = os.path.join('/mfs', time_dir, result)
         os.makedirs(result_dir)
         if os.path.isdir(result_dir):
             logging.info('makedirs %s successfully' % result_dir)
