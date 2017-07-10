@@ -377,6 +377,9 @@ class BootloaderTarget(MasterImageTarget):
             self._booted = True
         # bootloader and booted, 2016.09.18
         elif self._is_bootloader() and self._booted:
+            if 'phoebus' in self.image_params.get('image', '') or 'formula' in self.image_params.get('image', ''):
+                logging.info('skip reboot for micro projector')
+                return
             self._hard_reboot(self.proc)
             self.proc.empty_buffer()
             self.proc.sendline('cleanallenv')
