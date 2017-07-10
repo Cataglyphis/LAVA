@@ -526,8 +526,8 @@ class BootloaderTarget(MasterImageTarget):
         ##############################################
         # get the pdu port info
         ##############################################
-        hard_reset_command = self.config.hard_reset_command
-        command = hard_reset_command.strip().split(' ')
+        power_on_cmd = self.config.power_on_cmd
+        command = power_on_cmd.strip().split(' ')
         if command:
             pdu_ip = ''
             pdu_port = ''
@@ -543,6 +543,14 @@ class BootloaderTarget(MasterImageTarget):
                 pdu = ''
         logging.info('PDU port number is: %s' % pdu)
 
+        pdu_type = ''
+        if power_on_cmd:
+            if 'pduclient' in power_on_cmd:
+                pdu_type = 'np1601'
+            elif 'pdurelay' in power_on_cmd:
+                pdu_type = 'r16t'
+        logging.info('PDU type is: %s' % pdu_type)
+        
         ##############################################
         # get current job id
         ##############################################
@@ -566,7 +574,10 @@ class BootloaderTarget(MasterImageTarget):
 
         data['device']['target'] = str(ip) + ':5555'
         data['device']['socat'] = connection_command
-        data['device']['pdu'] = str(pdu)
+        data['device']['pdu'] = pdu
+        data['device']['pdu_type'] = pdu_type
+        data['device']['macaddr'] = self._get_macaddr_whaley()
+        data['device']['sn'] = self._get_sn_whaley()
 
         job_data = self.context.job_data
         params = {}
