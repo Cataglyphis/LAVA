@@ -636,13 +636,13 @@ class Target(object):
     def _get_macaddr_whaley(self):
         mac_addr = self.config.macaddr
         logging.info('mac address: %s' % mac_addr)
-        return mac_addr
+        return mac_addr.upper()
 
     # get current device sn
     def _get_sn_whaley(self):
         sn = self.config.sn
         logging.info('sn: %s' % sn)
-        return sn
+        return sn.upper()
 
     # set mac address in bootloader
     def _set_macaddr_whaley(self, connection):
