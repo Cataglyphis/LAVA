@@ -29,6 +29,7 @@ import contextlib
 import subprocess
 import pexpect
 import os
+import re
 import json
 import time
 
@@ -377,7 +378,8 @@ class BootloaderTarget(MasterImageTarget):
             self._booted = True
         # bootloader and booted, 2016.09.18
         elif self._is_bootloader() and self._booted:
-            if 'phoebus' in self.image_params.get('image', '') or 'formula' in self.image_params.get('image', ''):
+            image_temp = self.image_params.get('image', '')
+            if 'phoebus' in image_temp or 'formula' in image_temp or 'mone' in image_temp:
                 logging.info('skip reboot for micro projector')
                 return
             self._hard_reboot(self.proc)
@@ -497,7 +499,8 @@ class BootloaderTarget(MasterImageTarget):
             self._skip_guide_whaley(self.proc)
 
         ip = ''
-        if 'phoebus' in self.image_params.get('image', '') or 'formula' in self.image_params.get('image', ''):
+        image_temp = self.image_params.get('image', '')
+        if 'phoebus' in image_temp or 'formula' in image_temp or 'mone' in image_temp:
             pass
         else:
             runner = NetworkCommandRunner(self, '', '')
@@ -579,14 +582,17 @@ class BootloaderTarget(MasterImageTarget):
         data['device']['macaddr'] = self._get_macaddr_whaley()
         data['device']['sn'] = self._get_sn_whaley()
 
-        job_data = self.context.job_data
-        params = {}
-        for cmd in job_data['actions']:
-            if cmd.get('command') == 'deploy_whaley_image':
-                params = cmd.get('parameters', {})
-        logging.info('deploy_whaley_image parameters: %s' % params)
-        image = params.get('image', '').split('/')
-        data['device']['image'] = image[0] + '/' + image[1]
+        # job_data = self.context.job_data
+        # params = {}
+        # for cmd in job_data['actions']:
+        #     if cmd.get('command') == 'deploy_whaley_image':
+        #         params = cmd.get('parameters', {})
+        # logging.info('deploy_whaley_image parameters: %s' % params)
+
+        result = re.search(r'(\S+:)?(\S+?)/(\S+?)/', self.image_params.get('image', ''))
+        logging.info('result: %s' % result.groups())
+        if result:
+            data['device']['image'] = result.groups()[1] + '/' + result.groups()[2]
 
         # get prop ro.build.product
         self.proc.sendline('')
