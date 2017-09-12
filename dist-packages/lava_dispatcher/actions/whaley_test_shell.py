@@ -132,7 +132,7 @@ class cmd_whaley_test_shell(BaseAction):
         os.chdir(tmpdir)
         current_user = os.listdir('/home')[0]
         logging.info('current user is: %s' % current_user)
-        cmd = ['sudo', '-u', current_user, 'git', 'clone']
+        cmd = ['sudo', '-u', 'dqa', 'git', 'clone']
         if branch:
             cmd.append('-b')
             cmd.append(branch)

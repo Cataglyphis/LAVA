@@ -23,15 +23,16 @@
 # modified by Wang Bo (wang.bo@whaley.cn), 2016.01.15
 # add function deploy_whaley_image in class BootloaderTarget
 ############################################################
+import os
+import re
+import time
+import yaml
+import json
 
+import pexpect
 import logging
 import contextlib
 import subprocess
-import pexpect
-import os
-import re
-import json
-import time
 
 from datetime import datetime
 
@@ -379,7 +380,7 @@ class BootloaderTarget(MasterImageTarget):
         # bootloader and booted, 2016.09.18
         elif self._is_bootloader() and self._booted:
             image_temp = self.image_params.get('image', '')
-            if 'phoebus' in image_temp or 'formula' in image_temp or 'mone' in image_temp:
+            if 'phoebus' in image_temp or 'formula' in image_temp or 'mone' in image_temp or 'loki' in image_temp:
                 logging.info('skip reboot for micro projector')
                 return
             self._hard_reboot(self.proc)
@@ -470,15 +471,9 @@ class BootloaderTarget(MasterImageTarget):
     # modify at 2016.07.18
     def whaley_file_system(self, path, git_info):
         logging.info('get the target device socat command, ip address and pdu port')
-        # socat command
-        connection_command = self.config.connection_command
-
         ##############################################
         # get device ip address info
         ##############################################
-        # pat = self.tester_ps1_pattern
-        # incrc = self.tester_ps1_includes_rc
-
         self.proc.empty_buffer()
         self.proc.sendcontrol('c')
         self.proc.sendline('')
@@ -500,7 +495,7 @@ class BootloaderTarget(MasterImageTarget):
 
         ip = ''
         image_temp = self.image_params.get('image', '')
-        if 'phoebus' in image_temp or 'formula' in image_temp or 'mone' in image_temp:
+        if 'phoebus' in image_temp or 'formula' in image_temp or 'mone' in image_temp or 'loki' in image_temp:
             pass
         else:
             runner = NetworkCommandRunner(self, '', '')
@@ -531,9 +526,9 @@ class BootloaderTarget(MasterImageTarget):
         ##############################################
         power_on_cmd = self.config.power_on_cmd
         command = power_on_cmd.strip().split(' ')
+        pdu_ip = ''
+        pdu_port = ''
         if command:
-            pdu_ip = ''
-            pdu_port = ''
             if '--hostname' in command:
                 index = command.index('--hostname')
                 pdu_ip = command[index+1]
@@ -553,7 +548,7 @@ class BootloaderTarget(MasterImageTarget):
             elif 'pdurelay' in power_on_cmd:
                 pdu_type = 'r16t'
         logging.info('PDU type is: %s' % pdu_type)
-        
+
         ##############################################
         # get current job id
         ##############################################
@@ -566,33 +561,13 @@ class BootloaderTarget(MasterImageTarget):
             job_id = '0'
 
         ##############################################
-        # dump info to plan.json
-        ###############################e###############
-        if os.path.isfile(path):
-            with open(path, 'r') as fin:
-                data = json.load(fin)
-        else:
-            logging.error('no json file found')
-            raise
-
-        data['device']['target'] = str(ip) + ':5555'
-        data['device']['socat'] = connection_command
-        data['device']['pdu'] = pdu
-        data['device']['pdu_type'] = pdu_type
-        data['device']['macaddr'] = self._get_macaddr_whaley()
-        data['device']['sn'] = self._get_sn_whaley()
-
-        # job_data = self.context.job_data
-        # params = {}
-        # for cmd in job_data['actions']:
-        #     if cmd.get('command') == 'deploy_whaley_image':
-        #         params = cmd.get('parameters', {})
-        # logging.info('deploy_whaley_image parameters: %s' % params)
-
-        result = re.search(r'(\S+:)?(\S+?)/(\S+?)/', self.image_params.get('image', ''))
-        logging.info('result: %s' % result.groups())
-        if result:
-            data['device']['image'] = result.groups()[1] + '/' + result.groups()[2]
+        # get image version
+        ##############################################
+        image = re.search(r'(\S+:)?(\S+?)/(\S+?)/', image_temp)
+        image_version = ''
+        if image:
+            image_version = image.groups()[1] + '/' + image.groups()[2]
+            logging.info('image version: %s' % image_version)
 
         # get prop ro.build.product
         self.proc.sendline('')
@@ -601,15 +576,72 @@ class BootloaderTarget(MasterImageTarget):
         self.proc.expect(['shell@', 'root@', pexpect.TIMEOUT])
         buffer_before = self.proc.before.strip()
         platform = buffer_before.split('\r\n')[-1]
-        data['device']['platform'] = platform.capitalize()
-        data['device']['hostname'] = self.config.hostname
+        logging.info('platform: %s' % platform)
 
-        data['device']['job_id'] = int(job_id)
-        data['mail']['subject'] = data['mail']['subject'] + ' ' + self.context.job_data.get('job_name')
-        data['git'] = git_info
+        # socat command
+        # socat stdin,raw,echo=0 tcp:172.16.117.20:4196
+        connection_command = self.config.connection_command
+
+        ##############################################
+        # dump info to plan.json
+        ###############################e###############
+        if not os.path.isfile(path):
+            logging.error('no file %s found' % path)
+            raise
+
+
+        suffix = os.path.splitext(path)[-1]
+        if suffix == '.json':
+            logging.info('should use tap 1.0 to parse json file')
+            with open(path, 'r') as fin:
+                data = json.load(fin)
+
+            data['device']['target'] = str(ip) + ':5555'
+            data['device']['socat'] = connection_command
+            data['device']['pdu'] = pdu
+            data['device']['pdu_type'] = pdu_type
+            data['device']['macaddr'] = self._get_macaddr_whaley()
+            data['device']['sn'] = self._get_sn_whaley()
+            data['device']['platform'] = platform.capitalize()
+            data['device']['hostname'] = self.config.hostname
+            data['device']['job_id'] = int(job_id)
+            data['device']['image'] = image_version
+            data['mail']['subject'] = data['mail']['subject'] + ' ' + self.context.job_data.get('job_name')
+            data['git'] = git_info
+
+        elif suffix == '.yaml':
+            logging.info('should use tap 1.5 to parse yaml file')
+            with open(path, 'r') as fin:
+                data = yaml.load(fin)
+
+            # connection_command = 'socat stdin,raw,echo=0 tcp:172.16.117.20:4196'
+            serial = re.search('tcp:(\S+):(\d+)', connection_command)
+            if serial:
+                data['device']['serial'] = serial.groups()[0] + ':' + serial.groups()[1]
+            else:
+                data['device']['serial'] = ''
+            data['device']['platform'] = platform
+            pdu = {'ip': pdu_ip, 'port': int(pdu_port), 'type': pdu_type}
+            data['device']['pdu'] = pdu
+            data['device']['image'] = image_version
+            data['device']['job_id'] = int(job_id)
+            data['device']['hostname'] = self.config.hostname
+            data['device']['sn'] = self._get_sn_whaley()
+            data['device']['lan_mac'] = self._get_macaddr_whaley()
+
+            factory = {
+                'model_index': int(self.image_params.get('model_index', '0')),
+                'product_name': self.image_params.get('project_name', ''),
+                'yun_os': False if self.image_params.get('yun_os', 'false') == 'false' else True
+                }
+
+            data['factory'] = factory
+        else:
+            logging.error('only support json and yaml file')
+            raise
 
         # H01P55D-01.13.00-1616508-65_1255
-        result = self.context.job_data.get('job_name') + '_' + job_id
+        result = self.context.job_data.get('job_name').split(' ')[0] + '_' + job_id
         time_dir = datetime.now().strftime('%y%W')
         result_dir = os.path.join('/mfs', time_dir, result)
         os.makedirs(result_dir)
@@ -619,11 +651,13 @@ class BootloaderTarget(MasterImageTarget):
             logging.warning("can't makedirs %s, try again" % result_dir)
             os.makedirs(result_dir)
 
-        case_json = os.path.join(result_dir, 'plan.json')
-
-        with open(case_json, 'w') as fout:
-            logging.info('write data to json file %s' % case_json)
-            json.dump(data, fout, indent=2)
+        case_plan = os.path.join(result_dir, 'plan' + suffix)
+        with open(case_plan, 'w') as fout:
+            logging.info('write data to file %s' % case_plan)
+            if suffix == '.json':
+                json.dump(data, fout, indent=2)
+            elif suffix == '.yaml':
+                yaml.dump(data, fout, default_flow_style=False, encoding='utf-8')
 
         logging.warning('disconnect the serial connection, try to run the script')
         if self.config.connection_command_terminate:
@@ -631,7 +665,7 @@ class BootloaderTarget(MasterImageTarget):
         finalize_process(self.proc)
         self.proc = None
         self.context.client.proc = self.proc
-        return case_json
+        return case_plan
 
     # modify at 2016.05.25
     def reconnect_serial(self):
